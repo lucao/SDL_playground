@@ -1,0 +1,10 @@
+.vscode/**
+build/**
+bin/**
+media/**
+share/**
+vendor/**
+include/**
+lib/**
+
+
