@@ -1,8 +1,83 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
+#include <SDL.h>
+#include <SDL_image.h>
+
+// #include <CustomGameCharacters.hpp>
+// #include <CustomScreen.hpp>
+// #include <Stage.hpp>
+#include <windows.h>
 
 #include <cstdio>
+#include <platform.hpp>
+#include <tuple>
 
+#ifdef RUNNING_ON_WINDOWS
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+                   LPSTR lpCmdLine, int nCmdShow) {
+  return main(0, 0);
+}
+#endif
+int main(int, char**) {
+  if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+    printf("error initializing SDL: %s\n", SDL_GetError());
+  }
+  SDL_Rect rect1 = {0, 0, 100, 100};
+  SDL_Rect rect2 = {-10, -10, -5, -5};
+  SDL_Rect result;
+
+  SDL_IntersectRect(&rect1, &rect2, &result);
+
+  if (result.w == 0 && result.h == 0) {
+    printf("rectangles do not intersect");
+  } else {
+    printf("rectangles do intersect %d %d %d %d", result.x, result.y, result.h,
+           result.w);
+    // the two rectangles intersect at the region represented by the 'result'
+    // rectangle
+  }
+
+  return 0;
+}
+/*
+int main(int, char**) {
+  if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+    printf("error initializing SDL: %s\n", SDL_GetError());
+  }
+  Screen* screen = new Screen(500, 500);
+  Camera* camera = new Camera(screen->getWindow());
+  // TODO start screen
+
+  // scenario config (Carregar isso de algum arquivo)
+  World* world = new World();
+
+  SDL_Rect rect = {0, 0, 500, 500};
+
+  std::unordered_set<Region*> regionsOnStage;
+  regionsOnStage.insert(new DynamicRegion({}, rect));
+  Stage* stage = new Stage(regionsOnStage, {-2000, -2000, 4000, 4000});
+  world->loadStage(stage);
+  // player config
+  CustomPlayer* player = new CustomPlayer(
+      "C:/Users/lucas/git/C/game/media/img/eu-foto-crianca.JPG", 0, 0, 10, 100);
+
+  int close = 0;
+  while (!close) {
+    SDL_Event event;
+
+    // Events management
+    while (SDL_PollEvent(&event)) {
+      switch (event.type) {
+        case SDL_QUIT:
+          // handling of close button
+          close = 1;
+          break;
+        default:
+          player->handleEvent(event);
+      }
+    }
+  }
+}
+*/
+/*
 int main(int, char**) {
   // returns zero on success else non-zero
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -22,7 +97,8 @@ int main(int, char**) {
   // creates a surface to load an image into the main memory
   SDL_Surface* surface;
   // please provide a path for your image
-  surface = IMG_Load("");
+  surface =
+IMG_Load("C:/Users/lucas/git/C/game/media/img/eu-foto-crianca.JPG");
 
   // loads image to our graphics hardware memory.
   SDL_Texture* tex = SDL_CreateTextureFromSurface(rend, surface);
@@ -49,7 +125,7 @@ int main(int, char**) {
   int close = 0;
 
   // speed of box
-  int speed = 30;
+  int speed = 100;
 
   // animation loop
   while (!close) {
@@ -113,3 +189,4 @@ int main(int, char**) {
 
   return 0;
 }
+*/

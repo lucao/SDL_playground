@@ -1,10 +1,8 @@
-.vscode/**
 build/**
 bin/**
 media/**
-share/**
-vendor/**
-include/**
-lib/**
+.cmake/**
+.vs/**
+CmakeSettings.json
 
 

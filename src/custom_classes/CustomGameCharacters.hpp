@@ -3,11 +3,12 @@
 
 #include <SDL.h>
 
-#include "CustomSDLObject.h"
+#include <CustomSDLObject.hpp>
 
-class CustomGameCharacter : public CustomSDLObject {
+class CustomGameCharacter : public CustomSDLMaterialObject {
  private:
   int lifePoints;
+  // hitbox
 
  public:
   CustomGameCharacter(SDL_Surface *surface, SDL_Rect position, int lifePoints);
@@ -16,11 +17,13 @@ class CustomGameCharacter : public CustomSDLObject {
 class CustomPlayer : public CustomGameCharacter {
  private:
   int speed;
+  void move(SDL_Rect destination);
 
  public:
   CustomPlayer(SDL_Surface *surface, SDL_Rect position, int lifePoints,
                int speed);
-  void move(SDL_Scancode code);
+  CustomPlayer(char *imgPath, int x, int y, int lifePoints, int speed);
+  void handleEvent(SDL_Event event);
 };
 
 #endif

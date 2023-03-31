@@ -6,11 +6,11 @@
 class CustomPosition {
  private:
   SDL_Point position;
-  CustomPosition* lastPosition;
+  CustomPosition *lastPosition;
 
  public:
   CustomPosition(int x, int y);
-
+  SDL_Point getPosition();
   void changePosition(CustomPosition newPosition);
 };
 
