@@ -5,12 +5,16 @@
             "label": "C/C++: g++.exe build active file",
             "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
             "args": [
+                "-std=c++17",
                 "-fdiagnostics-color=always",
-                "-g",
+                "-ggdb",
+                "-O0",
                 "${file}",
+                "${fileDirname}\\*.cpp",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "-I${workspaceFolder}\\include\\macros",
+                "-Iinclude\\macros",
+                "-Iinclude",
                 "-IC:\\msys64\\mingw64\\include\\SDL2",
                 "-LC:\\msys64\\mingw64\\lib\\",
                 "-lSDL2",
@@ -18,7 +22,7 @@
                 "-lSDL2_image"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [
                 "$gcc"

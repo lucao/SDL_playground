@@ -1,63 +1,56 @@
 #include <SDL.h>
 #include <SDL_image.h>
-
-// #include <CustomGameCharacters.hpp>
-// #include <CustomScreen.hpp>
-// #include <Stage.hpp>
 #include <windows.h>
 
+#include <CustomGameCharacters.hpp>
+#include <CustomScreen.hpp>
+#include <Stage.hpp>
+#include <World.hpp>
 #include <cstdio>
+#include <memory>
 #include <platform.hpp>
 #include <tuple>
+
+int custom_main(int, char**);
 
 #ifdef RUNNING_ON_WINDOWS
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                    LPSTR lpCmdLine, int nCmdShow) {
-  return main(0, 0);
+  return custom_main(0, 0);
 }
+#else
+
+int main(int, char**) { return custom_main(0, 0); }
 #endif
-int main(int, char**) {
+
+int custom_main(int, char**) {
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
     printf("error initializing SDL: %s\n", SDL_GetError());
   }
-  SDL_Rect rect1 = {0, 0, 100, 100};
-  SDL_Rect rect2 = {-10, -10, -5, -5};
-  SDL_Rect result;
-
-  SDL_IntersectRect(&rect1, &rect2, &result);
-
-  if (result.w == 0 && result.h == 0) {
-    printf("rectangles do not intersect");
-  } else {
-    printf("rectangles do intersect %d %d %d %d", result.x, result.y, result.h,
-           result.w);
-    // the two rectangles intersect at the region represented by the 'result'
-    // rectangle
-  }
-
-  return 0;
-}
-/*
-int main(int, char**) {
-  if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-    printf("error initializing SDL: %s\n", SDL_GetError());
-  }
-  Screen* screen = new Screen(500, 500);
-  Camera* camera = new Camera(screen->getWindow());
+  std::shared_ptr<Screen> screen(new Screen(640, 480));
+  std::shared_ptr<Camera> camera(new Camera(screen->getWindow(), new int(100)));
   // TODO start screen
 
-  // scenario config (Carregar isso de algum arquivo)
-  World* world = new World();
-
-  SDL_Rect rect = {0, 0, 500, 500};
+  Region* region =
+      new DynamicRegion({}, new CustomSDLRect(new SDL_Rect({0, 0, 500, 500})),
+                        camera->getRenderer());
+  CustomPlayer* player = new CustomPlayer(
+      IMG_LoadTexture(
+          camera->getRenderer(),
+          "C:/Users/lucas/git/C/game/media/img/eu-foto-crianca.JPG"),
+      new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})),
+      new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 10, 10);
+  camera->setFollowedObject(player);
+  region->addObjectToRegion(player);
 
   std::unordered_set<Region*> regionsOnStage;
-  regionsOnStage.insert(new DynamicRegion({}, rect));
-  Stage* stage = new Stage(regionsOnStage, {-2000, -2000, 4000, 4000});
+  regionsOnStage.insert(region);
+  Stage* stage =
+      new Stage(regionsOnStage,
+                new CustomSDLRect(new SDL_Rect({-2000, -2000, 4000, 4000})));
+
+  World* world = new World();
   world->loadStage(stage);
-  // player config
-  CustomPlayer* player = new CustomPlayer(
-      "C:/Users/lucas/git/C/game/media/img/eu-foto-crianca.JPG", 0, 0, 10, 100);
 
   int close = 0;
   while (!close) {
@@ -70,13 +63,23 @@ int main(int, char**) {
           // handling of close button
           close = 1;
           break;
-        default:
-          player->handleEvent(event);
       }
     }
+    player->handleEvent(event);
+
+    camera->renderStage(stage);
+
+    SDL_Delay(1000 / 60);  // controlar melhor o fps
   }
+
+  // destruir tudo
+
+  // close SDL
+  SDL_Quit();
+
+  return 0;
 }
-*/
+
 /*
 int main(int, char**) {
   // returns zero on success else non-zero

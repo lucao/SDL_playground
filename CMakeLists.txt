@@ -9,21 +9,24 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
-set(SOURCE_PREFIX src/)
-set(SOURCES ${SOURCE_PREFIX}main.cpp)
-#set(SOURCES ${SOURCES} ${SOURCE_PREFIX}custom_classes/CustomSDLObject.hpp ${SOURCE_PREFIX}custom_classes/CustomGameCharacters.hpp ${SOURCE_PREFIX}custom_classes/CustomPosition.hpp)
-#set(SOURCES ${SOURCES} ${SOURCE_PREFIX}custom_classes/src/CustomSDLObject.cpp ${SOURCE_PREFIX}custom_classes/src/CustomGameCharacters.cpp ${SOURCE_PREFIX}custom_classes/src/CustomPosition.cpp)
+set(CUSTOM_INCLUDE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+include_directories(${CUSTOM_INCLUDE_DIR})
+
+
+set(CUSTOM_CLASSES src/custom_classes/src/CustomGameCharacters.cpp src/custom_classes/src/CustomScreen.cpp src/custom_classes/src/CustomSDLObject.cpp src/custom_classes/src/Stage.cpp src/custom_classes/src/World.cpp) 
 
 #SET(CMAKE_FIND_PACKAGE_REDIRECTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build")
 #find_package(SDL2 CONFIG REQUIRED)
 #find_package(SDL2_image CONFIG REQUIRED)
 
 #message(CMAKE_CURRENT_LIST_DIR="${${CMAKE_CURRENT_LIST_DIR}}")
-#message(COMPILING="${SOURCES}")
 set(CMAKE_MINGW_DIR "C:/msys64/mingw64")
-add_executable(main WIN32 ${SOURCES})
+
+add_executable(main WIN32 src/main.cpp ${CUSTOM_CLASSES})
 
 target_include_directories(main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/macros)
+target_include_directories(main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(main PUBLIC ${CMAKE_MINGW_DIR}/include)
 target_include_directories(main PRIVATE ${CMAKE_MINGW_DIR}/include/SDL2)
 target_link_directories(main PUBLIC ${CMAKE_MINGW_DIR}/lib)

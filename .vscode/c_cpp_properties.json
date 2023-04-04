@@ -4,9 +4,11 @@
             "name": "GCC",
             "includePath": [
                 "C:/msys64/mingw64/include/**",
-                "${workspaceFolder}/include/**"
+                "${workspaceFolder}/include/**",
+                "C:/msys64/mingw64/include/SDL2"
             ],
             "defines": [
+                "Debug",
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"

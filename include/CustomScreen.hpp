@@ -9,28 +9,24 @@
 
 class Camera {
  private:
-  SDL_Rect cameraRect;
-  int x;
-  int y;
-
-  /**
-   * Centro da câmera é um quadrado de lados iguais
-   */
-  int h;
-  /**
-   * Camera segue objeto mantendo-o próximo ao centro da câmera
-   */
+  CustomSDLRect* cameraRect;
   CustomSDLMaterialObject* followedObject;
 
-  SDL_Surface* surface;
   SDL_Renderer* renderer;
+  int speed;
+
+  void follow(SDL_Point* point);
 
  public:
-  Camera(SDL_Window* window);
+  Camera(SDL_Window* window, int* speed);
+  ~Camera();
   void setFollowedObject(CustomSDLMaterialObject* object);
   SDL_Renderer* getRenderer();
-  SDL_Rect getCameraRect();
-  void filmStage(Stage* stage);
+  CustomSDLRect* getCameraRect();
+  void setCameraRect(SDL_Rect* rect);
+  std::unique_ptr<SDL_Rect> getRelativeDestinationRect(
+      CustomSDLRect* destination);
+  void renderStage(Stage* stage);
 };
 
 class Screen {
@@ -40,6 +36,7 @@ class Screen {
 
  public:
   Screen(int resolution_w, int resolution_h);
+  ~Screen();
   SDL_Window* getWindow();
 };
 

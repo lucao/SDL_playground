@@ -11,18 +11,20 @@ class CustomGameCharacter : public CustomSDLMaterialObject {
   // hitbox
 
  public:
-  CustomGameCharacter(SDL_Surface *surface, SDL_Rect position, int lifePoints);
+  CustomGameCharacter(SDL_Texture *texture, CustomSDLRect *srcRect,
+                      CustomSDLRect *position, int lifePoints);
+  virtual ~CustomGameCharacter();
 };
 
 class CustomPlayer : public CustomGameCharacter {
  private:
   int speed;
-  void move(SDL_Rect destination);
+  void move(SDL_Rect *destination);
 
  public:
-  CustomPlayer(SDL_Surface *surface, SDL_Rect position, int lifePoints,
-               int speed);
-  CustomPlayer(char *imgPath, int x, int y, int lifePoints, int speed);
+  CustomPlayer(SDL_Texture *texture, CustomSDLRect *srcRect,
+               CustomSDLRect *position, int lifePoints, int speed);
+  ~CustomPlayer();
   void handleEvent(SDL_Event event);
 };
 
