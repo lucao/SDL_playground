@@ -27,7 +27,7 @@ class Camera {
   SDL_Renderer* getRenderer();
   CustomSDLRect* getCameraRect();
   void setCameraRect(SDL_Rect* rect);
-  void setFilmedRegion(Region* region);
+  void Camera::setFilmedRegion(std::shared_ptr<Region> region);
   std::shared_ptr<Region> getFilmedRegion();
   std::unique_ptr<SDL_Rect> getRelativeDestinationRect(
       CustomSDLRect* destination);

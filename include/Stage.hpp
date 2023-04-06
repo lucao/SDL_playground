@@ -11,6 +11,11 @@
 #include <unordered_set>
 
 class Region {
+ private:
+  BackgroundSDLObject* background;
+  std::set<CustomSDLMaterialObject*> objectsOnRegion;
+  CustomSDLRect* rect;
+
  public:
   enum Direction {
     TOP,
@@ -22,12 +27,11 @@ class Region {
     BOTTOMLEFT,
     BOTTOMRIGHT
   };
+  static constexpr Direction directions[] = {
+      TOP, BOTTOM, LEFT, RIGHT, TOPLEFT, TOPRIGHT, BOTTOMLEFT, BOTTOMRIGHT};
 
  private:
-  BackgroundSDLObject* background;
-  std::set<CustomSDLMaterialObject*> objectsOnRegion;
-  CustomSDLRect* rect;
-  std::map<Direction, std::shared_ptr<Region>> sideRegions;
+  std::map<Region::Direction, std::shared_ptr<Region>> sideRegions;
 
  public:
   Region(std::set<CustomSDLMaterialObject*> objectsOnRegion,
@@ -37,22 +41,40 @@ class Region {
   void removeObjectFromRegion(CustomSDLMaterialObject* object);
   SDL_Rect* getRect();
   std::set<CustomSDLMaterialObject*> getObjectsOnRegion();
+  std::shared_ptr<Region> loadRegion(Stage* stage, Region::Direction direction,
+                                     SDL_Renderer* renderer);
+  std::shared_ptr<CustomSDLRect> clipRegion(CustomSDLRect* cameraRect);
   BackgroundSDLObject* getBackground();
-  void loadRegion(Direction direction, SDL_Renderer* renderer);
 };
 
 class Stage {
  private:
   std::string id;  // ainda não estou usando isso
   CustomSDLRect* rect;
-  std::unordered_set<Region*> regionsOnStage;
   std::shared_ptr<Stage> nextStage;
   std::shared_ptr<Stage> previousStage;
 
+  std::unordered_set<std::shared_ptr<Region>> regionsOnStage;
+
  public:
-  Stage(std::unordered_set<Region*> regionsOnStage, CustomSDLRect* rect);
+  Stage(std::unordered_set<std::shared_ptr<Region>> regionsOnStage,
+        CustomSDLRect* rect);
   ~Stage();
-  std::unordered_set<Region*> getRegionsOnStage();
+  std::shared_ptr<Stage> getNextStage();
+  std::shared_ptr<Stage> getPreviousStage();
+  std::unordered_set<std::shared_ptr<Region>> getRegionsOnStage();
+  std::shared_ptr<Region> getRegionFromPoint(std::shared_ptr<SDL_Point> point,
+                                             SDL_Renderer* renderer);
+};
+
+class StageOutOfBounds : public std::exception {
+ public:
+  char* what() { return "Tried to access point outside the current stage"; }
+};
+
+class StagesLoadError : public std::exception {
+ public:
+  char* what() { return "Stages not properly loaded"; }
 };
 
 class DynamicRegion : public Region {

@@ -124,19 +124,16 @@ int custom_main(int, char**) {
       camera->getRenderer(),
       "C:/Users/lucas/git/C/game/media/img/eu-foto-crianca.JPG"));
 
-  Region* region = new DynamicRegion(
+  std::shared_ptr<Region> region(new DynamicRegion(
       {}, new CustomSDLRect(new SDL_Rect({-1000, -1000, 2000, 2000})),
-      camera->getRenderer());
+      camera->getRenderer()));
   region->addObjectToRegion(player);
 
-  std::unordered_set<Region*> regionsOnStage;
+  std::unordered_set<std::shared_ptr<Region>> regionsOnStage;
   regionsOnStage.insert(region);
   Stage* stage = new Stage(
       regionsOnStage,
       new CustomSDLRect(new SDL_Rect({-40000, -40000, 80000, 80000})));
-
-  World* world = new World();
-  world->loadStage(stage);
 
   int close = 0;
 #ifdef RUNNING_ON_WINDOWS
@@ -377,7 +374,7 @@ void fpsControlDebugWindow(FPSControl* fpsControl) {
   // Display contents in a scrolling region
   ImGui::TextColored(
       ImVec4(1, 1, 0, 1),
-      ("FPS: " + fps[0] + "in " +
+      ("FPS: " + fps[0] + " in " +
        std::to_string(fpsControl->getLastSecondTreshold()) + " ms")
           .c_str());
   ImGui::BeginChild("Scrolling");

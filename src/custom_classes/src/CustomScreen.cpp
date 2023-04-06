@@ -31,10 +31,8 @@ CustomSDLRect* Camera::getCameraRect() { return this->cameraRect; }
 void Camera::setCameraRect(SDL_Rect* rect) {
   this->cameraRect = new CustomSDLRect(rect);
 }
-void Camera::setFilmedRegion(Region* region) {
-  if (this->filmedRegion.get() != region) {
-    this->filmedRegion = std::shared_ptr<Region>(region);
-  }
+void Camera::setFilmedRegion(std::shared_ptr<Region> region) {
+  this->filmedRegion = region;
 }
 std::shared_ptr<Region> Camera::getFilmedRegion() { return this->filmedRegion; }
 SDL_Renderer* Camera::getRenderer() { return this->renderer; }
@@ -95,28 +93,22 @@ void Camera::renderStage(Stage* stage) {
   std::shared_ptr<SDL_Point> cameraCenterPoint =
       this->cameraRect->createCenter();
   bool regionFound = false;
-  for (Region* region : stage->getRegionsOnStage()) {
-    if (SDL_PointInRect(cameraCenterPoint.get(), region->getRect())) {
-      this->setFilmedRegion(region);
-      regionFound = true;  // se não for encontrada, provavelmente precisa
-                           // carregar outro Stage
-    }
+
+  try {
+    this->filmedRegion =
+        stage->getRegionFromPoint(cameraCenterPoint, this->renderer);
+  } catch (StageOutOfBounds ex) {
+    throw StagesLoadError();
   }
 
-  if (regionFound) {  // lembrando que a Region não pode ser menor do que o
-                      // SDL_Rect da camera
+  if (regionFound) {
+    std::map<std::shared_ptr<CustomSDLRect>, std::shared_ptr<Region>> clips;
 
-    // get the part of the main region being filmed
-    std::shared_ptr<CustomSDLRect> filmedRect(
-        new CustomSDLRect(new SDL_Rect()));
-    SDL_IntersectRect(this->cameraRect, filmedRegion->getRect(),
-                      filmedRect.get());
-
-    std::pair<CustomSDLRect*, Region*> pair;
-    pair.first = filmedRect.get();
-    pair.second = this->filmedRegion.get();
-    std::map<CustomSDLRect*, Region*> clips;
-    clips.insert(pair);
+    std::shared_ptr<CustomSDLRect> filmedRect =
+        this->filmedRegion->clipRegion(this->cameraRect);
+    clips.insert(
+        std::pair<std::shared_ptr<CustomSDLRect>, std::shared_ptr<Region>>(
+            filmedRect, this->filmedRegion));
 
     if (!SDL_RectEquals(
             filmedRect.get(),
@@ -132,7 +124,10 @@ void Camera::renderStage(Stage* stage) {
       int w_camera = this->getCameraRect()->w;
 
       if (x_filmed == x_camera) {
-        // TODO carregar region da direita
+        clips.insert(
+            std::pair<std::shared_ptr<CustomSDLRect>, std::shared_ptr<Region>>(
+                this->filmedRegion->clipRegion(this->cameraRect),
+                this->filmedRegion));
         if (y_filmed == y_camera) {
           // TODO carregar region debaixo e direita-baixo
         } else {
@@ -149,12 +144,12 @@ void Camera::renderStage(Stage* stage) {
     }
     SDL_RenderClear(this->renderer);
     std::vector<CustomSDLMaterialObject*> drawableObjects;
-    for (std::pair<CustomSDLRect*, Region*> key_value : clips) {
-      SDL_RenderCopy(this->renderer,
-                     key_value.second->getBackground()->getTexture(),
-                     key_value.first,
-                     this->getRelativeDestinationRect(key_value.first).get());
-      // TODO store relative destination on map
+    for (std::pair<std::shared_ptr<CustomSDLRect>, std::shared_ptr<Region>>
+             key_value : clips) {
+      SDL_RenderCopy(
+          this->renderer, key_value.second->getBackground()->getTexture(),
+          key_value.first.get(),
+          this->getRelativeDestinationRect(key_value.first.get()).get());
       for (CustomSDLMaterialObject* object :
            key_value.second->getObjectsOnRegion()) {
         if (SDL_HasIntersection(object->getDestination(), this->cameraRect)) {
