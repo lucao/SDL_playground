@@ -12,6 +12,8 @@ class Camera {
   CustomSDLRect* cameraRect;
   CustomSDLMaterialObject* followedObject;
 
+  std::shared_ptr<Region> filmedRegion;
+
   SDL_Renderer* renderer;
   int speed;
 
@@ -25,6 +27,8 @@ class Camera {
   SDL_Renderer* getRenderer();
   CustomSDLRect* getCameraRect();
   void setCameraRect(SDL_Rect* rect);
+  void setFilmedRegion(Region* region);
+  std::shared_ptr<Region> getFilmedRegion();
   std::unique_ptr<SDL_Rect> getRelativeDestinationRect(
       CustomSDLRect* destination);
   void renderStage(Stage* stage);

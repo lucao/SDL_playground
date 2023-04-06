@@ -30,6 +30,7 @@ class FPSControl {
  private:
   Uint32 tick;
   Uint32 lastSecondTreshold;
+  Uint32 lastSecondTick;
   Uint32 frameCounter;
   Uint32 fpsLimit;
   Uint32 defaultDelay;
@@ -40,10 +41,13 @@ class FPSControl {
   FPSControl(Uint32 fpsLimit) {
     this->lastSecondTreshold = SDL_GetTicks();
     this->tick = SDL_GetTicks();
+    this->lastSecondTick = SDL_GetTicks();
     this->fpsLimit = fpsLimit;
     this->defaultDelay = secondinMS / fpsLimit;
-    this->samples = std::deque<Uint32>(20, 0);
+    this->samples = std::deque<Uint32>(20, -1);
   }
+
+  Uint32 getLastSecondTreshold() { return this->lastSecondTreshold; }
 
   int getNecessarydelay() {
     Uint32 timePassed = SDL_GetTicks() - this->tick;
@@ -58,8 +62,9 @@ class FPSControl {
 
     frameCounter++;
     if (frameCounter >= 60 ||
-        (this->tick - this->lastSecondTreshold) >= secondinMS) {
-      this->lastSecondTreshold = SDL_GetTicks();
+        (SDL_GetTicks() - this->lastSecondTick) >= secondinMS) {
+      this->lastSecondTreshold = SDL_GetTicks() - this->lastSecondTick;
+      this->lastSecondTick = SDL_GetTicks();
       this->samples.pop_back();
       this->samples.push_front(frameCounter);
       frameCounter = 0;
@@ -86,7 +91,7 @@ void CleanupRenderTarget();
 
 void fpsControlDebugWindow(FPSControl* fpsControl);
 
-void cameraDebugWindow(Camera* camera);
+void cameraDebugWindow(Camera* camera, CustomSDLMaterialObject* followedObject);
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif
@@ -205,7 +210,7 @@ int custom_main(int, char**) {
     ImGui::NewFrame();
 
     fpsControlDebugWindow(fpsControl);
-    cameraDebugWindow(camera.get());
+    cameraDebugWindow(camera.get(), player);
 
     ImGui::Render();
     // End of frame: render Dear ImGui
@@ -355,18 +360,26 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 }
 
 void fpsControlDebugWindow(FPSControl* fpsControl) {
+  ImGui::SetNextWindowSize(ImVec2(250, 250));
   ImGui::Begin("FPS Control");
 
   float samples[fpsControl->getFpsSamples().size()];
   std::string fps[fpsControl->getFpsSamples().size()];
   for (int n = 0; n < fpsControl->getFpsSamples().size(); n++) {
-    samples[n] = fpsControl->getFpsSamples()[n];
-    fps[n] = ("FPS: " + std::to_string(samples[n])).c_str();
+    int sample = fpsControl->getFpsSamples()[n];
+    if (sample > -1) {
+      samples[n] = sample;
+      fps[n] = ("FPS: " + std::to_string(sample)).c_str();
+    }
   }
   ImGui::PlotLines("FPS Samples", samples, fpsControl->getFpsSamples().size());
 
   // Display contents in a scrolling region
-  ImGui::TextColored(ImVec4(1, 1, 0, 1), ("FPS: " + fps[0]).c_str());
+  ImGui::TextColored(
+      ImVec4(1, 1, 0, 1),
+      ("FPS: " + fps[0] + "in " +
+       std::to_string(fpsControl->getLastSecondTreshold()) + " ms")
+          .c_str());
   ImGui::BeginChild("Scrolling");
   for (std::string s : fps) ImGui::Text(s.c_str());
   ImGui::EndChild();
@@ -374,13 +387,63 @@ void fpsControlDebugWindow(FPSControl* fpsControl) {
   ImGui::End();
 }
 
-void cameraDebugWindow(Camera* camera) {
+void cameraDebugWindow(Camera* camera,
+                       CustomSDLMaterialObject* followedObject) {
+  ImGui::SetNextWindowSize(ImVec2(320, 300));
   ImGui::Begin("Camera Control");
-
+  ImGui::Text("Camera SDL_Rect");
+  ImGui::Separator();
   ImGui::Text(("X: " + std::to_string(camera->getCameraRect()->x)).c_str());
   ImGui::Text(("Y: " + std::to_string(camera->getCameraRect()->y)).c_str());
   ImGui::Text(("W: " + std::to_string(camera->getCameraRect()->w)).c_str());
   ImGui::Text(("H: " + std::to_string(camera->getCameraRect()->h)).c_str());
+  ImGui::Separator();
+  ImGui::Separator();
+  ImGui::Text("Followed Object SDL_Rect");
+  ImGui::BeginTable("table1", 2);
+  ImGui::TableNextRow();
+  ImGui::TableNextColumn();
+  ImGui::Text(
+      ("X: " + std::to_string(followedObject->getDestination()->x)).c_str());
+  ImGui::TableNextColumn();
+  ImGui::Text(
+      ("X relative: " +
+       std::to_string(
+           camera->getRelativeDestinationRect(followedObject->getDestination())
+               .get()
+               ->x))
+          .c_str());
+  ImGui::TableNextRow();
+  ImGui::TableNextColumn();
+  ImGui::Text(
+      ("Y: " + std::to_string(followedObject->getDestination()->y)).c_str());
+  ImGui::TableNextColumn();
+  ImGui::Text(
+      ("Y relative: " +
+       std::to_string(
+           camera->getRelativeDestinationRect(followedObject->getDestination())
+               .get()
+               ->y))
+          .c_str());
+  ImGui::TableNextRow();
+  ImGui::TableNextColumn();
+  ImGui::Text(
+      ("W: " + std::to_string(followedObject->getDestination()->w)).c_str());
+  ImGui::TableNextColumn();
+  ImGui::Text(".");
+  ImGui::TableNextRow();
+  ImGui::TableNextColumn();
+  ImGui::Text(
+      ("H: " + std::to_string(followedObject->getDestination()->h)).c_str());
+  ImGui::TableNextColumn();
+  ImGui::Text(".");
+  ImGui::EndTable();
+  ImGui::Separator();
+  ImGui::Text(("Is intersecting: " +
+               std::to_string(SDL_HasIntersection(
+                   followedObject->getDestination(), camera->getCameraRect())))
+                  .c_str());
+
   ImGui::End();
 }
 
