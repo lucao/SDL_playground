@@ -40,12 +40,12 @@ void Region::removeObjectFromRegion(CustomSDLMaterialObject* object) {
 std::set<CustomSDLMaterialObject*> Region::getObjectsOnRegion() {
   return this->objectsOnRegion;
 }
-SDL_Rect* Region::getRect() { return this->rect->getRect(); }
+SDL_Rect* Region::getRect() { return this->rect; }
 BackgroundSDLObject* Region::getBackground() { return this->background; }
 void Region::loadRegion(Direction direction, SDL_Renderer* renderer) {
   // Carregar Region dinâmica, TODO verificar qual a melhor forma de fazer
   // (estou pensando em apenas repetir o background da Region atual)
-  SDL_Rect atual = *this->rect->getRect();
+  SDL_Rect atual = *this->rect;
   SDL_Rect* newRect;
   std::pair<Direction, std::shared_ptr<Region>> pair;
   switch (direction) {

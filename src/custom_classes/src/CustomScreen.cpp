@@ -8,12 +8,14 @@
 #include <memory>
 #include <vector>
 
-Camera::Camera(SDL_Window* window, int* speed) {
-  Uint32 render_flags = SDL_RENDERER_ACCELERATED;
+Camera::Camera(SDL_Window* window, CustomSDLMaterialObject* followedObject,
+               int* speed) {
+  Uint32 render_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
   this->renderer = SDL_CreateRenderer(window, -1, render_flags);
   int w, h;
   SDL_GetWindowSize(window, &w, &h);
   this->cameraRect = new CustomSDLRect(new SDL_Rect({0, 0, w, h}));
+  this->followedObject = followedObject;
   this->speed = *speed;
 }
 Camera::~Camera() {
@@ -32,38 +34,64 @@ SDL_Renderer* Camera::getRenderer() { return this->renderer; }
 
 const uint8_t reduction = 3;
 void Camera::follow(SDL_Point* point) {
-  std::unique_ptr<SDL_Point> cameraCenterPoint = this->cameraRect->getCenter();
-  std::unique_ptr<SDL_Rect> insideRect =
-      this->cameraRect->getInsideMiddleRect(reduction);
-  SDL_IntersectRectAndLine(
-      this->cameraRect->getInsideMiddleRect(reduction).get(),
-      &cameraCenterPoint->x, &cameraCenterPoint->y, &point->x, &point->y);
+  std::shared_ptr<SDL_Point> cameraCenterPoint =
+      this->cameraRect->createCenter();
+  std::shared_ptr<CustomSDLRect> insideRect =
+      this->cameraRect->createInsideMiddleRect(reduction);
+  std::shared_ptr<SDL_Point> pointCopy(new SDL_Point({point->x, point->y}));
+
+  if (SDL_IntersectRectAndLine(insideRect.get(), &cameraCenterPoint->x,
+                               &cameraCenterPoint->y, &pointCopy->x,
+                               &pointCopy->y)) {
+    if (!insideRect->xPointIsInBounds(point->x)) {
+      int x_boundary = insideRect->xGetNearestBoundary(point->x);
+
+      int x_distance = point->x - x_boundary;
+      if (x_distance > this->speed) {
+        this->cameraRect->x += this->speed;
+      } else if (x_distance < (this->speed * -1)) {
+        this->cameraRect->x += (this->speed * -1);
+      } else {
+        this->cameraRect->x += x_distance;
+      }
+    }
+    if (!insideRect->yPointIsInBounds(point->y)) {
+      int y_boundary = insideRect->yGetNearestBoundary(point->y);
+
+      int y_distance = point->y - y_boundary;
+      if (y_distance > this->speed) {
+        this->cameraRect->y += this->speed;
+      } else if (y_distance < (this->speed * -1)) {
+        this->cameraRect->y += (this->speed * -1);
+      } else {
+        this->cameraRect->y += y_distance;
+      }
+    }
+  }
 }
 void Camera::renderStage(Stage* stage) {
   // camera fixando nela mesma caso não esteja seguindo nenhum objeto
-  std::unique_ptr<SDL_Point> followedPoint;
-  if (this->followedObject) {
-    followedPoint = this->followedObject->getDestination()->getCenter();
-  } else {
-    followedPoint = this->cameraRect->getCenter();
-  }
+  std::shared_ptr<SDL_Point> followedPoint;
+  followedPoint = this->followedObject->getDestination()->createCenter();
 
   // adjust camera
+  std::shared_ptr<SDL_Rect> cameraInsideRect =
+      this->cameraRect->createInsideMiddleRect(reduction);
 
-  if (!SDL_PointInRect(
-          followedPoint.get(),
-          this->cameraRect->getInsideMiddleRect(reduction).get())) {
+  if (!SDL_PointInRect(followedPoint.get(), cameraInsideRect.get())) {
     this->follow(followedPoint.get());
   }
 
   // find main region being filmed
+  std::shared_ptr<SDL_Point> cameraCenterPoint =
+      this->cameraRect->createCenter();
   Region* filmedRegion;
   bool regionFound = false;
   for (Region* region : stage->getRegionsOnStage()) {
-    if (SDL_PointInRect(this->cameraRect->getCenter().get(),
-                        region->getRect())) {
+    if (SDL_PointInRect(cameraCenterPoint.get(), region->getRect())) {
       filmedRegion = region;
-      regionFound = true;
+      regionFound = true;  // se não for encontrada, provavelmente precisa
+                           // carregar outro Stage
     }
   }
 
@@ -72,8 +100,7 @@ void Camera::renderStage(Stage* stage) {
 
     // get the part of the main region being filmed
     CustomSDLRect* filmedRect = new CustomSDLRect(new SDL_Rect());
-    SDL_IntersectRect(this->cameraRect->getRect(), filmedRegion->getRect(),
-                      filmedRect->getRect());
+    SDL_IntersectRect(this->cameraRect, filmedRegion->getRect(), filmedRect);
 
     std::pair<CustomSDLRect*, Region*> pair;
     pair.first = filmedRect;
@@ -82,18 +109,17 @@ void Camera::renderStage(Stage* stage) {
     clips.insert(pair);
 
     if (!SDL_RectEquals(
-            filmedRect->getRect(),
-            this->getCameraRect()
-                ->getRect())) {  // carregar outras 3 regions faltantes
-      int x_filmed = filmedRect->getRect()->x;
-      int y_filmed = filmedRect->getRect()->y;
-      int h_filmed = filmedRect->getRect()->h;
-      int w_filmed = filmedRect->getRect()->w;
+            filmedRect,
+            this->getCameraRect())) {  // carregar outras 3 regions faltantes
+      int x_filmed = filmedRect->x;
+      int y_filmed = filmedRect->y;
+      int h_filmed = filmedRect->h;
+      int w_filmed = filmedRect->w;
 
-      int x_camera = this->getCameraRect()->getRect()->x;
-      int y_camera = this->getCameraRect()->getRect()->y;
-      int h_camera = this->getCameraRect()->getRect()->h;
-      int w_camera = this->getCameraRect()->getRect()->w;
+      int x_camera = this->getCameraRect()->x;
+      int y_camera = this->getCameraRect()->y;
+      int h_camera = this->getCameraRect()->h;
+      int w_camera = this->getCameraRect()->w;
 
       if (x_filmed == x_camera) {
         // TODO carregar region da direita
@@ -116,20 +142,23 @@ void Camera::renderStage(Stage* stage) {
     for (std::pair<CustomSDLRect*, Region*> key_value : clips) {
       SDL_RenderCopy(this->renderer,
                      key_value.second->getBackground()->getTexture(),
-                     key_value.second->getBackground()->getSrcRect()->getRect(),
+                     key_value.first,
                      this->getRelativeDestinationRect(key_value.first).get());
       delete key_value.first;
+      // TODO store relative destination on map
       for (CustomSDLMaterialObject* object :
            key_value.second->getObjectsOnRegion()) {
-        if (SDL_HasIntersection(object->getDestination()->getRect(),
-                                this->getCameraRect()->getRect())) {
+        if (SDL_HasIntersection(
+                this->getRelativeDestinationRect(object->getDestination())
+                    .get(),
+                this->cameraRect)) {
           drawableObjects.push_back(object);
         }
       }
     }
     for (CustomSDLMaterialObject* object : drawableObjects) {
       SDL_RenderCopy(
-          this->renderer, object->getTexture(), object->getSrcRect()->getRect(),
+          this->renderer, object->getTexture(), object->getSrcRect(),
           this->getRelativeDestinationRect(object->getDestination()).get());
     }
 
@@ -141,11 +170,10 @@ void Camera::renderStage(Stage* stage) {
 }
 std::unique_ptr<SDL_Rect> Camera::getRelativeDestinationRect(
     CustomSDLRect* destination) {
-  int x_relative = destination->getRect()->x - this->cameraRect->getRect()->x;
-  int y_relative = destination->getRect()->y - this->cameraRect->getRect()->y;
+  int x_relative = destination->x - this->cameraRect->x;
+  int y_relative = destination->y - this->cameraRect->y;
   std::unique_ptr<SDL_Rect> relativeRect(
-      new SDL_Rect({x_relative, y_relative, destination->getRect()->w,
-                    destination->getRect()->h}));
+      new SDL_Rect({x_relative, y_relative, destination->w, destination->h}));
   return relativeRect;
 }
 

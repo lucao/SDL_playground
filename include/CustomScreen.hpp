@@ -18,7 +18,8 @@ class Camera {
   void follow(SDL_Point* point);
 
  public:
-  Camera(SDL_Window* window, int* speed);
+  Camera(SDL_Window* window, CustomSDLMaterialObject* followedObject,
+         int* speed);
   ~Camera();
   void setFollowedObject(CustomSDLMaterialObject* object);
   SDL_Renderer* getRenderer();

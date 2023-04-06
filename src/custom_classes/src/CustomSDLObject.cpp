@@ -5,42 +5,59 @@
 #include <memory>
 #include <string>
 
-CustomSDLRect::CustomSDLRect(SDL_Rect *rect) { this->rect = rect; }
+CustomSDLRect::CustomSDLRect(SDL_Rect *rect) : SDL_Rect(*rect) {}
 CustomSDLRect::CustomSDLRect(SDL_Rect *rect, SDL_Texture *texture,
-                             Uint32 *format, int *access) {
-  this->rect = rect;
+                             Uint32 *format, int *access)
+    : SDL_Rect(*rect) {
   this->assingTexture(texture, format, access);
 }
-CustomSDLRect::~CustomSDLRect() { delete this->rect; }
-std::unique_ptr<SDL_Point> CustomSDLRect::getCenter() {
-  return std::unique_ptr<SDL_Point>(
-      new SDL_Point({this->rect->x + (this->rect->w / 2),
-                     this->rect->y + (this->rect->h / 2)}));
+CustomSDLRect::~CustomSDLRect() {}
+std::shared_ptr<SDL_Point> CustomSDLRect::createCenter() {
+  return std::shared_ptr<SDL_Point>(
+      new SDL_Point({this->x + (this->w / 2), this->y + (this->h / 2)}));
 }
-SDL_Rect *CustomSDLRect::getRect() { return this->rect; }
-std::unique_ptr<SDL_Rect> CustomSDLRect::getInsideMiddleRect(
+std::shared_ptr<CustomSDLRect> CustomSDLRect::createInsideMiddleRect(
     uint8_t reductionProportion) {
-  int w_reducted = this->rect->w / reductionProportion;
-  int h_reducted = this->rect->h / reductionProportion;
-  return std::unique_ptr<SDL_Rect>(
-      new SDL_Rect({(this->rect->x + (this->rect->w / 2) - (w_reducted / 2)),
-                    (this->rect->y + (this->rect->h / 2) - (h_reducted / 2)),
-                    w_reducted, h_reducted}));
+  int w_reducted = this->w / reductionProportion;
+  int h_reducted = this->h / reductionProportion;
+  return std::shared_ptr<CustomSDLRect>(new CustomSDLRect(new SDL_Rect(
+      {(this->x + (this->w / 2) - (w_reducted / 2)),
+       (this->y + (this->h / 2) - (h_reducted / 2)), w_reducted, h_reducted})));
+}
+std::shared_ptr<CustomSDLRect> CustomSDLRect::createRectWith0Axis() {
+  return std::shared_ptr<CustomSDLRect>(
+      new CustomSDLRect(new SDL_Rect({0, 0, this->w, this->h})));
+}
+bool CustomSDLRect::xPointIsInBounds(int x) {
+  return (x < this->x + this->w && x > this->x);
+}
+bool CustomSDLRect::yPointIsInBounds(int y) {
+  return (y < this->y + this->h && y > this->y);
+}
+int CustomSDLRect::xGetNearestBoundary(int x) {
+  std::shared_ptr<SDL_Point> centerPoint = this->createCenter();
+  if (x < centerPoint->x) {
+    return this->x;
+  } else if (x > centerPoint->x) {
+    return this->x + this->w;
+  } else {
+    return this->x;
+  }
+}
+int CustomSDLRect::yGetNearestBoundary(int y) {
+  std::shared_ptr<SDL_Point> centerPoint = this->createCenter();
+  if (y < centerPoint->y) {
+    return this->y;
+  } else if (y > centerPoint->y) {
+    return this->y + this->h;
+  } else {
+    return this->y;
+  }
 }
 void CustomSDLRect::assingTexture(SDL_Texture *texture, Uint32 *format,
                                   int *access) {
-  SDL_QueryTexture(texture, format, access, &this->rect->w, &this->rect->h);
+  SDL_QueryTexture(texture, format, access, &this->w, &this->h);
 }
-
-CustomSDLObject::CustomSDLObject(SDL_Point *position) {
-  this->position = position;
-}
-CustomSDLObject::~CustomSDLObject() {
-  if (this->position) {
-    delete this->position;
-  }
-}
-SDL_Point *CustomSDLObject::getPosition() { return this->position; }
 
 CustomSDLMaterialObject::CustomSDLMaterialObject(SDL_Texture *texture,
                                                  CustomSDLRect *srcRect,
@@ -50,10 +67,13 @@ CustomSDLMaterialObject::CustomSDLMaterialObject(SDL_Texture *texture,
   this->texture = texture;
   this->srcRect->assingTexture(this->texture, NULL, NULL);
 }
-std::unique_ptr<SDL_Rect> CustomSDLRect::getRectWith0Axis() {
-  return std::unique_ptr<SDL_Rect>(
-      new SDL_Rect({0, 0, this->rect->w, this->rect->h}));
+
+CustomSDLMaterialObject::CustomSDLMaterialObject(CustomSDLRect *srcRect,
+                                                 CustomSDLRect *destination) {
+  this->srcRect = srcRect;
+  this->destination = destination;
 }
+
 CustomSDLMaterialObject::~CustomSDLMaterialObject() {
   delete this->destination;
   delete this->srcRect;
@@ -61,6 +81,7 @@ CustomSDLMaterialObject::~CustomSDLMaterialObject() {
 }
 void CustomSDLMaterialObject::setTexture(SDL_Texture *texture) {
   this->texture = texture;
+  this->srcRect->assingTexture(this->texture, NULL, NULL);
 }
 SDL_Texture *CustomSDLMaterialObject::getTexture() { return this->texture; }
 void CustomSDLMaterialObject::setDestination(SDL_Rect *destination) {
@@ -81,9 +102,9 @@ CustomSDLRect *CustomSDLMaterialObject::getSrcRect() { return this->srcRect; }
 BackgroundSDLObject::BackgroundSDLObject(SDL_Renderer *renderer,
                                          CustomSDLRect *destination) {
   SDL_Surface *surface =
-      SDL_CreateRGBSurface(0, 640, 480, 32, 120, 120, 120, 0);
+      SDL_CreateRGBSurface(0, 640, 480, 32, 120, 120, 120, -1);
   this->texture = SDL_CreateTextureFromSurface(renderer, surface);
-  this->srcRect = new CustomSDLRect(new SDL_Rect());
+  this->srcRect = new CustomSDLRect(new SDL_Rect({0, 0, 640, 480}));
   this->destination = destination;
   this->srcRect->assingTexture(this->texture, NULL, NULL);
 

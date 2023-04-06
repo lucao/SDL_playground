@@ -16,6 +16,12 @@ CustomGameCharacter::CustomGameCharacter(SDL_Texture *texture,
     : CustomSDLMaterialObject(texture, srcRect, position) {
   this->lifePoints = lifePoints;
 }
+CustomGameCharacter::CustomGameCharacter(CustomSDLRect *srcRect,
+                                         CustomSDLRect *position,
+                                         int lifePoints)
+    : CustomSDLMaterialObject(srcRect, position) {
+  this->lifePoints = lifePoints;
+}
 CustomGameCharacter::~CustomGameCharacter() {}
 
 CustomPlayer::CustomPlayer(SDL_Texture *texture, CustomSDLRect *srcRect,
@@ -23,11 +29,16 @@ CustomPlayer::CustomPlayer(SDL_Texture *texture, CustomSDLRect *srcRect,
     : CustomGameCharacter(texture, srcRect, position, lifePoints) {
   this->speed = speed;
 }
+CustomPlayer::CustomPlayer(CustomSDLRect *srcRect, CustomSDLRect *position,
+                           int lifePoints, int speed)
+    : CustomGameCharacter(srcRect, position, lifePoints) {
+  this->speed = speed;
+}
 
 CustomPlayer::~CustomPlayer() {}
 
 void CustomPlayer::handleEvent(SDL_Event event) {
-  SDL_Rect *destination = this->getDestination()->getRect();
+  SDL_Rect *destination = this->getDestination();
   const Uint8 *keyboardState = SDL_GetKeyboardState(NULL);
   if (keyboardState[SDL_SCANCODE_W] || keyboardState[SDL_SCANCODE_UP]) {
     destination->y -= speed;

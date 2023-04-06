@@ -3,6 +3,8 @@ bin/**
 media/**
 .cmake/**
 .vs/**
+vendor/**
+lib/**
 CmakeSettings.json
 
 

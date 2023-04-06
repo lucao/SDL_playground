@@ -1,19 +1,95 @@
 #include <SDL.h>
 #include <SDL_image.h>
-#include <windows.h>
+#include <SDL_thread.h>
+#include <stdio.h>
 
 #include <CustomGameCharacters.hpp>
 #include <CustomScreen.hpp>
 #include <Stage.hpp>
 #include <World.hpp>
-#include <cstdio>
+#include <algorithm>
+#include <deque>
 #include <memory>
 #include <platform.hpp>
+#include <string>
 #include <tuple>
 
+#ifdef RUNNING_ON_WINDOWS
+#include <windows.h>
+#ifdef DEBUG
+#include <d3d11.h>
+#include <imgui.h>
+#include <imgui_impl_dx11.h>
+#include <imgui_impl_win32.h>
+#include <tchar.h>
+#endif
+#endif
+
 int custom_main(int, char**);
+class FPSControl {
+ private:
+  Uint32 tick;
+  Uint32 lastSecondTreshold;
+  Uint32 frameCounter;
+  Uint32 fpsLimit;
+  Uint32 defaultDelay;
+  std::deque<Uint32> samples;
+
+ public:
+  static const Uint32 secondinMS = 1000;
+  FPSControl(Uint32 fpsLimit) {
+    this->lastSecondTreshold = SDL_GetTicks();
+    this->tick = SDL_GetTicks();
+    this->fpsLimit = fpsLimit;
+    this->defaultDelay = secondinMS / fpsLimit;
+    this->samples = std::deque<Uint32>(20, 0);
+  }
+
+  int getNecessarydelay() {
+    Uint32 timePassed = SDL_GetTicks() - this->tick;
+    this->tick = SDL_GetTicks();
+
+    Uint32 delay;
+    if (timePassed > this->defaultDelay) {
+      delay = 0;
+    } else if (timePassed <= this->defaultDelay) {
+      delay = this->defaultDelay;
+    }
+
+    frameCounter++;
+    if (frameCounter >= 60 ||
+        (this->tick - this->lastSecondTreshold) >= secondinMS) {
+      this->lastSecondTreshold = SDL_GetTicks();
+      this->samples.pop_back();
+      this->samples.push_front(frameCounter);
+      frameCounter = 0;
+    }
+
+    return delay;
+  }
+  std::deque<Uint32> getFpsSamples() { return this->samples; }
+};
 
 #ifdef RUNNING_ON_WINDOWS
+#ifdef DEBUG
+static ID3D11Device* g_pd3dDevice = NULL;
+static ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
+static IDXGISwapChain* g_pSwapChain = NULL;
+static ID3D11RenderTargetView* g_mainRenderTargetView = NULL;
+
+ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+bool CreateDeviceD3D(HWND hWnd);
+void CleanupDeviceD3D();
+void CreateRenderTarget();
+void CleanupRenderTarget();
+
+void fpsControlDebugWindow(FPSControl* fpsControl);
+
+void cameraDebugWindow(Camera* camera);
+
+LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                    LPSTR lpCmdLine, int nCmdShow) {
   return custom_main(0, 0);
@@ -24,40 +100,85 @@ int main(int, char**) { return custom_main(0, 0); }
 #endif
 
 int custom_main(int, char**) {
+  printf("Inicializando...");
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-    printf("error initializing SDL: %s\n", SDL_GetError());
+    SDL_Log("error initializing SDL: %s\n", SDL_GetError());
   }
-  std::shared_ptr<Screen> screen(new Screen(640, 480));
-  std::shared_ptr<Camera> camera(new Camera(screen->getWindow(), new int(100)));
-  // TODO start screen
 
-  Region* region =
-      new DynamicRegion({}, new CustomSDLRect(new SDL_Rect({0, 0, 500, 500})),
-                        camera->getRenderer());
-  CustomPlayer* player = new CustomPlayer(
-      IMG_LoadTexture(
-          camera->getRenderer(),
-          "C:/Users/lucas/git/C/game/media/img/eu-foto-crianca.JPG"),
-      new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})),
-      new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 10, 10);
-  camera->setFollowedObject(player);
+  std::shared_ptr<Screen> screen(new Screen(640, 480));
+
+  // TODO start screen
+  CustomPlayer* player =
+      new CustomPlayer(new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})),
+                       new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 10, 10);
+
+  std::shared_ptr<Camera> camera(
+      new Camera(screen->getWindow(), player, new int(100)));
+
+  player->setTexture(IMG_LoadTexture(
+      camera->getRenderer(),
+      "C:/Users/lucas/git/C/game/media/img/eu-foto-crianca.JPG"));
+
+  Region* region = new DynamicRegion(
+      {}, new CustomSDLRect(new SDL_Rect({-1000, -1000, 2000, 2000})),
+      camera->getRenderer());
   region->addObjectToRegion(player);
 
   std::unordered_set<Region*> regionsOnStage;
   regionsOnStage.insert(region);
-  Stage* stage =
-      new Stage(regionsOnStage,
-                new CustomSDLRect(new SDL_Rect({-2000, -2000, 4000, 4000})));
+  Stage* stage = new Stage(
+      regionsOnStage,
+      new CustomSDLRect(new SDL_Rect({-40000, -40000, 80000, 80000})));
 
   World* world = new World();
   world->loadStage(stage);
 
   int close = 0;
+#ifdef RUNNING_ON_WINDOWS
+#ifdef DEBUG
+  WNDCLASSEXW wc = {sizeof(wc),
+                    CS_CLASSDC,
+                    WndProc,
+                    0L,
+                    0L,
+                    GetModuleHandle(NULL),
+                    NULL,
+                    NULL,
+                    NULL,
+                    NULL,
+                    L"ImGui Example",
+                    NULL};
+  ::RegisterClassExW(&wc);
+  HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Dear ImGui DirectX11 Example",
+                              WS_EX_LEFT, 100, 100, 640, 480, NULL, NULL,
+                              wc.hInstance, NULL);
+
+  // Initialize Direct3D
+  if (!CreateDeviceD3D(hwnd)) {
+    CleanupDeviceD3D();
+    ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
+    return 1;
+  }
+
+  // Show the window
+  ::ShowWindow(hwnd, SW_SHOWNORMAL);
+  ::UpdateWindow(hwnd);
+
+  ImGui::CreateContext();
+
+  // Initialize Platform + Renderer backends (here: using imgui_impl_win32.cpp +
+  // imgui_impl_dx11.cpp)
+  ImGui_ImplWin32_Init(hwnd);
+  ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
+#endif
+#endif
+  FPSControl* fpsControl = new FPSControl(60);
   while (!close) {
     SDL_Event event;
 
-    // Events management
-    while (SDL_PollEvent(&event)) {
+    SDL_PumpEvents();
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT,
+                          SDL_DISPLAYEVENT)) {
       switch (event.type) {
         case SDL_QUIT:
           // handling of close button
@@ -65,131 +186,203 @@ int custom_main(int, char**) {
           break;
       }
     }
+
     player->handleEvent(event);
 
     camera->renderStage(stage);
-
-    SDL_Delay(1000 / 60);  // controlar melhor o fps
-  }
-
-  // destruir tudo
-
-  // close SDL
-  SDL_Quit();
-
-  return 0;
-}
-
-/*
-int main(int, char**) {
-  // returns zero on success else non-zero
-  if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-    printf("error initializing SDL: %s\n", SDL_GetError());
-  }
-  SDL_Window* win = SDL_CreateWindow("GAME",  // creates a window
-                                     SDL_WINDOWPOS_CENTERED,
-                                     SDL_WINDOWPOS_CENTERED, 640, 480, 0);
-
-  // triggers the program that controls
-  // your graphics hardware and sets flags
-  Uint32 render_flags = SDL_RENDERER_ACCELERATED;
-
-  // creates a renderer to render our images
-  SDL_Renderer* rend = SDL_CreateRenderer(win, -1, render_flags);
-
-  // creates a surface to load an image into the main memory
-  SDL_Surface* surface;
-  // please provide a path for your image
-  surface =
-IMG_Load("C:/Users/lucas/git/C/game/media/img/eu-foto-crianca.JPG");
-
-  // loads image to our graphics hardware memory.
-  SDL_Texture* tex = SDL_CreateTextureFromSurface(rend, surface);
-
-  // clears main-memory
-  SDL_FreeSurface(surface);
-
-  // let us control our image position
-  // so that we can move it with our keyboard.
-  SDL_Rect dest;
-
-  // connects our texture with dest to control position
-  SDL_QueryTexture(tex, NULL, NULL, &dest.w, &dest.h);
-
-  // adjust height and width of our image box.
-  dest.w = 100;
-  dest.h = 100;
-  // sets initial x-position of object
-  dest.x = 0;
-  // sets initial y-position of object
-  dest.y = 0;
-
-  // controls animation loop
-  int close = 0;
-
-  // speed of box
-  int speed = 100;
-
-  // animation loop
-  while (!close) {
-    SDL_Event event;
-
-    // Events management
-    while (SDL_PollEvent(&event)) {
-      switch (event.type) {
-        case SDL_QUIT:
-          // handling of close button
-          close = 1;
-          break;
-
-        case SDL_KEYDOWN:
-          // keyboard API for key pressed
-          switch (event.key.keysym.scancode) {
-            case SDL_SCANCODE_W:
-            case SDL_SCANCODE_UP:
-              dest.y -= speed / 30;
-              break;
-            case SDL_SCANCODE_A:
-            case SDL_SCANCODE_LEFT:
-              dest.x -= speed / 30;
-              break;
-            case SDL_SCANCODE_S:
-            case SDL_SCANCODE_DOWN:
-              dest.y += speed / 30;
-              break;
-            case SDL_SCANCODE_D:
-            case SDL_SCANCODE_RIGHT:
-              dest.x += speed / 30;
-              break;
-            default:
-              break;
-          }
-      }
+#ifdef RUNNING_ON_WINDOWS
+#ifdef DEBUG
+    MSG msg;
+    while (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+      ::TranslateMessage(&msg);
+      ::DispatchMessage(&msg);
+      if (msg.message == WM_QUIT) close = 1;
     }
-    // clears the screen
-    SDL_RenderClear(rend);
-    SDL_RenderCopy(rend, tex, NULL, &dest);
+    // Beginning of frame: update Renderer + Platform backend, start Dear ImGui
+    // frame
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
 
-    // triggers the double buffers
-    // for multiple rendering
-    SDL_RenderPresent(rend);
+    fpsControlDebugWindow(fpsControl);
+    cameraDebugWindow(camera.get());
 
-    // calculates to 60 fps
-    SDL_Delay(1000 / 60);
+    ImGui::Render();
+    // End of frame: render Dear ImGui
+    const float clear_color_with_alpha[4] = {
+        clear_color.x * clear_color.w, clear_color.y * clear_color.w,
+        clear_color.z * clear_color.w, clear_color.w};
+    g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL);
+    g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView,
+                                               clear_color_with_alpha);
+
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+    // Swap
+    g_pSwapChain->Present(1, 0);
+#endif
+#endif
+
+    SDL_Delay(fpsControl->getNecessarydelay());
   }
+#ifdef RUNNING_ON_WINDOWS
+#ifdef DEBUG
+  ImGui_ImplDX11_Shutdown();
+  ImGui_ImplWin32_Shutdown();
+  ImGui::DestroyContext();
 
-  // destroy texture
-  SDL_DestroyTexture(tex);
-
-  // destroy renderer
-  SDL_DestroyRenderer(rend);
-
-  // destroy window
-  SDL_DestroyWindow(win);
-
+  CleanupDeviceD3D();
+  ::DestroyWindow(hwnd);
+  ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
+#endif
+#endif
   // close SDL
   SDL_Quit();
 
   return 0;
 }
-*/
+#ifdef RUNNING_ON_WINDOWS
+#ifdef DEBUG
+bool CreateDeviceD3D(HWND hWnd) {
+  // Setup swap chain
+  DXGI_SWAP_CHAIN_DESC sd;
+  ZeroMemory(&sd, sizeof(sd));
+  sd.BufferCount = 2;
+  sd.BufferDesc.Width = 0;
+  sd.BufferDesc.Height = 0;
+  sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+  sd.BufferDesc.RefreshRate.Numerator = 60;
+  sd.BufferDesc.RefreshRate.Denominator = 1;
+  sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+  sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+  sd.OutputWindow = hWnd;
+  sd.SampleDesc.Count = 1;
+  sd.SampleDesc.Quality = 0;
+  sd.Windowed = TRUE;
+  sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+
+  UINT createDeviceFlags = 0;
+  // createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+  D3D_FEATURE_LEVEL featureLevel;
+  const D3D_FEATURE_LEVEL featureLevelArray[2] = {
+      D3D_FEATURE_LEVEL_11_0,
+      D3D_FEATURE_LEVEL_10_0,
+  };
+  HRESULT res = D3D11CreateDeviceAndSwapChain(
+      NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, createDeviceFlags,
+      featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain,
+      &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext);
+  if (res == DXGI_ERROR_UNSUPPORTED)  // Try high-performance WARP software
+                                      // driver if hardware is not available.
+    res = D3D11CreateDeviceAndSwapChain(
+        NULL, D3D_DRIVER_TYPE_WARP, NULL, createDeviceFlags, featureLevelArray,
+        2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel,
+        &g_pd3dDeviceContext);
+  if (res != S_OK) return false;
+
+  CreateRenderTarget();
+  return true;
+}
+
+void CleanupDeviceD3D() {
+  CleanupRenderTarget();
+  if (g_pSwapChain) {
+    g_pSwapChain->Release();
+    g_pSwapChain = NULL;
+  }
+  if (g_pd3dDeviceContext) {
+    g_pd3dDeviceContext->Release();
+    g_pd3dDeviceContext = NULL;
+  }
+  if (g_pd3dDevice) {
+    g_pd3dDevice->Release();
+    g_pd3dDevice = NULL;
+  }
+}
+
+void CreateRenderTarget() {
+  ID3D11Texture2D* pBackBuffer;
+  g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+  g_pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL,
+                                       &g_mainRenderTargetView);
+  pBackBuffer->Release();
+}
+
+void CleanupRenderTarget() {
+  if (g_mainRenderTargetView) {
+    g_mainRenderTargetView->Release();
+    g_mainRenderTargetView = NULL;
+  }
+}
+
+// Forward declare message handler from imgui_impl_win32.cpp
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
+                                                             UINT msg,
+                                                             WPARAM wParam,
+                                                             LPARAM lParam);
+
+// Win32 message handler
+// You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if
+// dear imgui wants to use your inputs.
+// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your
+// main application, or clear/overwrite your copy of the mouse data.
+// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to
+// your main application, or clear/overwrite your copy of the keyboard data.
+// Generally you may always pass all inputs to dear imgui, and hide them from
+// your application based on those two flags.
+LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+  if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) return true;
+
+  switch (msg) {
+    case WM_SIZE:
+      if (g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED) {
+        CleanupRenderTarget();
+        g_pSwapChain->ResizeBuffers(0, (UINT)LOWORD(lParam),
+                                    (UINT)HIWORD(lParam), DXGI_FORMAT_UNKNOWN,
+                                    0);
+        CreateRenderTarget();
+      }
+      return 0;
+    case WM_SYSCOMMAND:
+      if ((wParam & 0xfff0) == SC_KEYMENU)  // Disable ALT application menu
+        return 0;
+      break;
+    case WM_DESTROY:
+      ::PostQuitMessage(0);
+      return 0;
+  }
+  return ::DefWindowProcW(hWnd, msg, wParam, lParam);
+}
+
+void fpsControlDebugWindow(FPSControl* fpsControl) {
+  ImGui::Begin("FPS Control");
+
+  float samples[fpsControl->getFpsSamples().size()];
+  std::string fps[fpsControl->getFpsSamples().size()];
+  for (int n = 0; n < fpsControl->getFpsSamples().size(); n++) {
+    samples[n] = fpsControl->getFpsSamples()[n];
+    fps[n] = ("FPS: " + std::to_string(samples[n])).c_str();
+  }
+  ImGui::PlotLines("FPS Samples", samples, fpsControl->getFpsSamples().size());
+
+  // Display contents in a scrolling region
+  ImGui::TextColored(ImVec4(1, 1, 0, 1), ("FPS: " + fps[0]).c_str());
+  ImGui::BeginChild("Scrolling");
+  for (std::string s : fps) ImGui::Text(s.c_str());
+  ImGui::EndChild();
+
+  ImGui::End();
+}
+
+void cameraDebugWindow(Camera* camera) {
+  ImGui::Begin("Camera Control");
+
+  ImGui::Text(("X: " + std::to_string(camera->getCameraRect()->x)).c_str());
+  ImGui::Text(("Y: " + std::to_string(camera->getCameraRect()->y)).c_str());
+  ImGui::Text(("W: " + std::to_string(camera->getCameraRect()->w)).c_str());
+  ImGui::Text(("H: " + std::to_string(camera->getCameraRect()->h)).c_str());
+  ImGui::End();
+}
+
+#endif
+#endif

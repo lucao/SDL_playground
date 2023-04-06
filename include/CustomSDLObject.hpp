@@ -7,30 +7,21 @@
 #include <set>
 #include <string>
 
-class CustomSDLRect {
- private:
-  SDL_Rect *rect;
-
+class CustomSDLRect : public SDL_Rect {
  public:
   CustomSDLRect(SDL_Rect *rect);
   CustomSDLRect(SDL_Rect *rect, SDL_Texture *texture, Uint32 *format,
                 int *access);
   ~CustomSDLRect();
-  std::unique_ptr<SDL_Point> getCenter();
-  SDL_Rect *getRect();
-  std::unique_ptr<SDL_Rect> getRectWith0Axis();
-  std::unique_ptr<SDL_Rect> getInsideMiddleRect(uint8_t reductionProportion);
+  std::shared_ptr<SDL_Point> createCenter();
+  std::shared_ptr<CustomSDLRect> createRectWith0Axis();
+  std::shared_ptr<CustomSDLRect> createInsideMiddleRect(
+      uint8_t reductionProportion);
+  bool xPointIsInBounds(int x);
+  bool yPointIsInBounds(int y);
+  int xGetNearestBoundary(int x);
+  int yGetNearestBoundary(int y);
   void assingTexture(SDL_Texture *texture, Uint32 *format, int *access);
-};
-
-class CustomSDLObject {
- private:
-  SDL_Point *position;
-
- public:
-  CustomSDLObject(SDL_Point *position);
-  virtual ~CustomSDLObject();
-  SDL_Point *getPosition();
 };
 
 class CustomSDLMaterialObject {
@@ -42,6 +33,7 @@ class CustomSDLMaterialObject {
  public:
   CustomSDLMaterialObject(SDL_Texture *texture, CustomSDLRect *srcRect,
                           CustomSDLRect *destination);
+  CustomSDLMaterialObject(CustomSDLRect *srcRect, CustomSDLRect *destination);
   virtual ~CustomSDLMaterialObject();
 
   void setTexture(SDL_Texture *texture);
