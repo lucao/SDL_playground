@@ -7,6 +7,7 @@
 #include <cmath>
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 Camera::Camera(SDL_Window* window, CustomSDLMaterialObject* followedObject,
@@ -102,17 +103,17 @@ void Camera::renderStage(Stage* stage) {
   }
 
   if (regionFound) {
-    std::map<std::shared_ptr<CustomSDLRect>, std::shared_ptr<Region>> clips;
+    std::map<std::shared_ptr<CustomSDLRect>, std::shared_ptr<Region>> srcClips;
 
     std::shared_ptr<CustomSDLRect> filmedRect =
-        this->filmedRegion->clipRegion(this->cameraRect);
-    clips.insert(
+        this->filmedRegion->getRect()->clipRect(this->cameraRect);
+    srcClips.insert(
         std::pair<std::shared_ptr<CustomSDLRect>, std::shared_ptr<Region>>(
             filmedRect, this->filmedRegion));
 
-    if (!SDL_RectEquals(
-            filmedRect.get(),
-            this->getCameraRect())) {  // carregar outras 3 regions faltantes
+    if (!SDL_RectEquals(filmedRect.get(),
+                        this->getCameraRect())) {  // carregar e clipar outras 3
+                                                   // regions faltantes
       int x_filmed = filmedRect->x;
       int y_filmed = filmedRect->y;
       int h_filmed = filmedRect->h;
@@ -123,33 +124,116 @@ void Camera::renderStage(Stage* stage) {
       int h_camera = this->getCameraRect()->h;
       int w_camera = this->getCameraRect()->w;
 
-      if (x_filmed == x_camera) {
-        clips.insert(
+      std::unordered_set<Region::Direction> directionsToRender;
+
+      // Oh no!! look at those if's
+      if (y_filmed > y_camera) {
+        throw std::logic_error("region not clipped correctly for the camera");
+      } else if (x_filmed < x_camera) {
+        throw std::logic_error("region not clipped correctly for the camera");
+      } else if (x_filmed > x_camera) {
+        if (w_filmed != w_camera) {
+          throw std::logic_error("region not clipped correctly for the camera");
+        }
+        directionsToRender.insert(Region::Direction::LEFT);
+        if (y_filmed < y_camera) {
+          if (h_filmed != h_camera) {  // enforce the need that those should be
+                                       // equal in this nest
+            throw std::logic_error(
+                "region not clipped correctly for the camera");
+          }
+          directionsToRender.insert(Region::Direction::TOP);
+          directionsToRender.insert(Region::Direction::TOPLEFT);
+        } else {  // y_filmed == y_camera
+          if (h_filmed < h_camera) {
+            if (y_filmed != y_camera) {  // enforce the need that those should
+                                         // be equal in this nest
+              throw std::logic_error(
+                  "region not clipped correctly for the camera");
+            }
+            directionsToRender.insert(Region::Direction::BOTTOM);
+            directionsToRender.insert(Region::Direction::BOTTOMLEFT);
+          } else if (h_filmed > h_camera) {
+            throw std::logic_error(
+                "region not clipped correctly for the camera");
+          }
+        }
+      } else {  // x_filmed == x_camera
+        if (w_filmed < w_camera) {
+          if (x_filmed != x_camera) {  // enforce the need that those should be
+                                       // equal in this nest
+            throw std::logic_error(
+                "region not clipped correctly for the camera");
+          }
+          directionsToRender.insert(Region::Direction::RIGHT);
+
+          if (y_filmed < y_camera) {
+            if (h_filmed != h_camera) {  // enforce the need that those should
+                                         // be equal in this nest
+              throw std::logic_error(
+                  "region not clipped correctly for the camera");
+            }
+            directionsToRender.insert(Region::Direction::TOP);
+            directionsToRender.insert(Region::Direction::TOPRIGHT);
+          } else {  // y_filmed == y_camera
+            if (h_filmed < h_camera) {
+              if (y_filmed != y_camera) {  // enforce the need that those should
+                                           // be equal in this nest
+                throw std::logic_error(
+                    "region not clipped correctly for the camera");
+              }
+              directionsToRender.insert(Region::Direction::BOTTOM);
+              directionsToRender.insert(Region::Direction::BOTTOMRIGHT);
+            } else if (h_filmed > h_camera) {
+              throw std::logic_error(
+                  "region not clipped correctly for the camera");
+            }
+          }
+        } else {  // w_filmed == w_camera
+          if (y_filmed < y_camera) {
+            if (h_filmed != h_camera) {  // enforce the need that those should
+                                         // be equal in this nest
+              throw std::logic_error(
+                  "region not clipped correctly for the camera");
+            }
+            directionsToRender.insert(Region::Direction::TOP);
+          } else {  // y_filmed == y_camera
+            if (h_filmed < h_camera) {
+              if (y_filmed != y_camera) {  // enforce the need that those should
+                                           // be equal in this nest
+                throw std::logic_error(
+                    "region not clipped correctly for the camera");
+              }
+              directionsToRender.insert(Region::Direction::BOTTOM);
+            } else if (h_filmed > h_camera) {
+              throw std::logic_error(
+                  "region not clipped correctly for the camera");
+            }
+          }
+        }
+      }
+
+      for (Region::Direction direction : directionsToRender) {
+        srcClips.insert(
             std::pair<std::shared_ptr<CustomSDLRect>, std::shared_ptr<Region>>(
-                this->filmedRegion->clipRegion(this->cameraRect),
-                this->filmedRegion));
-        if (y_filmed == y_camera) {
-          // TODO carregar region debaixo e direita-baixo
-        } else {
-          // TODO carregar region de cima e direita-cima
-        }
-      } else {
-        // TODO carregar region da esquerda
-        if (y_filmed == y_camera) {
-          // TODO carregar region debaixo e esquerda-baixo
-        } else {
-          // TODO carregar region de cima e esquerda-cima
-        }
+                this->filmedRegion->getSideRegion(direction)
+                    ->getRect()
+                    ->clipRect(this->cameraRect),
+                this->filmedRegion->getSideRegion(direction)));
       }
     }
     SDL_RenderClear(this->renderer);
     std::vector<CustomSDLMaterialObject*> drawableObjects;
     for (std::pair<std::shared_ptr<CustomSDLRect>, std::shared_ptr<Region>>
-             key_value : clips) {
-      SDL_RenderCopy(
-          this->renderer, key_value.second->getBackground()->getTexture(),
-          key_value.first.get(),
-          this->getRelativeDestinationRect(key_value.first.get()).get());
+             key_value : srcClips) {
+      SDL_RenderCopy(this->renderer,
+                     key_value.second->getBackground()->getTexture(),
+                     this->getCameraRect()
+                         ->getRelativeSrcRect(key_value.first.get())
+                         .get(),
+                     this->getCameraRect()
+                         ->getRelativeDestinationRect(key_value.first.get())
+                         .get());
       for (CustomSDLMaterialObject* object :
            key_value.second->getObjectsOnRegion()) {
         if (SDL_HasIntersection(object->getDestination(), this->cameraRect)) {
@@ -158,9 +242,10 @@ void Camera::renderStage(Stage* stage) {
       }
     }
     for (CustomSDLMaterialObject* object : drawableObjects) {
-      SDL_RenderCopy(
-          this->renderer, object->getTexture(), object->getSrcRect(),
-          this->getRelativeDestinationRect(object->getDestination()).get());
+      SDL_RenderCopy(this->renderer, object->getTexture(), object->getSrcRect(),
+                     this->getCameraRect()
+                         ->getRelativeDestinationRect(object->getDestination())
+                         .get());
     }
 
     SDL_RenderPresent(this->renderer);
@@ -168,14 +253,6 @@ void Camera::renderStage(Stage* stage) {
   } else {
     // error (may need to reload stage)
   }
-}
-std::unique_ptr<SDL_Rect> Camera::getRelativeDestinationRect(
-    CustomSDLRect* destination) {
-  int x_relative = destination->x - this->cameraRect->x;
-  int y_relative = destination->y - this->cameraRect->y;
-  std::unique_ptr<SDL_Rect> relativeRect(
-      new SDL_Rect({x_relative, y_relative, destination->w, destination->h}));
-  return relativeRect;
 }
 
 Screen::Screen(int resolution_w, int resolution_h) {

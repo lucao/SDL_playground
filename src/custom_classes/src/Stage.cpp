@@ -20,12 +20,13 @@ std::shared_ptr<Region> Stage::getRegionFromPoint(
   }
   for (std::shared_ptr<Region> region : this->regionsOnStage) {
     if (SDL_PointInRect(point.get(), region->getRect())) {
-      return region;
       for (Region::Direction direction : Region::directions) {
         region->loadRegion(this, direction, renderer);
       }
+      return region;
     }
   }
+  throw StageOutOfBounds();
 }
 std::shared_ptr<Stage> Stage::getNextStage() { return this->nextStage; }
 std::shared_ptr<Stage> Stage::getPreviousStage() { return this->previousStage; }
@@ -52,8 +53,11 @@ void Region::removeObjectFromRegion(CustomSDLMaterialObject* object) {
 std::set<CustomSDLMaterialObject*> Region::getObjectsOnRegion() {
   return this->objectsOnRegion;
 }
-SDL_Rect* Region::getRect() { return this->rect; }
+CustomSDLRect* Region::getRect() { return this->rect; }
 BackgroundSDLObject* Region::getBackground() { return this->background; }
+std::shared_ptr<Region> Region::getSideRegion(Region::Direction direction) {
+  return this->sideRegions[direction];
+}
 std::shared_ptr<Region> Region::loadRegion(Stage* stage,
                                            Region::Direction direction,
                                            SDL_Renderer* renderer) {
@@ -180,11 +184,7 @@ std::shared_ptr<Region> Region::loadRegion(Stage* stage,
       }
       break;
   }
-}
-std::shared_ptr<CustomSDLRect> Region::clipRegion(CustomSDLRect* cameraRect) {
-  std::shared_ptr<CustomSDLRect> filmedRect(new CustomSDLRect(new SDL_Rect()));
-  SDL_IntersectRect(cameraRect, this->getRect(), filmedRect.get());
-  return filmedRect;
+  throw StageOutOfBounds();
 }
 
 DynamicRegion::DynamicRegion(std::set<CustomSDLMaterialObject*> objectsOnRegion,

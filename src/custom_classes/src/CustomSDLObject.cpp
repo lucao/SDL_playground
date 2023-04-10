@@ -54,6 +54,27 @@ int CustomSDLRect::yGetNearestBoundary(int y) {
     return this->y;
   }
 }
+
+std::unique_ptr<SDL_Rect> CustomSDLRect::getRelativeDestinationRect(
+    CustomSDLRect *destination) {
+  int x_relative = destination->x - this->x;
+  int y_relative = destination->y - this->y;
+  std::unique_ptr<SDL_Rect> relativeRect(
+      new SDL_Rect({x_relative, y_relative, destination->w, destination->h}));
+  return relativeRect;
+}
+
+std::unique_ptr<SDL_Rect> CustomSDLRect::getRelativeSrcRect(
+    CustomSDLRect *destination) {
+  return destination->getRelativeDestinationRect(this);
+}
+
+std::shared_ptr<CustomSDLRect> CustomSDLRect::clipRect(
+    CustomSDLRect *referenceRect) {
+  std::shared_ptr<CustomSDLRect> clippedRect(new CustomSDLRect(new SDL_Rect()));
+  SDL_IntersectRect(referenceRect, this, clippedRect.get());
+  return clippedRect;
+}
 void CustomSDLRect::assingTexture(SDL_Texture *texture, Uint32 *format,
                                   int *access) {
   SDL_QueryTexture(texture, format, access, &this->w, &this->h);

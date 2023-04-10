@@ -9,7 +9,7 @@
 #include <set>
 #include <string>
 #include <unordered_set>
-
+class Stage;
 class Region {
  private:
   BackgroundSDLObject* background;
@@ -39,11 +39,11 @@ class Region {
   virtual ~Region();
   void addObjectToRegion(CustomSDLMaterialObject* object);
   void removeObjectFromRegion(CustomSDLMaterialObject* object);
-  SDL_Rect* getRect();
+  CustomSDLRect* getRect();
   std::set<CustomSDLMaterialObject*> getObjectsOnRegion();
   std::shared_ptr<Region> loadRegion(Stage* stage, Region::Direction direction,
                                      SDL_Renderer* renderer);
-  std::shared_ptr<CustomSDLRect> clipRegion(CustomSDLRect* cameraRect);
+  std::shared_ptr<Region> getSideRegion(Region::Direction direction);
   BackgroundSDLObject* getBackground();
 };
 
@@ -69,12 +69,14 @@ class Stage {
 
 class StageOutOfBounds : public std::exception {
  public:
-  char* what() { return "Tried to access point outside the current stage"; }
+  char* what() {
+    return const_cast<char*>("Tried to access point outside the current stage");
+  }
 };
 
 class StagesLoadError : public std::exception {
  public:
-  char* what() { return "Stages not properly loaded"; }
+  char* what() { return const_cast<char*>("Stages not properly loaded"); }
 };
 
 class DynamicRegion : public Region {

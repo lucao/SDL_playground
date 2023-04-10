@@ -7,8 +7,7 @@
 #include <set>
 #include <string>
 
-class CustomSDLRect : public SDL_Rect {
- public:
+struct CustomSDLRect : SDL_Rect {
   CustomSDLRect(SDL_Rect *rect);
   CustomSDLRect(SDL_Rect *rect, SDL_Texture *texture, Uint32 *format,
                 int *access);
@@ -21,6 +20,10 @@ class CustomSDLRect : public SDL_Rect {
   bool yPointIsInBounds(int y);
   int xGetNearestBoundary(int x);
   int yGetNearestBoundary(int y);
+  std::unique_ptr<SDL_Rect> getRelativeDestinationRect(
+      CustomSDLRect *destination);
+  std::unique_ptr<SDL_Rect> getRelativeSrcRect(CustomSDLRect *srcRect);
+  std::shared_ptr<CustomSDLRect> clipRect(CustomSDLRect *referenceRect);
   void assingTexture(SDL_Texture *texture, Uint32 *format, int *access);
 };
 

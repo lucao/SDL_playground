@@ -386,7 +386,7 @@ void fpsControlDebugWindow(FPSControl* fpsControl) {
 
 void cameraDebugWindow(Camera* camera,
                        CustomSDLMaterialObject* followedObject) {
-  ImGui::SetNextWindowSize(ImVec2(320, 300));
+  ImGui::SetNextWindowSize(ImVec2(320, 500));
   ImGui::Begin("Camera Control");
   ImGui::Text("Camera SDL_Rect");
   ImGui::Separator();
@@ -394,21 +394,23 @@ void cameraDebugWindow(Camera* camera,
   ImGui::Text(("Y: " + std::to_string(camera->getCameraRect()->y)).c_str());
   ImGui::Text(("W: " + std::to_string(camera->getCameraRect()->w)).c_str());
   ImGui::Text(("H: " + std::to_string(camera->getCameraRect()->h)).c_str());
+
   ImGui::Separator();
   ImGui::Separator();
+
   ImGui::Text("Followed Object SDL_Rect");
-  ImGui::BeginTable("table1", 2);
+  ImGui::BeginTable("Followed Object", 2);
   ImGui::TableNextRow();
   ImGui::TableNextColumn();
   ImGui::Text(
       ("X: " + std::to_string(followedObject->getDestination()->x)).c_str());
   ImGui::TableNextColumn();
   ImGui::Text(
-      ("X relative: " +
-       std::to_string(
-           camera->getRelativeDestinationRect(followedObject->getDestination())
-               .get()
-               ->x))
+      ("X relative: " + std::to_string(camera->getCameraRect()
+                                           ->getRelativeDestinationRect(
+                                               followedObject->getDestination())
+                                           .get()
+                                           ->x))
           .c_str());
   ImGui::TableNextRow();
   ImGui::TableNextColumn();
@@ -416,30 +418,101 @@ void cameraDebugWindow(Camera* camera,
       ("Y: " + std::to_string(followedObject->getDestination()->y)).c_str());
   ImGui::TableNextColumn();
   ImGui::Text(
-      ("Y relative: " +
-       std::to_string(
-           camera->getRelativeDestinationRect(followedObject->getDestination())
-               .get()
-               ->y))
+      ("Y relative: " + std::to_string(camera->getCameraRect()
+                                           ->getRelativeDestinationRect(
+                                               followedObject->getDestination())
+                                           .get()
+                                           ->y))
           .c_str());
   ImGui::TableNextRow();
   ImGui::TableNextColumn();
   ImGui::Text(
       ("W: " + std::to_string(followedObject->getDestination()->w)).c_str());
   ImGui::TableNextColumn();
-  ImGui::Text(".");
+  ImGui::Text(("src X - W " + std::to_string(followedObject->getSrcRect()->x) +
+               " - " + std::to_string(followedObject->getSrcRect()->w))
+                  .c_str());
   ImGui::TableNextRow();
   ImGui::TableNextColumn();
   ImGui::Text(
       ("H: " + std::to_string(followedObject->getDestination()->h)).c_str());
   ImGui::TableNextColumn();
-  ImGui::Text(".");
+  ImGui::Text(("src Y - H " + std::to_string(followedObject->getSrcRect()->y) +
+               " - " + std::to_string(followedObject->getSrcRect()->h))
+                  .c_str());
   ImGui::EndTable();
   ImGui::Separator();
   ImGui::Text(("Is intersecting: " +
                std::to_string(SDL_HasIntersection(
                    followedObject->getDestination(), camera->getCameraRect())))
                   .c_str());
+
+  ImGui::Separator();
+  ImGui::Separator();
+
+  ImGui::Text("Active Region SDL_Rect");
+  ImGui::BeginTable("Active Region Object", 2);
+  ImGui::TableNextRow();
+  ImGui::TableNextColumn();
+  ImGui::Text(("X: " + std::to_string(camera->getFilmedRegion()->getRect()->x))
+                  .c_str());
+  ImGui::TableNextColumn();
+  ImGui::Text(("X relative: " +
+               std::to_string(camera->getCameraRect()
+                                  ->getRelativeDestinationRect(
+                                      camera->getFilmedRegion()->getRect())
+                                  .get()
+                                  ->x))
+                  .c_str());
+  ImGui::TableNextRow();
+  ImGui::TableNextColumn();
+  ImGui::Text(("Y: " + std::to_string(camera->getFilmedRegion()->getRect()->y))
+                  .c_str());
+  ImGui::TableNextColumn();
+  ImGui::Text(("Y relative: " +
+               std::to_string(camera->getCameraRect()
+                                  ->getRelativeDestinationRect(
+                                      camera->getFilmedRegion()->getRect())
+                                  .get()
+                                  ->y))
+                  .c_str());
+  ImGui::TableNextRow();
+  ImGui::TableNextColumn();
+  ImGui::Text(("W: " + std::to_string(camera->getFilmedRegion()->getRect()->w))
+                  .c_str());
+  ImGui::TableNextColumn();
+  ImGui::Text(("src X - W " +
+               std::to_string(camera->getCameraRect()
+                                  ->getRelativeSrcRect(
+                                      camera->getFilmedRegion()->getRect())
+                                  .get()
+                                  ->x) +
+               " - " +
+               std::to_string(camera->getCameraRect()
+                                  ->getRelativeSrcRect(
+                                      camera->getFilmedRegion()->getRect())
+                                  .get()
+                                  ->w))
+                  .c_str());
+  ImGui::TableNextRow();
+  ImGui::TableNextColumn();
+  ImGui::Text(
+      ("H: " + std::to_string(followedObject->getDestination()->h)).c_str());
+  ImGui::TableNextColumn();
+  ImGui::Text(("src Y - H " +
+               std::to_string(camera->getCameraRect()
+                                  ->getRelativeSrcRect(
+                                      camera->getFilmedRegion()->getRect())
+                                  .get()
+                                  ->y) +
+               " - " +
+               std::to_string(camera->getCameraRect()
+                                  ->getRelativeSrcRect(
+                                      camera->getFilmedRegion()->getRect())
+                                  .get()
+                                  ->h))
+                  .c_str());
+  ImGui::EndTable();
 
   ImGui::End();
 }
