@@ -3,14 +3,10 @@
 
 #include <CustomSDLObject.hpp>
 #include <memory>
+#include <stdexcept>
 #include <string>
 
 CustomSDLRect::CustomSDLRect(SDL_Rect *rect) : SDL_Rect(*rect) {}
-CustomSDLRect::CustomSDLRect(SDL_Rect *rect, SDL_Texture *texture,
-                             Uint32 *format, int *access)
-    : SDL_Rect(*rect) {
-  this->assingTexture(texture, format, access);
-}
 CustomSDLRect::~CustomSDLRect() {}
 std::shared_ptr<SDL_Point> CustomSDLRect::createCenter() {
   return std::shared_ptr<SDL_Point>(
@@ -55,38 +51,12 @@ int CustomSDLRect::yGetNearestBoundary(int y) {
   }
 }
 
-std::unique_ptr<SDL_Rect> CustomSDLRect::getRelativeDestinationRect(
-    CustomSDLRect *destination) {
-  int x_relative = destination->x - this->x;
-  int y_relative = destination->y - this->y;
-  std::unique_ptr<SDL_Rect> relativeRect(
-      new SDL_Rect({x_relative, y_relative, destination->w, destination->h}));
-  return relativeRect;
-}
-
-std::unique_ptr<SDL_Rect> CustomSDLRect::getRelativeSrcRect(
-    CustomSDLRect *destination) {
-  return destination->getRelativeDestinationRect(this);
-}
-
-std::shared_ptr<CustomSDLRect> CustomSDLRect::clipRect(
-    CustomSDLRect *referenceRect) {
-  std::shared_ptr<CustomSDLRect> clippedRect(new CustomSDLRect(new SDL_Rect()));
-  SDL_IntersectRect(referenceRect, this, clippedRect.get());
-  return clippedRect;
-}
-void CustomSDLRect::assingTexture(SDL_Texture *texture, Uint32 *format,
-                                  int *access) {
-  SDL_QueryTexture(texture, format, access, &this->w, &this->h);
-}
-
 CustomSDLMaterialObject::CustomSDLMaterialObject(SDL_Texture *texture,
                                                  CustomSDLRect *srcRect,
                                                  CustomSDLRect *destination) {
   this->srcRect = srcRect;
   this->destination = destination;
   this->texture = texture;
-  this->srcRect->assingTexture(this->texture, NULL, NULL);
 }
 
 CustomSDLMaterialObject::CustomSDLMaterialObject(CustomSDLRect *srcRect,
@@ -102,7 +72,6 @@ CustomSDLMaterialObject::~CustomSDLMaterialObject() {
 }
 void CustomSDLMaterialObject::setTexture(SDL_Texture *texture) {
   this->texture = texture;
-  this->srcRect->assingTexture(this->texture, NULL, NULL);
 }
 SDL_Texture *CustomSDLMaterialObject::getTexture() { return this->texture; }
 void CustomSDLMaterialObject::setDestination(SDL_Rect *destination) {
@@ -112,6 +81,14 @@ void CustomSDLMaterialObject::setDestination(SDL_Rect *destination) {
 CustomSDLRect *CustomSDLMaterialObject::getDestination() {
   return this->destination;
 }
+CustomSDLRect *CustomSDLMaterialObject::getDestination(
+    CustomSDLRect *referenceRect) {
+  return std::make_unique<CustomSDLRect>(
+             new SDL_Rect({this->getDestination()->y - referenceRect->x,
+                           this->getDestination()->y - referenceRect->y,
+                           referenceRect->w, referenceRect->h}))
+      .get();
+}
 void CustomSDLMaterialObject::setSrcRect(SDL_Rect *srcRect) {
   delete this->srcRect;
   this->srcRect = new CustomSDLRect(srcRect);
@@ -120,24 +97,17 @@ CustomSDLRect *CustomSDLMaterialObject::getSrcRect() { return this->srcRect; }
 
 #include <stdlib.h>
 
-BackgroundSDLObject::BackgroundSDLObject(SDL_Renderer *renderer,
-                                         CustomSDLRect *destination) {
+BackgroundSDLTexture::BackgroundSDLTexture(SDL_Renderer *renderer) {
   SDL_Surface *surface =
-      SDL_CreateRGBSurface(0, 640, 480, 32, 120, 120, 120, -1);
+      IMG_Load("C:/Users/lucas/git/C/game/media/img/praia.jpg");
+  // SDL_CreateRGBSurface(0, 640, 480, 32, 120, 120, 120, -1);
   this->texture = SDL_CreateTextureFromSurface(renderer, surface);
-  this->srcRect = new CustomSDLRect(new SDL_Rect({0, 0, 640, 480}));
-  this->destination = destination;
-  this->srcRect->assingTexture(this->texture, NULL, NULL);
+  this->srcRect = new CustomSDLRect(new SDL_Rect());
 
   SDL_FreeSurface(surface);
 }
-BackgroundSDLObject::~BackgroundSDLObject() {
+BackgroundSDLTexture::~BackgroundSDLTexture() {
   delete this->srcRect;
-  delete this->destination;
   SDL_DestroyTexture(this->texture);
 }
-CustomSDLRect *BackgroundSDLObject::getSrcRect() { return this->srcRect; }
-CustomSDLRect *BackgroundSDLObject::getDestination() {
-  return this->destination;
-}
-SDL_Texture *BackgroundSDLObject::getTexture() { return this->texture; }
+SDL_Texture *BackgroundSDLTexture::getTexture() { return this->texture; }

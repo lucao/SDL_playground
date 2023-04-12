@@ -4,7 +4,6 @@ project(game VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS_DEBUG -DDEBUG)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
@@ -43,6 +42,21 @@ ${CUSTOM_CLASSES_DIR}/World.cpp)
 set(CMAKE_MINGW_DIR "C:/msys64/mingw64")
 
 add_executable(main WIN32 src/main.cpp ${CUSTOM_CLASSES} ${IMGUI_SOURCES})
+
+add_executable(unitTests src/test/Tests.cpp ${CUSTOM_CLASSES})
+
+target_include_directories(unitTests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/macros)
+target_include_directories(unitTests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(unitTests PUBLIC ${CMAKE_MINGW_DIR}/include)
+target_include_directories(unitTests PRIVATE ${CMAKE_MINGW_DIR}/include/SDL2)
+target_include_directories(unitTests PRIVATE ${IMGUI_DIR})
+target_include_directories(unitTests PRIVATE ${IMGUI_DIR}/backends)
+
+target_link_libraries(unitTests PRIVATE SDL2)
+target_link_libraries(unitTests PRIVATE SDL2main)
+target_link_libraries(unitTests PRIVATE SDL2_image)
+
+add_test(NAME unitTests COMMAND unitTests.exe)
 
 target_include_directories(main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/macros)
 target_include_directories(main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

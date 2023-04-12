@@ -5,19 +5,15 @@
 
 #include <CustomSDLObject.hpp>
 #include <Stage.hpp>
-#include <list>
+#include <vector>
 
 class Camera {
  private:
   CustomSDLRect* cameraRect;
   CustomSDLMaterialObject* followedObject;
 
-  std::shared_ptr<Region> filmedRegion;
-
   SDL_Renderer* renderer;
   int speed;
-
-  void follow(SDL_Point* point);
 
  public:
   Camera(SDL_Window* window, CustomSDLMaterialObject* followedObject,
@@ -27,9 +23,8 @@ class Camera {
   SDL_Renderer* getRenderer();
   CustomSDLRect* getCameraRect();
   void setCameraRect(SDL_Rect* rect);
-  void setFilmedRegion(std::shared_ptr<Region> region);
-  std::shared_ptr<Region> getFilmedRegion();
-  void renderStage(Stage* stage);
+  std::vector<std::shared_ptr<Region>> getRegionsToFilm(Stage* stage);
+  void followObject();
 };
 
 class Screen {

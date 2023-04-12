@@ -13,6 +13,7 @@
 #include <platform.hpp>
 #include <string>
 #include <tuple>
+#include <vector>
 
 #ifdef RUNNING_ON_WINDOWS
 #include <windows.h>
@@ -92,6 +93,8 @@ void CleanupRenderTarget();
 void fpsControlDebugWindow(FPSControl* fpsControl);
 
 void cameraDebugWindow(Camera* camera, CustomSDLMaterialObject* followedObject);
+void backgroundRenderDebugWindow(
+    Camera* camera, std::vector<std::shared_ptr<Region>> regionsToRender);
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif
@@ -114,7 +117,7 @@ int custom_main(int, char**) {
 
   // TODO start screen
   CustomPlayer* player =
-      new CustomPlayer(new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})),
+      new CustomPlayer(new CustomSDLRect(new SDL_Rect({0, 0, 300, 300})),
                        new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 10, 10);
 
   std::shared_ptr<Camera> camera(
@@ -152,7 +155,7 @@ int custom_main(int, char**) {
                     NULL};
   ::RegisterClassExW(&wc);
   HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Dear ImGui DirectX11 Example",
-                              WS_EX_LEFT, 100, 100, 640, 480, NULL, NULL,
+                              WS_EX_LEFT, 100, 100, 1024, 768, NULL, NULL,
                               wc.hInstance, NULL);
 
   // Initialize Direct3D
@@ -190,8 +193,36 @@ int custom_main(int, char**) {
     }
 
     player->handleEvent(event);
+    camera->followObject();
+    std::vector<std::shared_ptr<Region>> regionsToRender;
+    try {
+      regionsToRender = camera->getRegionsToFilm(stage);
+    } catch (StageOutOfBounds err) {
+      // Load new stage
+    }
 
-    camera->renderStage(stage);
+    SDL_RenderClear(camera->getRenderer());
+    std::vector<CustomSDLMaterialObject*> drawableObjects;
+    for (std::shared_ptr<Region> region : regionsToRender) {
+      SDL_RenderCopy(camera->getRenderer(),
+                     region->getBackground()->getTexture(),
+                     region->getSrcRect(camera->getCameraRect()).get(),
+                     region->getDestinationRect(camera->getCameraRect()).get());
+      for (CustomSDLMaterialObject* object : region->getObjectsOnRegion()) {
+        if (SDL_HasIntersection(object->getDestination(),
+                                camera->getCameraRect())) {
+          drawableObjects.push_back(object);
+        }
+      }
+    }
+    for (CustomSDLMaterialObject* object : drawableObjects) {
+      SDL_RenderCopy(camera->getRenderer(), object->getTexture(),
+                     object->getSrcRect(),
+                     object->getDestination(camera->getCameraRect()));
+    }
+
+    SDL_RenderPresent(camera->getRenderer());
+
 #ifdef RUNNING_ON_WINDOWS
 #ifdef DEBUG
     MSG msg;
@@ -208,6 +239,7 @@ int custom_main(int, char**) {
 
     fpsControlDebugWindow(fpsControl);
     cameraDebugWindow(camera.get(), player);
+    backgroundRenderDebugWindow(camera.get(), regionsToRender);
 
     ImGui::Render();
     // End of frame: render Dear ImGui
@@ -386,7 +418,7 @@ void fpsControlDebugWindow(FPSControl* fpsControl) {
 
 void cameraDebugWindow(Camera* camera,
                        CustomSDLMaterialObject* followedObject) {
-  ImGui::SetNextWindowSize(ImVec2(320, 500));
+  ImGui::SetNextWindowSize(ImVec2(320, 300));
   ImGui::Begin("Camera Control");
   ImGui::Text("Camera SDL_Rect");
   ImGui::Separator();
@@ -406,11 +438,7 @@ void cameraDebugWindow(Camera* camera,
       ("X: " + std::to_string(followedObject->getDestination()->x)).c_str());
   ImGui::TableNextColumn();
   ImGui::Text(
-      ("X relative: " + std::to_string(camera->getCameraRect()
-                                           ->getRelativeDestinationRect(
-                                               followedObject->getDestination())
-                                           .get()
-                                           ->x))
+      ("X relative: " + std::to_string(followedObject->getDestination()->x))
           .c_str());
   ImGui::TableNextRow();
   ImGui::TableNextColumn();
@@ -418,11 +446,7 @@ void cameraDebugWindow(Camera* camera,
       ("Y: " + std::to_string(followedObject->getDestination()->y)).c_str());
   ImGui::TableNextColumn();
   ImGui::Text(
-      ("Y relative: " + std::to_string(camera->getCameraRect()
-                                           ->getRelativeDestinationRect(
-                                               followedObject->getDestination())
-                                           .get()
-                                           ->y))
+      ("Y relative: " + std::to_string(followedObject->getDestination()->y))
           .c_str());
   ImGui::TableNextRow();
   ImGui::TableNextColumn();
@@ -447,72 +471,51 @@ void cameraDebugWindow(Camera* camera,
                    followedObject->getDestination(), camera->getCameraRect())))
                   .c_str());
 
-  ImGui::Separator();
-  ImGui::Separator();
+  ImGui::End();
+}
 
-  ImGui::Text("Active Region SDL_Rect");
-  ImGui::BeginTable("Active Region Object", 2);
-  ImGui::TableNextRow();
-  ImGui::TableNextColumn();
-  ImGui::Text(("X: " + std::to_string(camera->getFilmedRegion()->getRect()->x))
-                  .c_str());
-  ImGui::TableNextColumn();
-  ImGui::Text(("X relative: " +
-               std::to_string(camera->getCameraRect()
-                                  ->getRelativeDestinationRect(
-                                      camera->getFilmedRegion()->getRect())
-                                  .get()
-                                  ->x))
-                  .c_str());
-  ImGui::TableNextRow();
-  ImGui::TableNextColumn();
-  ImGui::Text(("Y: " + std::to_string(camera->getFilmedRegion()->getRect()->y))
-                  .c_str());
-  ImGui::TableNextColumn();
-  ImGui::Text(("Y relative: " +
-               std::to_string(camera->getCameraRect()
-                                  ->getRelativeDestinationRect(
-                                      camera->getFilmedRegion()->getRect())
-                                  .get()
-                                  ->y))
-                  .c_str());
-  ImGui::TableNextRow();
-  ImGui::TableNextColumn();
-  ImGui::Text(("W: " + std::to_string(camera->getFilmedRegion()->getRect()->w))
-                  .c_str());
-  ImGui::TableNextColumn();
-  ImGui::Text(("src X - W " +
-               std::to_string(camera->getCameraRect()
-                                  ->getRelativeSrcRect(
-                                      camera->getFilmedRegion()->getRect())
-                                  .get()
-                                  ->x) +
-               " - " +
-               std::to_string(camera->getCameraRect()
-                                  ->getRelativeSrcRect(
-                                      camera->getFilmedRegion()->getRect())
-                                  .get()
-                                  ->w))
-                  .c_str());
-  ImGui::TableNextRow();
-  ImGui::TableNextColumn();
-  ImGui::Text(
-      ("H: " + std::to_string(followedObject->getDestination()->h)).c_str());
-  ImGui::TableNextColumn();
-  ImGui::Text(("src Y - H " +
-               std::to_string(camera->getCameraRect()
-                                  ->getRelativeSrcRect(
-                                      camera->getFilmedRegion()->getRect())
-                                  .get()
-                                  ->y) +
-               " - " +
-               std::to_string(camera->getCameraRect()
-                                  ->getRelativeSrcRect(
-                                      camera->getFilmedRegion()->getRect())
-                                  .get()
-                                  ->h))
-                  .c_str());
-  ImGui::EndTable();
+void backgroundRenderDebugWindow(
+    Camera* camera, std::vector<std::shared_ptr<Region>> regionsToRender) {
+  ImGui::SetNextWindowSize(ImVec2(320, 600));
+  ImGui::Begin("Background Region Control");
+  ImGui::Text(("Regions: " + std::to_string(regionsToRender.size())).c_str());
+  ImGui::Separator();
+  ImGui::Columns(regionsToRender.size(), "regionsColumns");
+  for (std::shared_ptr<Region> region : regionsToRender) {
+    ImGui::Text(("X src: " +
+                 std::to_string(region->getSrcRect(camera->getCameraRect())->x))
+                    .c_str());
+    ImGui::Text(("Y src: " +
+                 std::to_string(region->getSrcRect(camera->getCameraRect())->y))
+                    .c_str());
+    ImGui::Text(("W src: " +
+                 std::to_string(region->getSrcRect(camera->getCameraRect())->w))
+                    .c_str());
+    ImGui::Text(("H src: " +
+                 std::to_string(region->getSrcRect(camera->getCameraRect())->h))
+                    .c_str());
+
+    ImGui::Text(
+        ("X dest: " +
+         std::to_string(region->getDestinationRect(camera->getCameraRect())->x))
+            .c_str());
+    ImGui::Text(
+        ("Y dest: " +
+         std::to_string(region->getDestinationRect(camera->getCameraRect())->y))
+            .c_str());
+    ImGui::Text(
+        ("W dest: " +
+         std::to_string(region->getDestinationRect(camera->getCameraRect())->w))
+            .c_str());
+    ImGui::Text(
+        ("H dest: " +
+         std::to_string(region->getDestinationRect(camera->getCameraRect())->h))
+            .c_str());
+
+    ImGui::NextColumn();
+  }
+
+  ImGui::Separator();
 
   ImGui::End();
 }

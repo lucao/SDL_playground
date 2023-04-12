@@ -8,6 +8,7 @@ Stage::Stage(std::unordered_set<std::shared_ptr<Region>> regionsOnStage,
              CustomSDLRect* rect) {
   this->rect = rect;
   this->regionsOnStage = regionsOnStage;
+  this->activeRegion = NULL;
 }
 Stage::~Stage() { delete this->rect; }
 std::unordered_set<std::shared_ptr<Region>> Stage::getRegionsOnStage() {
@@ -19,7 +20,7 @@ std::shared_ptr<Region> Stage::getRegionFromPoint(
     throw StageOutOfBounds();
   }
   for (std::shared_ptr<Region> region : this->regionsOnStage) {
-    if (SDL_PointInRect(point.get(), region->getRect())) {
+    if (SDL_PointInRect(point.get(), region->getRect().get())) {
       for (Region::Direction direction : Region::directions) {
         region->loadRegion(this, direction, renderer);
       }
@@ -28,11 +29,15 @@ std::shared_ptr<Region> Stage::getRegionFromPoint(
   }
   throw StageOutOfBounds();
 }
+std::shared_ptr<Region> Stage::getActiveRegion() { return this->activeRegion; }
+void Stage::setActiveRegion(std::shared_ptr<Region> region) {
+  this->activeRegion = region;
+}
 std::shared_ptr<Stage> Stage::getNextStage() { return this->nextStage; }
 std::shared_ptr<Stage> Stage::getPreviousStage() { return this->previousStage; }
 
-Region::Region(std::set<CustomSDLMaterialObject*> objectsOnRegion,
-               CustomSDLRect* rect, BackgroundSDLObject* background) {
+Region::Region(std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
+               CustomSDLRect* rect, BackgroundSDLTexture* background) {
   this->rect = rect;
   this->objectsOnRegion = objectsOnRegion;
   this->background = background;
@@ -50,11 +55,57 @@ void Region::addObjectToRegion(CustomSDLMaterialObject* object) {
 void Region::removeObjectFromRegion(CustomSDLMaterialObject* object) {
   this->objectsOnRegion.erase(object);
 }
-std::set<CustomSDLMaterialObject*> Region::getObjectsOnRegion() {
+std::unordered_set<CustomSDLMaterialObject*> Region::getObjectsOnRegion() {
   return this->objectsOnRegion;
 }
-CustomSDLRect* Region::getRect() { return this->rect; }
-BackgroundSDLObject* Region::getBackground() { return this->background; }
+std::shared_ptr<CustomSDLRect> Region::getRect() {
+  return std::make_shared<CustomSDLRect>(this->rect);
+}
+std::shared_ptr<CustomSDLRect> Region::getDestinationRect(
+    CustomSDLRect* referenceRect) {
+  std::unique_ptr<CustomSDLRect> referenceDestinationRect =
+      std::make_unique<CustomSDLRect>(
+          new SDL_Rect({0, 0, referenceRect->w, referenceRect->h}));
+  std::unique_ptr<CustomSDLRect> thisDestinationRect =
+      std::make_unique<CustomSDLRect>(new SDL_Rect(
+          {this->rect->x - referenceRect->x, this->rect->y - referenceRect->y,
+           this->rect->w, this->rect->h}));
+
+  std::shared_ptr<CustomSDLRect> destinationRect =
+      std::make_shared<CustomSDLRect>(new SDL_Rect());
+  if (SDL_IntersectRect(thisDestinationRect.get(),
+                        referenceDestinationRect.get(),
+                        destinationRect.get())) {
+    return destinationRect;
+  } else {  // throw exception
+    return std::make_shared<CustomSDLRect>(new SDL_Rect());
+  }
+}
+std::shared_ptr<CustomSDLRect> Region::getSrcRect(
+    CustomSDLRect* referenceRect) {
+  std::shared_ptr<CustomSDLRect> srcRect =
+      std::make_shared<CustomSDLRect>(new SDL_Rect());
+
+  std::shared_ptr<SDL_Point> pointRegion_wh = std::make_shared<SDL_Point>();
+  pointRegion_wh->x = this->rect->x + this->rect->w;
+  pointRegion_wh->y = this->rect->y + this->rect->h;
+
+  srcRect->x = referenceRect->x - this->rect->x;
+  if (srcRect->x < 0) srcRect->x = 0;
+  srcRect->y = referenceRect->y - this->rect->y;
+  if (srcRect->y < 0) srcRect->y = 0;
+
+  if (SDL_PointInRect(pointRegion_wh.get(), referenceRect)) {
+    srcRect->w = pointRegion_wh->x - referenceRect->x;
+    srcRect->h = pointRegion_wh->y - referenceRect->y;
+  } else {
+    srcRect->w = referenceRect->w;
+    srcRect->h = referenceRect->h;
+  }
+
+  return srcRect;
+}
+BackgroundSDLTexture* Region::getBackground() { return this->background; }
 std::shared_ptr<Region> Region::getSideRegion(Region::Direction direction) {
   return this->sideRegions[direction];
 }
@@ -187,7 +238,8 @@ std::shared_ptr<Region> Region::loadRegion(Stage* stage,
   throw StageOutOfBounds();
 }
 
-DynamicRegion::DynamicRegion(std::set<CustomSDLMaterialObject*> objectsOnRegion,
-                             CustomSDLRect* rect, SDL_Renderer* renderer)
-    : Region(objectsOnRegion, rect, new BackgroundSDLObject(renderer, rect)) {}
+DynamicRegion::DynamicRegion(
+    std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
+    CustomSDLRect* rect, SDL_Renderer* renderer)
+    : Region(objectsOnRegion, rect, new BackgroundSDLTexture(renderer)) {}
 DynamicRegion::~DynamicRegion() {}

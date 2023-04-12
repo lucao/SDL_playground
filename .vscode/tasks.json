@@ -10,24 +10,16 @@
                 "-ggdb",
                 "-O0",
                 "${file}",
-                "${fileDirname}\\*.cpp",
-                "${workspaceFolder}\\vendor\\imgui\\*.cpp",
-                "${workspaceFolder}\\vendor\\imgui\\backends\\*.cpp",
+                "${workspaceFolder}\\src\\custom_classes\\src\\*.cpp",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "-Iinclude\\macros",
                 "-Iinclude",
-                "-Ivendor\\imgui",
-                "-Ivendor\\imgui\\backends",
                 "-IC:\\msys64\\mingw64\\include\\SDL2",
                 "-LC:\\msys64\\mingw64\\lib\\",
-                "-L${workspaceFolder}\\vendor\\lib",
                 "-lSDL2",
                 "-lSDL2main",
-                "-lSDL2_image",
-                "-ld3d11.lib",
-                "-ld3dcompiler.lib",
-                "-ldwmapi.lib"
+                "-lSDL2_image"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

@@ -3,11 +3,11 @@
 
 #include <CustomGameCharacters.hpp>
 #include <CustomSDLObject.hpp>
+#include <unordered_set>
 
-std::set<SDL_Scancode> movementScanCodes({SDL_SCANCODE_W, SDL_SCANCODE_UP,
-                                          SDL_SCANCODE_A, SDL_SCANCODE_LEFT,
-                                          SDL_SCANCODE_S, SDL_SCANCODE_DOWN,
-                                          SDL_SCANCODE_D, SDL_SCANCODE_RIGHT});
+std::unordered_set<SDL_Scancode> movementScanCodes(
+    {SDL_SCANCODE_W, SDL_SCANCODE_UP, SDL_SCANCODE_A, SDL_SCANCODE_LEFT,
+     SDL_SCANCODE_S, SDL_SCANCODE_DOWN, SDL_SCANCODE_D, SDL_SCANCODE_RIGHT});
 
 CustomGameCharacter::CustomGameCharacter(SDL_Texture *texture,
                                          CustomSDLRect *srcRect,
