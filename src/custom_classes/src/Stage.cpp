@@ -66,6 +66,7 @@ std::shared_ptr<CustomSDLRect> Region::getDestinationRect(
   std::unique_ptr<CustomSDLRect> referenceDestinationRect =
       std::make_unique<CustomSDLRect>(
           new SDL_Rect({0, 0, referenceRect->w, referenceRect->h}));
+
   std::unique_ptr<CustomSDLRect> thisDestinationRect =
       std::make_unique<CustomSDLRect>(new SDL_Rect(
           {this->rect->x - referenceRect->x, this->rect->y - referenceRect->y,
@@ -86,20 +87,24 @@ std::shared_ptr<CustomSDLRect> Region::getSrcRect(
   std::shared_ptr<CustomSDLRect> srcRect =
       std::make_shared<CustomSDLRect>(new SDL_Rect());
 
-  std::shared_ptr<SDL_Point> pointRegion_wh = std::make_shared<SDL_Point>();
-  pointRegion_wh->x = this->rect->x + this->rect->w;
-  pointRegion_wh->y = this->rect->y + this->rect->h;
+  int pointWH_x = this->rect->x + this->rect->w;
+  int pointWH_y = this->rect->y + this->rect->h;
 
   srcRect->x = referenceRect->x - this->rect->x;
   if (srcRect->x < 0) srcRect->x = 0;
   srcRect->y = referenceRect->y - this->rect->y;
   if (srcRect->y < 0) srcRect->y = 0;
 
-  if (SDL_PointInRect(pointRegion_wh.get(), referenceRect)) {
-    srcRect->w = pointRegion_wh->x - referenceRect->x;
-    srcRect->h = pointRegion_wh->y - referenceRect->y;
+  if (pointWH_x > referenceRect->x &&
+      pointWH_x < referenceRect->x + referenceRect->w) {
+    srcRect->w = pointWH_x - referenceRect->x;
   } else {
     srcRect->w = referenceRect->w;
+  }
+  if (pointWH_y > referenceRect->y &&
+      pointWH_y < referenceRect->y + referenceRect->h) {
+    srcRect->h = pointWH_y - referenceRect->y;
+  } else {
     srcRect->h = referenceRect->h;
   }
 
