@@ -3,6 +3,7 @@
 
 #include <CustomGameCharacters.hpp>
 #include <CustomSDLObject.hpp>
+#include <queue>
 #include <unordered_set>
 
 std::unordered_set<SDL_Scancode> movementScanCodes(
@@ -24,6 +25,27 @@ CustomGameCharacter::CustomGameCharacter(CustomSDLRect *srcRect,
 }
 CustomGameCharacter::~CustomGameCharacter() {}
 
+CustomEvent::CustomEvent(Action action, long timeSinceLastEventProcess) {
+  this->action = action;
+  this->timeSinceLastEventProcess = timeSinceLastEventProcess;
+}
+CustomEvent::~CustomEvent() {}
+long CustomEvent::getTimeSinceLastEventProcess() {
+  return this->timeSinceLastEventProcess;
+}
+Action CustomEvent::getAction() { return this->action; }
+
+bool EventListener::handleEvent(CustomEvent *event) {
+  // handle general events
+  return true;
+}
+
+/// @brief
+/// @param texture
+/// @param srcRect
+/// @param position
+/// @param lifePoints
+/// @param speed in pixels per milisecond
 CustomPlayer::CustomPlayer(SDL_Texture *texture, CustomSDLRect *srcRect,
                            CustomSDLRect *position, int lifePoints, int speed)
     : CustomGameCharacter(texture, srcRect, position, lifePoints) {
@@ -34,24 +56,27 @@ CustomPlayer::CustomPlayer(CustomSDLRect *srcRect, CustomSDLRect *position,
     : CustomGameCharacter(srcRect, position, lifePoints) {
   this->speed = speed;
 }
-
 CustomPlayer::~CustomPlayer() {}
 
-void CustomPlayer::handleEvent(SDL_Event event) {
-  SDL_Rect *destination = this->getDestination();
+bool CustomPlayer::handleEvent(CustomEvent *event) {
+  SDL_Rect *destination = this->getGlobalDestination();
   const Uint8 *keyboardState = SDL_GetKeyboardState(NULL);
-  if (keyboardState[SDL_SCANCODE_W] || keyboardState[SDL_SCANCODE_UP]) {
+
+  int pixelsMoved =
+      speed * (SDL_GetTicks() - event->getTimeSinceLastEventProcess());
+
+  if (event->getAction() == Action::PLAYER_MOVE_UP) {
     destination->y -= speed;
-  } else if (keyboardState[SDL_SCANCODE_S] ||
-             keyboardState[SDL_SCANCODE_DOWN]) {
+  } else if (event->getAction() == Action::PLAYER_MOVE_DOWN) {
     destination->y += speed;
   }
-  if (keyboardState[SDL_SCANCODE_A] || keyboardState[SDL_SCANCODE_LEFT]) {
+  if (event->getAction() == Action::PLAYER_MOVE_LEFT) {
     destination->x -= speed;
-  } else if (keyboardState[SDL_SCANCODE_D] ||
-             keyboardState[SDL_SCANCODE_RIGHT]) {
+  } else if (event->getAction() == Action::PLAYER_MOVE_RIGHT) {
     destination->x += speed;
   }
+
+  return true;
 }
 
 // acho que nao preciso desse método

@@ -4,6 +4,7 @@
 
 #include <CustomSDLObject.hpp>
 #include <Stage.hpp>
+#include <chrono>
 #include <iostream>
 #include <platform.hpp>
 
@@ -26,8 +27,20 @@ void testRegionGetSrc2();
 void testRegionGetDest();
 
 int custom_main(int, char**) {
+  std::chrono::steady_clock::time_point begin =
+      std::chrono::steady_clock::now();
+
   testRegionGetSrc1();
-  // testRegionGetSrc2();
+  testRegionGetSrc2();
+  testRegionGetDest();
+
+  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+  std::cout << "Time difference = "
+            << std::chrono::duration_cast<std::chrono::microseconds>(end -
+                                                                     begin)
+                   .count()
+            << "[µs]" << std::endl;
   return 0;
 }
 

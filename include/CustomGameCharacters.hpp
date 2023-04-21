@@ -4,6 +4,7 @@
 #include <SDL.h>
 
 #include <CustomSDLObject.hpp>
+#include <queue>
 
 class CustomGameCharacter : public CustomSDLMaterialObject {
  private:
@@ -17,7 +18,32 @@ class CustomGameCharacter : public CustomSDLMaterialObject {
   virtual ~CustomGameCharacter();
 };
 
-class CustomPlayer : public CustomGameCharacter {
+enum Action {
+  PLAYER_MOVE_UP = 101,
+  PLAYER_MOVE_DOWN = 102,
+  PLAYER_MOVE_LEFT = 103,
+  PLAYER_MOVE_RIGHT = 104,
+  PLAYER_INTERACT = 100
+};
+
+class CustomEvent {
+ private:
+  Action action;
+  long timeSinceLastEventProcess;
+
+ public:
+  CustomEvent(Action action, long timeSinceLastEventProcess);
+  virtual ~CustomEvent();
+  long getTimeSinceLastEventProcess();
+  Action getAction();
+};
+
+class EventListener {
+ public:
+  virtual bool handleEvent(CustomEvent *event);
+};
+
+class CustomPlayer : public CustomGameCharacter, public EventListener {
  private:
   int speed;
   void move(SDL_Rect *destination);
@@ -28,7 +54,7 @@ class CustomPlayer : public CustomGameCharacter {
   CustomPlayer(CustomSDLRect *srcRect, CustomSDLRect *position, int lifePoints,
                int speed);
   ~CustomPlayer();
-  void handleEvent(SDL_Event event);
+  bool handleEvent(CustomEvent *event);
 };
 
 #endif

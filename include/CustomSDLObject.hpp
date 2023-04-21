@@ -19,11 +19,23 @@ struct CustomSDLRect : SDL_Rect {
   int yGetNearestBoundary(int y);
 };
 
-class CustomSDLMaterialObject {
+class GlobalPositionalSDLObject {
+ private:
+  CustomSDLRect *destination;
+
+ public:
+  GlobalPositionalSDLObject();
+  GlobalPositionalSDLObject(SDL_Rect *destination);
+  virtual ~GlobalPositionalSDLObject();
+  CustomSDLRect *getGlobalDestination();
+  void setDestination(SDL_Rect *destination);
+  CustomSDLRect *getDestination(CustomSDLRect *referenceRect);
+};
+
+class CustomSDLMaterialObject : public GlobalPositionalSDLObject {
  private:
   SDL_Texture *texture;
   CustomSDLRect *srcRect;
-  CustomSDLRect *destination;
 
  public:
   CustomSDLMaterialObject(SDL_Texture *texture, CustomSDLRect *srcRect,
@@ -33,10 +45,6 @@ class CustomSDLMaterialObject {
 
   void setTexture(SDL_Texture *texture);
   SDL_Texture *getTexture();
-
-  void setDestination(SDL_Rect *destination);
-  CustomSDLRect *getDestination();
-  CustomSDLRect *getDestination(CustomSDLRect *referenceRect);
 
   void setSrcRect(SDL_Rect *srcRect);
   CustomSDLRect *getSrcRect();

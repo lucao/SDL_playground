@@ -38,7 +38,7 @@ const uint8_t reduction = 3;
 void Camera::followObject() {
   // camera fixando nela mesma caso não esteja seguindo nenhum objeto
   std::shared_ptr<SDL_Point> followedPoint;
-  followedPoint = this->followedObject->getDestination()->createCenter();
+  followedPoint = this->followedObject->getGlobalDestination()->createCenter();
 
   // adjust camera
   std::shared_ptr<SDL_Rect> cameraInsideRect =
@@ -87,29 +87,17 @@ void Camera::followObject() {
   }
 }
 std::vector<std::shared_ptr<Region>> Camera::getRegionsToFilm(Stage* stage) {
-  // find main region being filmed
-  std::shared_ptr<SDL_Point> cameraCenterPoint =
-      this->cameraRect->createCenter();
-
-  if (stage->getActiveRegion()) {
-    if (SDL_PointInRect(this->cameraRect->createCenter().get(),
-                        stage->getActiveRegion()->getRect().get())) {
-      stage->setActiveRegion(
-          stage->getRegionFromPoint(cameraCenterPoint, this->renderer));
-    }
-  } else {
-    stage->setActiveRegion(
-        stage->getRegionFromPoint(cameraCenterPoint, this->renderer));
-  }
-
   std::vector<std::shared_ptr<Region>> regionsToRender = {};
-  regionsToRender.push_back(stage->getActiveRegion());
+  std::shared_ptr<SDL_Point> cameraCenter = this->cameraRect->createCenter();
+  std::shared_ptr<Region> activeRegion = stage->getActiveRegion(
+      this->cameraRect->createCenter().get(), this->getRenderer());
+
+  regionsToRender.push_back(activeRegion);
 
   for (Region::Direction direction : Region::directions) {
     std::unique_ptr<CustomSDLRect> intersectedRect =
         std::make_unique<CustomSDLRect>(new SDL_Rect());
-    std::shared_ptr<Region> sideRegion =
-        stage->getActiveRegion()->getSideRegion(direction);
+    std::shared_ptr<Region> sideRegion = activeRegion->getSideRegion(direction);
     if (SDL_IntersectRect(sideRegion->getRect().get(), this->getCameraRect(),
                           intersectedRect.get())) {
       regionsToRender.push_back(sideRegion);

@@ -6,6 +6,7 @@
 #include <CustomSDLObject.hpp>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -30,6 +31,13 @@ class Region {
   static constexpr Direction directions[] = {
       TOP, BOTTOM, LEFT, RIGHT, TOPLEFT, TOPRIGHT, BOTTOMLEFT, BOTTOMRIGHT};
 
+  typedef std::unordered_map<Direction, std::tuple<int, int>>
+      DirectionMatrixMap;
+  static DirectionMatrixMap directionMatrixMap;
+
+  static const int fixedRegionWidth = 1920;
+  static const int fixedRegionHeight = 1080;
+
  private:
   std::unordered_map<Region::Direction, std::shared_ptr<Region>> sideRegions;
 
@@ -42,10 +50,9 @@ class Region {
   std::shared_ptr<CustomSDLRect> getRect();
   std::shared_ptr<CustomSDLRect> getDestinationRect(
       CustomSDLRect* referenceRect);
-  std::unordered_set<CustomSDLMaterialObject*> getObjectsOnRegion();
-  std::shared_ptr<Region> loadRegion(Stage* stage, Region::Direction direction,
-                                     SDL_Renderer* renderer);
   std::shared_ptr<Region> getSideRegion(Region::Direction direction);
+  void setSideRegion(Region::Direction direction,
+                     std::shared_ptr<Region> region);
   BackgroundSDLTexture* getBackground();
   std::shared_ptr<CustomSDLRect> getSrcRect(CustomSDLRect* referenceRect);
 };
@@ -59,19 +66,31 @@ class Stage {
 
   std::shared_ptr<Region> activeRegion;
 
-  std::unordered_set<std::shared_ptr<Region>> regionsOnStage;
+  typedef std::tuple<int, int> CustomMatrixKey;
+  struct RegionMatrix_key_hash {
+    std::size_t operator()(const CustomMatrixKey& k) const {
+      return std::get<0>(k) ^ std::get<1>(k);
+    }
+  };
+  struct RegionMatrix_key_equal {
+    bool operator()(const CustomMatrixKey& v0,
+                    const CustomMatrixKey& v1) const {
+      return (std::get<0>(v0) == std::get<0>(v1) &&
+              std::get<1>(v0) == std::get<1>(v1));
+    }
+  };
+  typedef std::unordered_map<CustomMatrixKey, std::shared_ptr<Region>,
+                             RegionMatrix_key_hash, RegionMatrix_key_equal>
+      CustomMatrix;
+  CustomMatrix regionsMatrix;
 
  public:
-  Stage(std::unordered_set<std::shared_ptr<Region>> regionsOnStage,
-        CustomSDLRect* rect);
+  Stage(CustomSDLRect* rect);
   ~Stage();
   std::shared_ptr<Stage> getNextStage();
   std::shared_ptr<Stage> getPreviousStage();
-  std::unordered_set<std::shared_ptr<Region>> getRegionsOnStage();
-  std::shared_ptr<Region> getActiveRegion();
-  void setActiveRegion(std::shared_ptr<Region> region);
-  std::shared_ptr<Region> getRegionFromPoint(std::shared_ptr<SDL_Point> point,
-                                             SDL_Renderer* renderer);
+  std::shared_ptr<Region> getActiveRegion(SDL_Point* cameraCenter,
+                                          SDL_Renderer* renderer);
 };
 
 class StageOutOfBounds : public std::exception {

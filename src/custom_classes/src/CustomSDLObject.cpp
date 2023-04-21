@@ -53,47 +53,55 @@ int CustomSDLRect::yGetNearestBoundary(int y) {
 
 CustomSDLMaterialObject::CustomSDLMaterialObject(SDL_Texture *texture,
                                                  CustomSDLRect *srcRect,
-                                                 CustomSDLRect *destination) {
+                                                 CustomSDLRect *destination)
+    : GlobalPositionalSDLObject(destination) {
   this->srcRect = srcRect;
-  this->destination = destination;
   this->texture = texture;
 }
 
 CustomSDLMaterialObject::CustomSDLMaterialObject(CustomSDLRect *srcRect,
-                                                 CustomSDLRect *destination) {
+                                                 CustomSDLRect *destination)
+    : GlobalPositionalSDLObject(destination) {
   this->srcRect = srcRect;
-  this->destination = destination;
 }
 
 CustomSDLMaterialObject::~CustomSDLMaterialObject() {
-  delete this->destination;
   delete this->srcRect;
   SDL_DestroyTexture(this->texture);
-}
-void CustomSDLMaterialObject::setTexture(SDL_Texture *texture) {
-  this->texture = texture;
-}
-SDL_Texture *CustomSDLMaterialObject::getTexture() { return this->texture; }
-void CustomSDLMaterialObject::setDestination(SDL_Rect *destination) {
-  delete this->destination;
-  this->destination = new CustomSDLRect(destination);
-}
-CustomSDLRect *CustomSDLMaterialObject::getDestination() {
-  return this->destination;
-}
-CustomSDLRect *CustomSDLMaterialObject::getDestination(
-    CustomSDLRect *referenceRect) {
-  return std::make_unique<CustomSDLRect>(
-             new SDL_Rect({this->getDestination()->y - referenceRect->x,
-                           this->getDestination()->y - referenceRect->y,
-                           referenceRect->w, referenceRect->h}))
-      .get();
 }
 void CustomSDLMaterialObject::setSrcRect(SDL_Rect *srcRect) {
   delete this->srcRect;
   this->srcRect = new CustomSDLRect(srcRect);
 }
 CustomSDLRect *CustomSDLMaterialObject::getSrcRect() { return this->srcRect; }
+void CustomSDLMaterialObject::setTexture(SDL_Texture *texture) {
+  this->texture = texture;
+}
+SDL_Texture *CustomSDLMaterialObject::getTexture() { return this->texture; }
+void GlobalPositionalSDLObject::setDestination(SDL_Rect *destination) {
+  delete this->destination;
+  this->destination = new CustomSDLRect(destination);
+}
+CustomSDLRect *GlobalPositionalSDLObject::getGlobalDestination() {
+  return this->destination;
+}
+CustomSDLRect *GlobalPositionalSDLObject::getDestination(
+    CustomSDLRect *referenceRect) {
+  return new CustomSDLRect(new SDL_Rect(
+      {this->getGlobalDestination()->x - referenceRect->x,
+       this->getGlobalDestination()->y - referenceRect->y,
+       this->getGlobalDestination()->w, this->getGlobalDestination()->h}));
+}
+
+GlobalPositionalSDLObject::GlobalPositionalSDLObject() {
+  this->destination = new CustomSDLRect({});
+}
+GlobalPositionalSDLObject::GlobalPositionalSDLObject(SDL_Rect *destination) {
+  this->destination = new CustomSDLRect(destination);
+}
+GlobalPositionalSDLObject::~GlobalPositionalSDLObject() {
+  delete this->destination;
+}
 
 #include <stdlib.h>
 

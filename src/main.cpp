@@ -5,6 +5,7 @@
 
 #include <CustomGameCharacters.hpp>
 #include <CustomScreen.hpp>
+#include <EntityManager.hpp>
 #include <Stage.hpp>
 #include <World.hpp>
 #include <algorithm>
@@ -27,6 +28,7 @@
 #endif
 
 int custom_main(int, char**);
+
 class FPSControl {
  private:
   Uint32 tick;
@@ -73,7 +75,34 @@ class FPSControl {
 
     return delay;
   }
+
+  long getLastFrameTick() { return this->tick; }
   std::deque<Uint32> getFpsSamples() { return this->samples; }
+};
+
+class EventControl {
+ private:
+  std::queue<CustomEvent*> eventsQueue;
+  std::vector<EventListener*> eventListeners;
+
+ public:
+  virtual ~EventControl() {}
+  void addEventListener(EventListener* listener) {
+    eventListeners.push_back(listener);
+  }
+  virtual void addEvent(CustomEvent* event) { eventsQueue.push(event); }
+  void processEvents() {
+    while (!eventsQueue.empty()) {
+      CustomEvent* event = this->eventsQueue.front();
+      for (EventListener* listener : eventListeners) {
+        if (!listener->handleEvent(event)) {
+          // ERROR
+        }
+      }
+      this->eventsQueue.pop();
+      delete event;
+    }
+  }
 };
 
 #ifdef RUNNING_ON_WINDOWS
@@ -94,7 +123,8 @@ void fpsControlDebugWindow(FPSControl* fpsControl);
 
 void cameraDebugWindow(Camera* camera, CustomSDLMaterialObject* followedObject);
 void backgroundRenderDebugWindow(
-    Camera* camera, std::vector<std::shared_ptr<Region>> regionsToRender);
+    Stage* stage, Camera* camera,
+    std::vector<std::shared_ptr<Region>> regionsToRender);
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif
@@ -118,25 +148,20 @@ int custom_main(int, char**) {
   // TODO start screen
   CustomPlayer* player =
       new CustomPlayer(new CustomSDLRect(new SDL_Rect({0, 0, 300, 300})),
-                       new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 10, 10);
+                       new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 10, 7);
 
   std::shared_ptr<Camera> camera(
-      new Camera(screen->getWindow(), player, new int(100)));
+      new Camera(screen->getWindow(), player, new int(1000)));
 
   player->setTexture(IMG_LoadTexture(
       camera->getRenderer(),
       "C:/Users/lucas/git/C/game/media/img/eu-foto-crianca.JPG"));
 
-  std::shared_ptr<Region> region(new DynamicRegion(
-      {}, new CustomSDLRect(new SDL_Rect({-1000, -1000, 2000, 2000})),
-      camera->getRenderer()));
-  region->addObjectToRegion(player);
-
-  std::unordered_set<std::shared_ptr<Region>> regionsOnStage;
-  regionsOnStage.insert(region);
   Stage* stage = new Stage(
-      regionsOnStage,
       new CustomSDLRect(new SDL_Rect({-40000, -40000, 80000, 80000})));
+
+  // TODO
+  EntityManager* entityManager = new EntityManager();
 
   int close = 0;
 #ifdef RUNNING_ON_WINDOWS
@@ -177,13 +202,16 @@ int custom_main(int, char**) {
   ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 #endif
 #endif
+  EventControl* eventControl = new EventControl();
+  eventControl->addEventListener(player);
   FPSControl* fpsControl = new FPSControl(60);
   while (!close) {
+    // Events
     SDL_Event event;
-
     SDL_PumpEvents();
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT,
-                          SDL_DISPLAYEVENT)) {
+                          SDL_DISPLAYEVENT) &&
+           !close) {
       switch (event.type) {
         case SDL_QUIT:
           // handling of close button
@@ -192,24 +220,47 @@ int custom_main(int, char**) {
       }
     }
 
-    player->handleEvent(event);
+    const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
+
+    if (keyboardState[SDL_SCANCODE_W] || keyboardState[SDL_SCANCODE_UP]) {
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_UP,
+                                             fpsControl->getLastFrameTick()));
+    } else if (keyboardState[SDL_SCANCODE_S] ||
+               keyboardState[SDL_SCANCODE_DOWN]) {
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_DOWN,
+                                             fpsControl->getLastFrameTick()));
+    }
+    if (keyboardState[SDL_SCANCODE_A] || keyboardState[SDL_SCANCODE_LEFT]) {
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_LEFT,
+                                             fpsControl->getLastFrameTick()));
+    } else if (keyboardState[SDL_SCANCODE_D] ||
+               keyboardState[SDL_SCANCODE_RIGHT]) {
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_RIGHT,
+                                             fpsControl->getLastFrameTick()));
+    }
+
+    eventControl->processEvents();
+
+    // Render
     camera->followObject();
     std::vector<std::shared_ptr<Region>> regionsToRender;
     try {
       regionsToRender = camera->getRegionsToFilm(stage);
     } catch (StageOutOfBounds err) {
       // Load new stage
+      printf(err.what());
     }
 
     SDL_RenderClear(camera->getRenderer());
     std::vector<CustomSDLMaterialObject*> drawableObjects;
+
     for (std::shared_ptr<Region> region : regionsToRender) {
       SDL_RenderCopy(camera->getRenderer(),
                      region->getBackground()->getTexture(),
                      region->getSrcRect(camera->getCameraRect()).get(),
                      region->getDestinationRect(camera->getCameraRect()).get());
-      for (CustomSDLMaterialObject* object : region->getObjectsOnRegion()) {
-        if (SDL_HasIntersection(object->getDestination(),
+      for (CustomSDLMaterialObject* object : objectsToRender) {
+        if (SDL_HasIntersection(object->getGlobalDestination(),
                                 camera->getCameraRect())) {
           drawableObjects.push_back(object);
         }
@@ -239,7 +290,7 @@ int custom_main(int, char**) {
 
     fpsControlDebugWindow(fpsControl);
     cameraDebugWindow(camera.get(), player);
-    backgroundRenderDebugWindow(camera.get(), regionsToRender);
+    backgroundRenderDebugWindow(stage, camera.get(), regionsToRender);
 
     ImGui::Render();
     // End of frame: render Dear ImGui
@@ -435,23 +486,26 @@ void cameraDebugWindow(Camera* camera,
   ImGui::TableNextRow();
   ImGui::TableNextColumn();
   ImGui::Text(
-      ("X: " + std::to_string(followedObject->getDestination()->x)).c_str());
-  ImGui::TableNextColumn();
-  ImGui::Text(
-      ("X relative: " + std::to_string(followedObject->getDestination()->x))
+      ("X: " + std::to_string(followedObject->getGlobalDestination()->x))
           .c_str());
+  ImGui::TableNextColumn();
+  ImGui::Text(("X relative: " +
+               std::to_string(followedObject->getGlobalDestination()->x))
+                  .c_str());
   ImGui::TableNextRow();
   ImGui::TableNextColumn();
   ImGui::Text(
-      ("Y: " + std::to_string(followedObject->getDestination()->y)).c_str());
-  ImGui::TableNextColumn();
-  ImGui::Text(
-      ("Y relative: " + std::to_string(followedObject->getDestination()->y))
+      ("Y: " + std::to_string(followedObject->getGlobalDestination()->y))
           .c_str());
+  ImGui::TableNextColumn();
+  ImGui::Text(("Y relative: " +
+               std::to_string(followedObject->getGlobalDestination()->y))
+                  .c_str());
   ImGui::TableNextRow();
   ImGui::TableNextColumn();
   ImGui::Text(
-      ("W: " + std::to_string(followedObject->getDestination()->w)).c_str());
+      ("W: " + std::to_string(followedObject->getGlobalDestination()->w))
+          .c_str());
   ImGui::TableNextColumn();
   ImGui::Text(("src X - W " + std::to_string(followedObject->getSrcRect()->x) +
                " - " + std::to_string(followedObject->getSrcRect()->w))
@@ -459,27 +513,40 @@ void cameraDebugWindow(Camera* camera,
   ImGui::TableNextRow();
   ImGui::TableNextColumn();
   ImGui::Text(
-      ("H: " + std::to_string(followedObject->getDestination()->h)).c_str());
+      ("H: " + std::to_string(followedObject->getGlobalDestination()->h))
+          .c_str());
   ImGui::TableNextColumn();
   ImGui::Text(("src Y - H " + std::to_string(followedObject->getSrcRect()->y) +
                " - " + std::to_string(followedObject->getSrcRect()->h))
                   .c_str());
   ImGui::EndTable();
   ImGui::Separator();
-  ImGui::Text(("Is intersecting: " +
-               std::to_string(SDL_HasIntersection(
-                   followedObject->getDestination(), camera->getCameraRect())))
+  ImGui::Text(("Is intersecting: " + std::to_string(SDL_HasIntersection(
+                                         followedObject->getGlobalDestination(),
+                                         camera->getCameraRect())))
                   .c_str());
 
   ImGui::End();
 }
 
 void backgroundRenderDebugWindow(
-    Camera* camera, std::vector<std::shared_ptr<Region>> regionsToRender) {
+    Stage* stage, Camera* camera,
+    std::vector<std::shared_ptr<Region>> regionsToRender) {
   ImGui::SetNextWindowSize(ImVec2(320, 600));
   ImGui::Begin("Background Region Control");
   ImGui::Text(("Regions: " + std::to_string(regionsToRender.size())).c_str());
+  std::shared_ptr<SDL_Point> cameraCenter =
+      camera->getCameraRect()->createCenter();
+  ImGui::Text(("Camera center x/y: " + (std::to_string(cameraCenter->x) + "/" +
+                                        std::to_string(cameraCenter->y)))
+                  .c_str());
+  ImGui::Text(
+      ("Active Region: " +
+       (std::to_string(cameraCenter->x / Region::fixedRegionWidth) + ", " +
+        std::to_string(cameraCenter->y / Region::fixedRegionHeight)))
+          .c_str());
   ImGui::Separator();
+
   ImGui::Columns(regionsToRender.size(), "regionsColumns");
   for (std::shared_ptr<Region> region : regionsToRender) {
     ImGui::Text(("X src: " +
