@@ -10,6 +10,8 @@
 class Camera {
  private:
   CustomSDLRect* cameraRect;
+  int cameraRectResize_w;
+  int cameraRectResize_h;
   CustomSDLMaterialObject* followedObject;
 
   SDL_Renderer* renderer;
@@ -22,9 +24,9 @@ class Camera {
   void setFollowedObject(CustomSDLMaterialObject* object);
   SDL_Renderer* getRenderer();
   CustomSDLRect* getCameraRect();
-  void setCameraRect(SDL_Rect* rect);
-  std::vector<std::shared_ptr<Region>> getRegionsToFilm(Stage* stage);
-  void followObject();
+  void resize(int w, int h);
+  SDL_Renderer* film(Stage* stage);
+  void moveCamera();
 };
 
 class Screen {

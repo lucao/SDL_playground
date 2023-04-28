@@ -22,6 +22,8 @@ struct CustomSDLRect : SDL_Rect {
 class GlobalPositionalSDLObject {
  private:
   CustomSDLRect *destination;
+  GlobalPositionalSDLObject *lastDestination;
+  void setLastDestination(GlobalPositionalSDLObject *lastDestination);
 
  public:
   GlobalPositionalSDLObject();
@@ -30,6 +32,9 @@ class GlobalPositionalSDLObject {
   CustomSDLRect *getGlobalDestination();
   void setDestination(SDL_Rect *destination);
   CustomSDLRect *getDestination(CustomSDLRect *referenceRect);
+  GlobalPositionalSDLObject *getLastGlobalDestination();
+
+  void move(SDL_Rect *destination);
 };
 
 class CustomSDLMaterialObject : public GlobalPositionalSDLObject {

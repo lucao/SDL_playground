@@ -14,7 +14,6 @@ set(CUSTOM_INCLUDE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 include_directories(${CUSTOM_INCLUDE_DIR})
 
-#TODO
 set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)
 set(IMGUI_HEADERS ${IMGUI_DIR}/imgui.h 
 ${IMGUI_DIR}/imconfig.h 
@@ -52,6 +51,8 @@ target_include_directories(unitTests PRIVATE ${CMAKE_MINGW_DIR}/include/SDL2)
 target_include_directories(unitTests PRIVATE ${IMGUI_DIR})
 target_include_directories(unitTests PRIVATE ${IMGUI_DIR}/backends)
 
+
+
 target_link_libraries(unitTests PRIVATE SDL2)
 target_link_libraries(unitTests PRIVATE SDL2main)
 target_link_libraries(unitTests PRIVATE SDL2_image)
@@ -60,12 +61,15 @@ add_test(NAME unitTests COMMAND unitTests.exe)
 
 target_include_directories(main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/macros)
 target_include_directories(main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/SDL2)
+target_include_directories(main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/cute)
 target_include_directories(main PUBLIC ${CMAKE_MINGW_DIR}/include)
-target_include_directories(main PRIVATE ${CMAKE_MINGW_DIR}/include/SDL2)
 target_include_directories(main PRIVATE ${IMGUI_DIR})
 target_include_directories(main PRIVATE ${IMGUI_DIR}/backends)
+
 target_link_directories(main PUBLIC ${CMAKE_MINGW_DIR}/lib)
 target_link_directories(main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/)
+
 
 
 if(TARGET SDL2::SDL2main)

@@ -2,6 +2,7 @@
 #include <SDL_image.h>
 
 #include <CustomGameCharacters.hpp>
+#include <CustomGameObjects.hpp>
 #include <CustomSDLObject.hpp>
 #include <queue>
 #include <unordered_set>
@@ -79,7 +80,4 @@ bool CustomPlayer::handleEvent(CustomEvent *event) {
   return true;
 }
 
-// acho que nao preciso desse método
-void CustomPlayer::move(SDL_Rect *destination) {
-  this->setDestination(destination);
-}
+bool CustomPlayer::colideWith(Platform *collider) { this->getDestination() }

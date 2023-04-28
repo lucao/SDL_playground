@@ -9,6 +9,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 class Stage;
 class Region {
@@ -91,6 +92,8 @@ class Stage {
   std::shared_ptr<Stage> getPreviousStage();
   std::shared_ptr<Region> getActiveRegion(SDL_Point* cameraCenter,
                                           SDL_Renderer* renderer);
+  std::vector<CustomSDLMaterialObject*> getMaterialObjectsNear(
+      GlobalPositionalSDLObject* object);
 };
 
 class StageOutOfBounds : public std::exception {

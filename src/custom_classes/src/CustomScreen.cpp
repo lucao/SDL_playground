@@ -16,6 +16,9 @@ Camera::Camera(SDL_Window* window, CustomSDLMaterialObject* followedObject,
   this->renderer = SDL_CreateRenderer(window, -1, render_flags);
   int w, h;
   SDL_GetWindowSize(window, &w, &h);
+  SDL_RenderSetLogicalSize(this->renderer, w, h);
+  this->cameraRectResize_w = w;
+  this->cameraRectResize_h = h;
   this->cameraRect = new CustomSDLRect(new SDL_Rect({0, 0, w, h}));
   this->followedObject = followedObject;
   this->speed = *speed;
@@ -29,24 +32,47 @@ void Camera::setFollowedObject(CustomSDLMaterialObject* object) {
   this->followedObject = object;
 }
 CustomSDLRect* Camera::getCameraRect() { return this->cameraRect; }
-void Camera::setCameraRect(SDL_Rect* rect) {
-  this->cameraRect = new CustomSDLRect(rect);
+void Camera::resize(int w, int h) {
+  this->cameraRectResize_w = w;
+  this->cameraRectResize_h = h;
 }
 SDL_Renderer* Camera::getRenderer() { return this->renderer; }
 
 const uint8_t reduction = 3;
-void Camera::followObject() {
-  // camera fixando nela mesma caso não esteja seguindo nenhum objeto
+void Camera::moveCamera() {
+  // zoom camera
+  if (!(this->cameraRectResize_w == this->cameraRect->w &&
+        this->cameraRectResize_h == this->cameraRect->h)) {
+    if (this->cameraRectResize_w > this->cameraRect->w) {
+      this->cameraRect->w +=
+          log2(abs(this->cameraRectResize_w - this->cameraRect->w));
+    } else {
+      this->cameraRect->w -=
+          log2(abs(this->cameraRectResize_w - this->cameraRect->w));
+    }
+    if (this->cameraRectResize_h > this->cameraRect->h) {
+      this->cameraRect->h +=
+          log2(abs(this->cameraRectResize_h - this->cameraRect->h));
+    } else {
+      this->cameraRect->h -=
+          log2(abs(this->cameraRectResize_h - this->cameraRect->h));
+    }
+    SDL_RenderSetLogicalSize(this->renderer, this->cameraRect->w,
+                             this->cameraRect->h);
+  }
+
   std::shared_ptr<SDL_Point> followedPoint;
   followedPoint = this->followedObject->getGlobalDestination()->createCenter();
 
-  // adjust camera
   std::shared_ptr<SDL_Rect> cameraInsideRect =
-      this->cameraRect->createInsideMiddleRect(reduction);
+      this->cameraRect->createInsideMiddleRect(
+          reduction);  // TODO modificar inside rect para ser proporcional ao
+                       // followed object
 
   std::shared_ptr<SDL_Point> cameraCenterPoint =
       this->cameraRect->createCenter();
 
+  // moving camera following the object
   if (followedPoint->x > cameraInsideRect->x + cameraInsideRect->w ||
       followedPoint->x < cameraInsideRect->x) {
     int x_distance = followedPoint->x - cameraCenterPoint->x;
@@ -86,20 +112,17 @@ void Camera::followObject() {
     }
   }
 }
-std::vector<std::shared_ptr<Region>> Camera::getRegionsToFilm(Stage* stage) {
-  std::vector<std::shared_ptr<Region>> regionsToRender = {};
+SDL_Renderer* Camera::film(Stage* stage) {
   std::shared_ptr<SDL_Point> cameraCenter = this->cameraRect->createCenter();
   std::shared_ptr<Region> activeRegion = stage->getActiveRegion(
       this->cameraRect->createCenter().get(), this->getRenderer());
 
+  std::vector<std::shared_ptr<Region>> regionsToRender = {};
   regionsToRender.push_back(activeRegion);
 
   for (Region::Direction direction : Region::directions) {
-    std::unique_ptr<CustomSDLRect> intersectedRect =
-        std::make_unique<CustomSDLRect>(new SDL_Rect());
     std::shared_ptr<Region> sideRegion = activeRegion->getSideRegion(direction);
-    if (SDL_IntersectRect(sideRegion->getRect().get(), this->getCameraRect(),
-                          intersectedRect.get())) {
+    if (SDL_HasIntersection(sideRegion->getRect().get(), this->cameraRect)) {
       regionsToRender.push_back(sideRegion);
     }
   }
@@ -108,7 +131,24 @@ std::vector<std::shared_ptr<Region>> Camera::getRegionsToFilm(Stage* stage) {
         "Regions were not correctly clipped. only 4 or less regions can be "
         "renderer at the same time on the screen.");
   }
-  return regionsToRender;
+  std::vector<CustomSDLMaterialObject*> drawableObjects =
+      stage->getMaterialObjectsNear(this->followedObject);
+
+  for (std::shared_ptr<Region> region : regionsToRender) {
+    SDL_RenderCopy(this->renderer, region->getBackground()->getTexture(),
+                   region->getSrcRect(this->cameraRect).get(),
+                   region->getDestinationRect(this->cameraRect).get());
+    for (CustomSDLMaterialObject* object : drawableObjects) {
+      if (SDL_HasIntersection(object->getGlobalDestination(),
+                              this->cameraRect)) {
+        drawableObjects.push_back(object);
+      }
+    }
+  }
+  for (CustomSDLMaterialObject* object : drawableObjects) {
+    SDL_RenderCopy(this->renderer, object->getTexture(), object->getSrcRect(),
+                   object->getDestination(this->cameraRect));
+  }
 }
 
 Screen::Screen(int resolution_w, int resolution_h) {

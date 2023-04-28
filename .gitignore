@@ -6,5 +6,9 @@ media/**
 vendor/**
 CmakeSettings.json
 src/test/*.exe
+include/boost/**
+include/Eigen/**
+include/SDL2/**
+include/cute/**
 
 

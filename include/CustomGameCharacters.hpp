@@ -3,6 +3,8 @@
 
 #include <SDL.h>
 
+#include <CustomCollision.hpp>
+#include <CustomGameObjects.hpp>
 #include <CustomSDLObject.hpp>
 #include <queue>
 
@@ -43,10 +45,11 @@ class EventListener {
   virtual bool handleEvent(CustomEvent *event);
 };
 
-class CustomPlayer : public CustomGameCharacter, public EventListener {
+class CustomPlayer : public CustomGameCharacter,
+                     public EventListener,
+                     public Collider<Platform> {
  private:
   int speed;
-  void move(SDL_Rect *destination);
 
  public:
   CustomPlayer(SDL_Texture *texture, CustomSDLRect *srcRect,
@@ -55,6 +58,7 @@ class CustomPlayer : public CustomGameCharacter, public EventListener {
                int speed);
   ~CustomPlayer();
   bool handleEvent(CustomEvent *event);
+  bool colideWith(Platform *collider);
 };
 
 #endif

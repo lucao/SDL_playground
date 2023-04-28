@@ -95,12 +95,28 @@ CustomSDLRect *GlobalPositionalSDLObject::getDestination(
 
 GlobalPositionalSDLObject::GlobalPositionalSDLObject() {
   this->destination = new CustomSDLRect({});
+  this->lastDestination = NULL;
 }
 GlobalPositionalSDLObject::GlobalPositionalSDLObject(SDL_Rect *destination) {
   this->destination = new CustomSDLRect(destination);
+  this->lastDestination = NULL;
 }
 GlobalPositionalSDLObject::~GlobalPositionalSDLObject() {
   delete this->destination;
+  if (this->lastDestination) delete this->lastDestination;
+}
+GlobalPositionalSDLObject *
+GlobalPositionalSDLObject::getLastGlobalDestination() {
+  return this->lastDestination;
+}
+void GlobalPositionalSDLObject::setLastDestination(
+    GlobalPositionalSDLObject *lastDestination) {
+  this->lastDestination = lastDestination;
+}
+// acho que nao preciso desse método
+void GlobalPositionalSDLObject::move(SDL_Rect *destination) {
+  this->setLastDestination(this);
+  this->setDestination(destination);
 }
 
 #include <stdlib.h>

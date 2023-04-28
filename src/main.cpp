@@ -5,7 +5,6 @@
 
 #include <CustomGameCharacters.hpp>
 #include <CustomScreen.hpp>
-#include <EntityManager.hpp>
 #include <Stage.hpp>
 #include <World.hpp>
 #include <algorithm>
@@ -122,9 +121,6 @@ void CleanupRenderTarget();
 void fpsControlDebugWindow(FPSControl* fpsControl);
 
 void cameraDebugWindow(Camera* camera, CustomSDLMaterialObject* followedObject);
-void backgroundRenderDebugWindow(
-    Stage* stage, Camera* camera,
-    std::vector<std::shared_ptr<Region>> regionsToRender);
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif
@@ -159,9 +155,6 @@ int custom_main(int, char**) {
 
   Stage* stage = new Stage(
       new CustomSDLRect(new SDL_Rect({-40000, -40000, 80000, 80000})));
-
-  // TODO
-  EntityManager* entityManager = new EntityManager();
 
   int close = 0;
 #ifdef RUNNING_ON_WINDOWS
@@ -217,6 +210,19 @@ int custom_main(int, char**) {
           // handling of close button
           close = 1;
           break;
+        case SDL_MOUSEWHEEL:
+          if (event.wheel.y > 0) {
+            // Put code for handling "scroll up" here!
+          } else if (event.wheel.y < 0) {
+            // Put code for handling "scroll down" here!
+          }
+
+          if (event.wheel.x > 0) {
+            // scroll right
+          } else if (event.wheel.x < 0) {
+            // scroll left
+          }
+          break;
       }
     }
 
@@ -242,37 +248,15 @@ int custom_main(int, char**) {
     eventControl->processEvents();
 
     // Render
-    camera->followObject();
-    std::vector<std::shared_ptr<Region>> regionsToRender;
+    camera->moveCamera();
+
+    SDL_RenderClear(camera->getRenderer());
     try {
-      regionsToRender = camera->getRegionsToFilm(stage);
+      SDL_RenderPresent(camera->film(stage));
     } catch (StageOutOfBounds err) {
       // Load new stage
       printf(err.what());
     }
-
-    SDL_RenderClear(camera->getRenderer());
-    std::vector<CustomSDLMaterialObject*> drawableObjects;
-
-    for (std::shared_ptr<Region> region : regionsToRender) {
-      SDL_RenderCopy(camera->getRenderer(),
-                     region->getBackground()->getTexture(),
-                     region->getSrcRect(camera->getCameraRect()).get(),
-                     region->getDestinationRect(camera->getCameraRect()).get());
-      for (CustomSDLMaterialObject* object : objectsToRender) {
-        if (SDL_HasIntersection(object->getGlobalDestination(),
-                                camera->getCameraRect())) {
-          drawableObjects.push_back(object);
-        }
-      }
-    }
-    for (CustomSDLMaterialObject* object : drawableObjects) {
-      SDL_RenderCopy(camera->getRenderer(), object->getTexture(),
-                     object->getSrcRect(),
-                     object->getDestination(camera->getCameraRect()));
-    }
-
-    SDL_RenderPresent(camera->getRenderer());
 
 #ifdef RUNNING_ON_WINDOWS
 #ifdef DEBUG
@@ -290,7 +274,6 @@ int custom_main(int, char**) {
 
     fpsControlDebugWindow(fpsControl);
     cameraDebugWindow(camera.get(), player);
-    backgroundRenderDebugWindow(stage, camera.get(), regionsToRender);
 
     ImGui::Render();
     // End of frame: render Dear ImGui
@@ -525,64 +508,6 @@ void cameraDebugWindow(Camera* camera,
                                          followedObject->getGlobalDestination(),
                                          camera->getCameraRect())))
                   .c_str());
-
-  ImGui::End();
-}
-
-void backgroundRenderDebugWindow(
-    Stage* stage, Camera* camera,
-    std::vector<std::shared_ptr<Region>> regionsToRender) {
-  ImGui::SetNextWindowSize(ImVec2(320, 600));
-  ImGui::Begin("Background Region Control");
-  ImGui::Text(("Regions: " + std::to_string(regionsToRender.size())).c_str());
-  std::shared_ptr<SDL_Point> cameraCenter =
-      camera->getCameraRect()->createCenter();
-  ImGui::Text(("Camera center x/y: " + (std::to_string(cameraCenter->x) + "/" +
-                                        std::to_string(cameraCenter->y)))
-                  .c_str());
-  ImGui::Text(
-      ("Active Region: " +
-       (std::to_string(cameraCenter->x / Region::fixedRegionWidth) + ", " +
-        std::to_string(cameraCenter->y / Region::fixedRegionHeight)))
-          .c_str());
-  ImGui::Separator();
-
-  ImGui::Columns(regionsToRender.size(), "regionsColumns");
-  for (std::shared_ptr<Region> region : regionsToRender) {
-    ImGui::Text(("X src: " +
-                 std::to_string(region->getSrcRect(camera->getCameraRect())->x))
-                    .c_str());
-    ImGui::Text(("Y src: " +
-                 std::to_string(region->getSrcRect(camera->getCameraRect())->y))
-                    .c_str());
-    ImGui::Text(("W src: " +
-                 std::to_string(region->getSrcRect(camera->getCameraRect())->w))
-                    .c_str());
-    ImGui::Text(("H src: " +
-                 std::to_string(region->getSrcRect(camera->getCameraRect())->h))
-                    .c_str());
-
-    ImGui::Text(
-        ("X dest: " +
-         std::to_string(region->getDestinationRect(camera->getCameraRect())->x))
-            .c_str());
-    ImGui::Text(
-        ("Y dest: " +
-         std::to_string(region->getDestinationRect(camera->getCameraRect())->y))
-            .c_str());
-    ImGui::Text(
-        ("W dest: " +
-         std::to_string(region->getDestinationRect(camera->getCameraRect())->w))
-            .c_str());
-    ImGui::Text(
-        ("H dest: " +
-         std::to_string(region->getDestinationRect(camera->getCameraRect())->h))
-            .c_str());
-
-    ImGui::NextColumn();
-  }
-
-  ImGui::Separator();
 
   ImGui::End();
 }
