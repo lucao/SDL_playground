@@ -1,6 +1,7 @@
-#include <SDL.h>
-#include <SDL_image.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 
+#include <CustomCollision.hpp>
 #include <CustomGameCharacters.hpp>
 #include <CustomGameObjects.hpp>
 #include <CustomSDLObject.hpp>
@@ -80,4 +81,8 @@ bool CustomPlayer::handleEvent(CustomEvent *event) {
   return true;
 }
 
-bool CustomPlayer::colideWith(Platform *collider) { this->getDestination() }
+bool CustomPlayer::colideWith(Platform *collider) { 
+  return false;
+//this->getDestination()  TODO
+}
+

@@ -1,7 +1,7 @@
 #ifndef CUSTOM_COLLISION_H
 #define CUSTOM_COLLISION_H
 
-template <typename T>
+template <class T>
 class Collider {
  public:
    virtual bool colideWith(T* collider);

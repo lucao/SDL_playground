@@ -1,4 +1,4 @@
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include <CustomSDLObject.hpp>
 #include <CustomScreen.hpp>
@@ -45,17 +45,17 @@ void Camera::moveCamera() {
         this->cameraRectResize_h == this->cameraRect->h)) {
     if (this->cameraRectResize_w > this->cameraRect->w) {
       this->cameraRect->w +=
-          log2(abs(this->cameraRectResize_w - this->cameraRect->w));
+         (int) log2(abs(this->cameraRectResize_w - this->cameraRect->w));
     } else {
       this->cameraRect->w -=
-          log2(abs(this->cameraRectResize_w - this->cameraRect->w));
+         (int) log2(abs(this->cameraRectResize_w - this->cameraRect->w));
     }
     if (this->cameraRectResize_h > this->cameraRect->h) {
       this->cameraRect->h +=
-          log2(abs(this->cameraRectResize_h - this->cameraRect->h));
+         (int) log2(abs(this->cameraRectResize_h - this->cameraRect->h));
     } else {
       this->cameraRect->h -=
-          log2(abs(this->cameraRectResize_h - this->cameraRect->h));
+         (int) log2(abs(this->cameraRectResize_h - this->cameraRect->h));
     }
     SDL_RenderSetLogicalSize(this->renderer, this->cameraRect->w,
                              this->cameraRect->h);
@@ -76,7 +76,7 @@ void Camera::moveCamera() {
   if (followedPoint->x > cameraInsideRect->x + cameraInsideRect->w ||
       followedPoint->x < cameraInsideRect->x) {
     int x_distance = followedPoint->x - cameraCenterPoint->x;
-    int x_smoothDistance = log2(abs(x_distance));
+    int x_smoothDistance = (int) log2(abs(x_distance));
 
     if (x_distance > 0) {
       if (x_smoothDistance > this->speed) {
@@ -95,7 +95,7 @@ void Camera::moveCamera() {
   if (followedPoint->y > cameraInsideRect->y + cameraInsideRect->h ||
       followedPoint->y < cameraInsideRect->y) {
     int y_distance = followedPoint->y - cameraCenterPoint->y;
-    int y_smoothDistance = log2(abs(y_distance));
+    int y_smoothDistance = (int) log2(abs(y_distance));
 
     if (y_distance > 0) {
       if (y_smoothDistance > this->speed) {

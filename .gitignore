@@ -1,14 +1,5 @@
+.vscode/**
 build/**
-bin/**
-media/**
-.cmake/**
-.vs/**
-vendor/**
-CmakeSettings.json
+out/**
 src/test/*.exe
-include/boost/**
-include/Eigen/**
-include/SDL2/**
-include/cute/**
-
 

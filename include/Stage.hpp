@@ -1,7 +1,7 @@
 #ifndef STAGE_H
 #define STAGE_H
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include <CustomSDLObject.hpp>
 #include <memory>

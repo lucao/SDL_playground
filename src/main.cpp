@@ -1,6 +1,6 @@
-#include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_thread.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_thread.h>
 #include <stdio.h>
 
 #include <CustomGameCharacters.hpp>
@@ -124,16 +124,9 @@ void cameraDebugWindow(Camera* camera, CustomSDLMaterialObject* followedObject);
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                   LPSTR lpCmdLine, int nCmdShow) {
-  return custom_main(0, 0);
-}
-#else
-
-int main(int, char**) { return custom_main(0, 0); }
 #endif
 
-int custom_main(int, char**) {
+int main(int, char**) {
   printf("Inicializando...");
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
     SDL_Log("error initializing SDL: %s\n", SDL_GetError());

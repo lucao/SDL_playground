@@ -1,7 +1,7 @@
 #ifndef CUSTOM_GAME_CHARACTERS_H
 #define CUSTOM_GAME_CHARACTERS_H
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include <CustomCollision.hpp>
 #include <CustomGameObjects.hpp>
@@ -57,8 +57,8 @@ class CustomPlayer : public CustomGameCharacter,
   CustomPlayer(CustomSDLRect *srcRect, CustomSDLRect *position, int lifePoints,
                int speed);
   ~CustomPlayer();
-  bool handleEvent(CustomEvent *event);
-  bool colideWith(Platform *collider);
+  bool handleEvent(CustomEvent *event) override;
+  bool colideWith(Platform *collider) override;
 };
 
 #endif

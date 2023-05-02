@@ -1,7 +1,7 @@
 #ifndef CUSTOM_SDL_OBJECT_H
 #define CUSTOM_SDL_OBJECT_H
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include <memory>
 #include <string>

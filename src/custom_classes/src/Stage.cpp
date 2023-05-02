@@ -1,4 +1,4 @@
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include <CustomSDLObject.hpp>
 #include <Stage.hpp>
@@ -142,5 +142,7 @@ std::shared_ptr<Region> Stage::getActiveRegion(SDL_Point* cameraCenter,
 
   return this->activeRegion;
 }
+std::vector<CustomSDLMaterialObject*> Stage::getMaterialObjectsNear(
+      GlobalPositionalSDLObject* object){return {};}
 std::shared_ptr<Stage> Stage::getNextStage() { return this->nextStage; }
 std::shared_ptr<Stage> Stage::getPreviousStage() { return this->previousStage; }
