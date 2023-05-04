@@ -5,9 +5,11 @@ project(game VERSION 0.1.0)
 include(CTest)
 enable_testing()
 
+find_package(Eigen3 CONFIG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_image CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+
     
 set(SOURCES 
 src/custom_classes/src/CustomCollision.cpp 
@@ -25,6 +27,7 @@ src/external/imgui/imgui_impl_dx12.cpp
 
 add_executable(game src/main.cpp ${SOURCES} ${IMGUI_SOURCES})
 
+target_link_libraries(game PRIVATE Eigen3::Eigen)
 target_link_libraries(game
         PRIVATE
         $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>

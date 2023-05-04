@@ -1,4 +1,4 @@
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include <CustomSDLObject.hpp>
 #include <CustomScreen.hpp>
@@ -115,7 +115,7 @@ void Camera::moveCamera() {
 SDL_Renderer* Camera::film(Stage* stage) {
   std::shared_ptr<SDL_Point> cameraCenter = this->cameraRect->createCenter();
   Region* activeRegion = stage->getActiveRegion(
-      this->cameraRect->createCenter().get(), this->getRenderer());
+      this->cameraRect->createCenter().get());
 
   std::vector<Region*> regionsToRender = {};
   regionsToRender.push_back(activeRegion);

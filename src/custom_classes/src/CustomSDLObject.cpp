@@ -1,8 +1,7 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
+#include <SDL.h>
+#include <SDL_image.h>
 
 #include <CustomSDLObject.hpp>
-#include <filesystem>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -120,18 +119,12 @@ void GlobalPositionalSDLObject::move(SDL_Rect *destination) {
   this->setDestination(destination);
 }
 
-#include <stdlib.h>
-namespace fs = std::filesystem;
-const auto p = fs::current_path();
-BackgroundSDLTexture::BackgroundSDLTexture(SDL_Renderer *renderer) {
-  
-  SDL_Surface *surface =
-      IMG_Load(p.string().append("media/img/praia.jpg").c_str());
-  // SDL_CreateRGBSurface(0, 640, 480, 32, 120, 120, 120, -1);
-  this->texture = SDL_CreateTextureFromSurface(renderer, surface);
-  this->srcRect = new CustomSDLRect(new SDL_Rect());
+//#include <stdlib.h>
 
-  SDL_FreeSurface(surface);
+BackgroundSDLTexture::BackgroundSDLTexture(SDL_Texture *texture) {
+  // SDL_CreateRGBSurface(0, 640, 480, 32, 120, 120, 120, -1);
+  this->texture = texture;
+  this->srcRect = new CustomSDLRect(new SDL_Rect());
 }
 BackgroundSDLTexture::~BackgroundSDLTexture() {
   delete this->srcRect;

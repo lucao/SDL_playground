@@ -1,7 +1,7 @@
 #ifndef CUSTOM_GAME_CHARACTERS_H
 #define CUSTOM_GAME_CHARACTERS_H
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include <CustomCollision.hpp>
 #include <CustomGameObjects.hpp>

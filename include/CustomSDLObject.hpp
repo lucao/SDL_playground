@@ -1,7 +1,7 @@
 #ifndef CUSTOM_SDL_OBJECT_H
 #define CUSTOM_SDL_OBJECT_H
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include <memory>
 #include <string>
@@ -61,7 +61,7 @@ class BackgroundSDLTexture {
   CustomSDLRect *srcRect;
 
  public:
-  BackgroundSDLTexture(SDL_Renderer *renderer);
+  BackgroundSDLTexture(SDL_Texture *texture);
   virtual ~BackgroundSDLTexture();
   SDL_Texture *getTexture();
 };

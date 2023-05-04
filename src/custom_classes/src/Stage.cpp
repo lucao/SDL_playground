@@ -1,4 +1,5 @@
-#include <SDL2/SDL.h>
+#include <SDL.h>
+#include <SDL_image.h>
 
 #include <CustomSDLObject.hpp>
 #include <Stage.hpp>
@@ -8,8 +9,9 @@
 
 DynamicRegion::DynamicRegion(
     std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-    CustomSDLRect* rect, SDL_Renderer* renderer)
-    : Region(objectsOnRegion, rect, new BackgroundSDLTexture(renderer)) {}
+    CustomSDLRect* rect, SDL_Renderer* renderer, SDL_Texture* texture)
+    : Region(objectsOnRegion, rect, new BackgroundSDLTexture(texture)) {
+    }
 DynamicRegion::~DynamicRegion() {}
 
 Region::DirectionMatrixMap Region::directionMatrixMap = {
@@ -80,14 +82,22 @@ void Region::setSideRegion(Region::Direction direction,
   this->sideRegions[direction] = region;
 }
 
-Stage::Stage(CustomSDLRect* rect) {
+Stage::Stage(CustomSDLRect* rect, SDL_Renderer* renderer) {
   this->rect = rect;
+  this->renderer = renderer;
+  this->default_dynamic_texture = IMG_LoadTextureTyped_RW(
+      this->renderer,
+       SDL_RWFromFile("C:/Users/lucas/git/SDL_playground/media/img/praia.jpg",
+                          "r"), 1, "jpeg");
   // load active region
   // this->activeRegion = NULL;
 }
 Stage::~Stage() { delete this->rect; }
-Region* Stage::getActiveRegion(SDL_Point* cameraCenter,
-                                               SDL_Renderer* renderer) {
+
+SDL_Renderer* Stage::getRenderer() {
+  return this->renderer;
+}
+Region* Stage::getActiveRegion(SDL_Point* cameraCenter) {
   std::tuple<int, int> key =
       std::make_tuple<int, int>(cameraCenter->x / Region::fixedRegionWidth,
                                 cameraCenter->y / Region::fixedRegionHeight);
@@ -104,7 +114,7 @@ Region* Stage::getActiveRegion(SDL_Point* cameraCenter,
             {std::get<0>(key) * Region::fixedRegionWidth,
              std::get<1>(key) * Region::fixedRegionHeight,
              Region::fixedRegionWidth, Region::fixedRegionHeight})),
-        renderer));
+        this->renderer, this->default_dynamic_texture));
     std::pair<std::tuple<int, int>, std::shared_ptr<Region>> pair =
         std::pair<std::tuple<int, int>, std::shared_ptr<Region>>({key, region});
 
@@ -132,7 +142,7 @@ Region* Stage::getActiveRegion(SDL_Point* cameraCenter,
                (std::get<1>(key) * Region::fixedRegionHeight) +
                    std::get<1>(sideRegionKey) * Region::fixedRegionHeight,
                Region::fixedRegionWidth, Region::fixedRegionHeight})),
-          renderer));
+          this->renderer, this->default_dynamic_texture));
       this->regionsMatrix[sideRegionKey] = sideRegion;
       this->activeRegion->setSideRegion(direction, sideRegion);
     }

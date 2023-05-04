@@ -1,7 +1,7 @@
 #ifndef CUSTOM_SCREEN_H
 #define CUSTOM_SCREEN_H
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include <CustomSDLObject.hpp>
 #include <Stage.hpp>

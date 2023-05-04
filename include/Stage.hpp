@@ -1,7 +1,7 @@
 #ifndef STAGE_H
 #define STAGE_H
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include <CustomSDLObject.hpp>
 #include <memory>
@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include<Eigen/Dense>
+
 
 class Stage;
 class Region {
@@ -67,6 +69,10 @@ class Stage {
 
   Region* activeRegion;
 
+  SDL_Texture* default_dynamic_texture;
+
+  SDL_Renderer* renderer;
+
   typedef std::tuple<int, int> CustomMatrixKey;
   struct RegionMatrix_key_hash {
     std::size_t operator()(const CustomMatrixKey& k) const {
@@ -86,14 +92,14 @@ class Stage {
   CustomMatrix regionsMatrix;
 
  public:
-  Stage(CustomSDLRect* rect);
+  Stage(CustomSDLRect* rect, SDL_Renderer* renderer);
   ~Stage();
   Stage* getNextStage();
   Stage* getPreviousStage();
-  Region* getActiveRegion(SDL_Point* cameraCenter,
-                                          SDL_Renderer* renderer);
+  Region* getActiveRegion(SDL_Point* cameraCenter);
   std::vector<CustomSDLMaterialObject*> getMaterialObjectsNear(
       GlobalPositionalSDLObject* object);
+  SDL_Renderer* getRenderer();
 };
 
 class StageOutOfBounds : public std::exception {
@@ -108,10 +114,14 @@ class StagesLoadError : public std::exception {
   char* what() { return const_cast<char*>("Stages not properly loaded"); }
 };
 
+
+
 class DynamicRegion : public Region {
  public:
+ static SDL_RWops* DEFAULT_TEXTURE_RWOPS;
+
   DynamicRegion(std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-                CustomSDLRect* rect, SDL_Renderer* renderer);
+                CustomSDLRect* rect, SDL_Renderer* renderer, SDL_Texture* texture);
   ~DynamicRegion();
 };
 #endif
