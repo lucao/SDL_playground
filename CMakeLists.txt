@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(game VERSION 0.1.0)
 
+
 include(CTest)
 enable_testing()
 
@@ -17,7 +18,12 @@ src/custom_classes/src/Stage.cpp
 src/custom_classes/src/World.cpp
 )
 
-add_executable(game src/main.cpp ${SOURCES})
+set(IMGUI_SOURCES 
+src/external/imgui/imgui_impl_win32.cpp 
+src/external/imgui/imgui_impl_dx12.cpp
+)
+
+add_executable(game src/main.cpp ${SOURCES} ${IMGUI_SOURCES})
 
 target_link_libraries(game
         PRIVATE
@@ -26,8 +32,11 @@ target_link_libraries(game
     )
 target_link_libraries(game PRIVATE $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)
 target_link_libraries(game PRIVATE imgui::imgui)
+target_link_libraries(game PRIVATE d3d12.lib dxgi.lib) 
 target_include_directories(game PUBLIC include)
 target_include_directories(game PUBLIC include/macros)
+
+target_include_directories(game PUBLIC include/external/imgui)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

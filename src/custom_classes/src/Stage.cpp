@@ -37,36 +37,34 @@ void Region::addObjectToRegion(CustomSDLMaterialObject* object) {
 void Region::removeObjectFromRegion(CustomSDLMaterialObject* object) {
   this->objectsOnRegion.erase(object);
 }
-std::shared_ptr<CustomSDLRect> Region::getRect() {
-  return std::make_shared<CustomSDLRect>(this->rect);
+CustomSDLRect* Region::getRect() {
+  return this->rect;
 }
-std::shared_ptr<CustomSDLRect> Region::getDestinationRect(
+CustomSDLRect* Region::getDestinationRect(
     CustomSDLRect* referenceRect) {
   std::unique_ptr<CustomSDLRect> referenceDestinationRect =
       std::make_unique<CustomSDLRect>(
           new SDL_Rect({0, 0, referenceRect->w, referenceRect->h}));
 
-  std::unique_ptr<CustomSDLRect> thisDestinationRect =
-      std::make_unique<CustomSDLRect>(new SDL_Rect(
+    std::unique_ptr<CustomSDLRect> thisDestinationRect = std::make_unique<CustomSDLRect>(new SDL_Rect(
           {this->rect->x - referenceRect->x, this->rect->y - referenceRect->y,
            this->rect->w, this->rect->h}));
 
-  std::shared_ptr<CustomSDLRect> destinationRect =
-      std::make_shared<CustomSDLRect>(new SDL_Rect());
+  CustomSDLRect* destinationRect = new CustomSDLRect(new SDL_Rect());
   if (SDL_IntersectRect(thisDestinationRect.get(),
                         referenceDestinationRect.get(),
-                        destinationRect.get())) {
+                        destinationRect)) {
     return destinationRect;
   } else {  // throw exception
-    return std::make_shared<CustomSDLRect>(new SDL_Rect());
+    return new CustomSDLRect(new SDL_Rect());
   }
 }
-std::shared_ptr<CustomSDLRect> Region::getSrcRect(
+CustomSDLRect* Region::getSrcRect(
     CustomSDLRect* referenceRect) {
-  std::shared_ptr<CustomSDLRect> srcRect =
-      std::make_shared<CustomSDLRect>(new SDL_Rect());
+  CustomSDLRect* srcRect =
+      new CustomSDLRect(new SDL_Rect());
 
-  SDL_IntersectRect(this->rect, referenceRect, srcRect.get());
+  SDL_IntersectRect(this->rect, referenceRect, srcRect);
 
   srcRect->x -= this->rect->x;
   srcRect->y -= this->rect->y;
@@ -74,8 +72,8 @@ std::shared_ptr<CustomSDLRect> Region::getSrcRect(
   return srcRect;
 }
 BackgroundSDLTexture* Region::getBackground() { return this->background; }
-std::shared_ptr<Region> Region::getSideRegion(Region::Direction direction) {
-  return this->sideRegions[direction];
+Region* Region::getSideRegion(Region::Direction direction) {
+  return this->sideRegions[direction].get();
 }
 void Region::setSideRegion(Region::Direction direction,
                            std::shared_ptr<Region> region) {
@@ -88,13 +86,13 @@ Stage::Stage(CustomSDLRect* rect) {
   // this->activeRegion = NULL;
 }
 Stage::~Stage() { delete this->rect; }
-std::shared_ptr<Region> Stage::getActiveRegion(SDL_Point* cameraCenter,
+Region* Stage::getActiveRegion(SDL_Point* cameraCenter,
                                                SDL_Renderer* renderer) {
   std::tuple<int, int> key =
       std::make_tuple<int, int>(cameraCenter->x / Region::fixedRegionWidth,
                                 cameraCenter->y / Region::fixedRegionHeight);
   if (this->regionsMatrix.count(key)) {
-    this->activeRegion = this->regionsMatrix[key];
+    this->activeRegion = this->regionsMatrix[key].get();
     /*
     if (!SDL_PointInRect(cameraCenter, this->activeRegion->getRect().get()))
       return this->activeRegion; TODO verificar erros */
@@ -111,7 +109,7 @@ std::shared_ptr<Region> Stage::getActiveRegion(SDL_Point* cameraCenter,
         std::pair<std::tuple<int, int>, std::shared_ptr<Region>>({key, region});
 
     this->regionsMatrix.insert(pair);
-    this->activeRegion = region;
+    this->activeRegion = region.get();
     /*
       if (!SDL_PointInRect(cameraCenter, this->activeRegion->getRect().get()))
         return this->activeRegion;// TODO verificar erros*/
@@ -144,5 +142,5 @@ std::shared_ptr<Region> Stage::getActiveRegion(SDL_Point* cameraCenter,
 }
 std::vector<CustomSDLMaterialObject*> Stage::getMaterialObjectsNear(
       GlobalPositionalSDLObject* object){return {};}
-std::shared_ptr<Stage> Stage::getNextStage() { return this->nextStage; }
-std::shared_ptr<Stage> Stage::getPreviousStage() { return this->previousStage; }
+Stage* Stage::getNextStage() { return this->nextStage; }
+Stage* Stage::getPreviousStage() { return this->previousStage; }

@@ -9,10 +9,11 @@
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "architecture": {
-                "value": "x86",
+                "value": "x64",
                 "strategy": "external"
              },
             "cacheVariables": {
+                "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_C_COMPILER": "cl",
                 "CMAKE_CXX_COMPILER": "cl",
                 "CMAKE_BUILD_TYPE": "Debug",

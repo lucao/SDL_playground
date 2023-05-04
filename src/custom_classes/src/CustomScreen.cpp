@@ -114,15 +114,15 @@ void Camera::moveCamera() {
 }
 SDL_Renderer* Camera::film(Stage* stage) {
   std::shared_ptr<SDL_Point> cameraCenter = this->cameraRect->createCenter();
-  std::shared_ptr<Region> activeRegion = stage->getActiveRegion(
+  Region* activeRegion = stage->getActiveRegion(
       this->cameraRect->createCenter().get(), this->getRenderer());
 
-  std::vector<std::shared_ptr<Region>> regionsToRender = {};
+  std::vector<Region*> regionsToRender = {};
   regionsToRender.push_back(activeRegion);
 
   for (Region::Direction direction : Region::directions) {
-    std::shared_ptr<Region> sideRegion = activeRegion->getSideRegion(direction);
-    if (SDL_HasIntersection(sideRegion->getRect().get(), this->cameraRect)) {
+    Region* sideRegion = activeRegion->getSideRegion(direction);
+    if (SDL_HasIntersection(sideRegion->getRect(), this->cameraRect)) {
       regionsToRender.push_back(sideRegion);
     }
   }
@@ -134,10 +134,10 @@ SDL_Renderer* Camera::film(Stage* stage) {
   std::vector<CustomSDLMaterialObject*> drawableObjects =
       stage->getMaterialObjectsNear(this->followedObject);
 
-  for (std::shared_ptr<Region> region : regionsToRender) {
+  for (Region* region : regionsToRender) {
     SDL_RenderCopy(this->renderer, region->getBackground()->getTexture(),
-                   region->getSrcRect(this->cameraRect).get(),
-                   region->getDestinationRect(this->cameraRect).get());
+                   std::make_unique<CustomSDLRect>(region->getSrcRect(this->cameraRect)).get(),
+                   std::make_unique<CustomSDLRect>(region->getDestinationRect(this->cameraRect)).get());
     for (CustomSDLMaterialObject* object : drawableObjects) {
       if (SDL_HasIntersection(object->getGlobalDestination(),
                               this->cameraRect)) {
@@ -149,6 +149,8 @@ SDL_Renderer* Camera::film(Stage* stage) {
     SDL_RenderCopy(this->renderer, object->getTexture(), object->getSrcRect(),
                    object->getDestination(this->cameraRect));
   }
+
+  return this->renderer;
 }
 
 Screen::Screen(int resolution_w, int resolution_h) {

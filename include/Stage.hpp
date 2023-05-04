@@ -48,24 +48,24 @@ class Region {
   virtual ~Region();
   void addObjectToRegion(CustomSDLMaterialObject* object);
   void removeObjectFromRegion(CustomSDLMaterialObject* object);
-  std::shared_ptr<CustomSDLRect> getRect();
-  std::shared_ptr<CustomSDLRect> getDestinationRect(
+  CustomSDLRect* getRect();
+  CustomSDLRect* getDestinationRect(
       CustomSDLRect* referenceRect);
-  std::shared_ptr<Region> getSideRegion(Region::Direction direction);
+  Region* getSideRegion(Region::Direction direction);
   void setSideRegion(Region::Direction direction,
                      std::shared_ptr<Region> region);
   BackgroundSDLTexture* getBackground();
-  std::shared_ptr<CustomSDLRect> getSrcRect(CustomSDLRect* referenceRect);
+  CustomSDLRect* getSrcRect(CustomSDLRect* referenceRect);
 };
 
 class Stage {
  private:
   std::string id;  // ainda não estou usando isso
   CustomSDLRect* rect;
-  std::shared_ptr<Stage> nextStage;
-  std::shared_ptr<Stage> previousStage;
+  Stage* nextStage;
+  Stage* previousStage;
 
-  std::shared_ptr<Region> activeRegion;
+  Region* activeRegion;
 
   typedef std::tuple<int, int> CustomMatrixKey;
   struct RegionMatrix_key_hash {
@@ -88,9 +88,9 @@ class Stage {
  public:
   Stage(CustomSDLRect* rect);
   ~Stage();
-  std::shared_ptr<Stage> getNextStage();
-  std::shared_ptr<Stage> getPreviousStage();
-  std::shared_ptr<Region> getActiveRegion(SDL_Point* cameraCenter,
+  Stage* getNextStage();
+  Stage* getPreviousStage();
+  Region* getActiveRegion(SDL_Point* cameraCenter,
                                           SDL_Renderer* renderer);
   std::vector<CustomSDLMaterialObject*> getMaterialObjectsNear(
       GlobalPositionalSDLObject* object);
