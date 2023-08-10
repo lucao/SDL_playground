@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <future>
 #include<Eigen/Dense>
 
 
@@ -42,7 +43,8 @@ class Region {
   static const int fixedRegionHeight = 1080;
 
  private:
-  std::unordered_map<Region::Direction, std::shared_ptr<Region>> sideRegions;
+
+  std::unordered_map<Region::Direction,  std::future<Region*>> sideRegions;
 
  public:
   Region(std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
@@ -54,8 +56,6 @@ class Region {
   CustomSDLRect* getDestinationRect(
       CustomSDLRect* referenceRect);
   Region* getSideRegion(Region::Direction direction);
-  void setSideRegion(Region::Direction direction,
-                     std::shared_ptr<Region> region);
   BackgroundSDLTexture* getBackground();
   CustomSDLRect* getSrcRect(CustomSDLRect* referenceRect);
 };
@@ -86,7 +86,7 @@ class Stage {
               std::get<1>(v0) == std::get<1>(v1));
     }
   };
-  typedef std::unordered_map<CustomMatrixKey, std::shared_ptr<Region>,
+  typedef std::unordered_map<CustomMatrixKey, std::future<Region*>,
                              RegionMatrix_key_hash, RegionMatrix_key_equal>
       CustomMatrix;
   CustomMatrix regionsMatrix;

@@ -155,7 +155,7 @@ FrameContext* WaitForNextFrameResources();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 void fpsControlDebugWindow(FPSControl* fpsControl);
-void cameraDebugWindow(Camera* camera, CustomSDLMaterialObject* followedObject);
+void cameraDebugWindow(Camera* camera, CustomSDLMaterialObject* followedObject, Stage* stage);
 #endif
 #endif
 
@@ -699,7 +699,7 @@ void fpsControlDebugWindow(FPSControl* fpsControl) {
 }
 
 void cameraDebugWindow(Camera* camera,
-                       CustomSDLMaterialObject* followedObject) {
+                       CustomSDLMaterialObject* followedObject, Stage* stage) {
   ImGui::SetNextWindowSize(ImVec2(320, 300));
   ImGui::Begin("Camera Control");
   ImGui::Text("Camera SDL_Rect");
@@ -756,6 +756,14 @@ void cameraDebugWindow(Camera* camera,
                                          followedObject->getGlobalDestination(),
                                          camera->getCameraRect())))
                   .c_str());
+
+  ImGui::End();
+
+  ImGui::Begin("Camera Control");
+  ImGui::Text("Camera Region Matrix");
+  
+  stage->getActiveRegion(
+      this->cameraRect->createCenter().get());
 
   ImGui::End();
 }

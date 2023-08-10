@@ -77,10 +77,6 @@ BackgroundSDLTexture* Region::getBackground() { return this->background; }
 Region* Region::getSideRegion(Region::Direction direction) {
   return this->sideRegions[direction].get();
 }
-void Region::setSideRegion(Region::Direction direction,
-                           std::shared_ptr<Region> region) {
-  this->sideRegions[direction] = region;
-}
 
 Stage::Stage(CustomSDLRect* rect, SDL_Renderer* renderer) {
   this->rect = rect;
@@ -101,40 +97,39 @@ Region* Stage::getActiveRegion(SDL_Point* cameraCenter) {
   std::tuple<int, int> key =
       std::make_tuple<int, int>(cameraCenter->x / Region::fixedRegionWidth,
                                 cameraCenter->y / Region::fixedRegionHeight);
+
+  std::future<Region*> region;
   if (this->regionsMatrix.count(key)) {
-    this->activeRegion = this->regionsMatrix[key].get();
-    /*
-    if (!SDL_PointInRect(cameraCenter, this->activeRegion->getRect().get()))
-      return this->activeRegion; TODO verificar erros */
+    this->activeRegion = this->regionsMatrix.at(key).get();
   } else {
     // não deveria ser DynamicRegion, carregar region de arquivo
-    std::shared_ptr<Region> region(new DynamicRegion(
+    region = std::async(std::launch::deferred, [&]() { return (Region*) new DynamicRegion(
         {},
         new CustomSDLRect(new SDL_Rect(
             {std::get<0>(key) * Region::fixedRegionWidth,
              std::get<1>(key) * Region::fixedRegionHeight,
              Region::fixedRegionWidth, Region::fixedRegionHeight})),
-        this->renderer, this->default_dynamic_texture));
-    std::pair<std::tuple<int, int>, std::shared_ptr<Region>> pair =
-        std::pair<std::tuple<int, int>, std::shared_ptr<Region>>({key, region});
+        this->renderer, this->default_dynamic_texture);
+        });
 
-    this->regionsMatrix.insert(pair);
-    this->activeRegion = region.get();
-    /*
-      if (!SDL_PointInRect(cameraCenter, this->activeRegion->getRect().get()))
-        return this->activeRegion;// TODO verificar erros*/
+    this->regionsMatrix.emplace(key, region);
   }
 
+  // carregar sideRegions
   for (Region::Direction direction : Region::directions) {
     std::tuple<int, int> sideRegionKey = std::make_tuple<int, int>(
         std::get<0>(key) + std::get<0>(Region::directionMatrixMap[direction]),
         std::get<1>(key) + std::get<1>(Region::directionMatrixMap[direction]));
-    if (this->regionsMatrix.count(sideRegionKey)) {
-      this->activeRegion->setSideRegion(direction,
-                                        this->regionsMatrix[sideRegionKey]);
+    
+    //carregar regions deferred
+    if (this->regionsMatrix.count(sideRegionKey)){
+      if (this->activeRegion->getSideRegion(direction) == nullptr) {
+        this->activeRegion->setSideRegion(direction,
+                                        this->regionsMatrix.at(sideRegionKey));
+      }      
     } else {
       // não deveria ser DynamicRegion, carregar region de arquivo
-      std::shared_ptr<Region> sideRegion(new DynamicRegion(
+      Region* sideRegion = new DynamicRegion(
           {},
           new CustomSDLRect(new SDL_Rect(
               {(std::get<0>(key) * Region::fixedRegionWidth) +
@@ -142,13 +137,14 @@ Region* Stage::getActiveRegion(SDL_Point* cameraCenter) {
                (std::get<1>(key) * Region::fixedRegionHeight) +
                    std::get<1>(sideRegionKey) * Region::fixedRegionHeight,
                Region::fixedRegionWidth, Region::fixedRegionHeight})),
-          this->renderer, this->default_dynamic_texture));
+          this->renderer, this->default_dynamic_texture);
+
       this->regionsMatrix[sideRegionKey] = sideRegion;
       this->activeRegion->setSideRegion(direction, sideRegion);
     }
   }
 
-  return this->activeRegion;
+  return region.get();
 }
 std::vector<CustomSDLMaterialObject*> Stage::getMaterialObjectsNear(
       GlobalPositionalSDLObject* object){return {};}
