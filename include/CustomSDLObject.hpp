@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 struct CustomSDLRect : SDL_Rect {
   CustomSDLRect(SDL_Rect *rect);
@@ -17,6 +18,7 @@ struct CustomSDLRect : SDL_Rect {
   bool yPointIsInBounds(int y);
   int xGetNearestBoundary(int x);
   int yGetNearestBoundary(int y);
+  std::vector<SDL_Point> getVertices();
 };
 
 class GlobalPositionalSDLObject {

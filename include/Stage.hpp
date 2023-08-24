@@ -4,124 +4,164 @@
 #include <SDL.h>
 
 #include <CustomSDLObject.hpp>
+#include <CustomUtils.hpp>
+#include <future>
 #include <memory>
 #include <string>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
-#include <future>
-#include<Eigen/Dense>
-
+#include <valarray>
+#include<vector>
 
 class Stage;
+
 class Region {
+ public:
+  struct RegionID {
+    static const std::valarray<std::valarray<int>> peripheralRegionsModifiers;
+    
+    std::tuple<int, int> id;
+    std::vector<std::tuple<int, int>> neighbourRegionsIDs;
+
+    static RegionID valueFrom(std::tuple<int, int> tuple) {
+      std::valarray<int> tuple_asvalarray {std::get<0>(tuple), std::get<1>(tuple)};
+      std::valarray<std::valarray<int>> neighbourIDs_asvalarray = tuple_asvalarray + Region::RegionID::peripheralRegionsModifiers;
+
+      std::vector<std::tuple<int, int>> neighbourRegionsIDs;
+      std::for_each(std::begin(neighbourIDs_asvalarray), std::end(neighbourIDs_asvalarray), [&neighbourRegionsIDs] (const std::valarray<int> n) {
+        neighbourRegionsIDs.push_back({n[0], n[1]});
+      });
+
+      return RegionID{tuple, neighbourRegionsIDs};
+    }
+  };
+
+  struct RegionID_key_hash {
+    std::size_t operator()(const Region::RegionID &k) const {
+      return std::get<0>(k.id) ^ std::get<1>(k.id);
+    }
+  };
+  struct RegionID_key_equal {
+    bool operator()(const Region::RegionID &v0,
+                    const Region::RegionID &v1) const {
+      return (std::get<0>(v0.id) == std::get<0>(v1.id) &&
+              std::get<1>(v0.id) == std::get<1>(v1.id));
+    }
+  };
+
  private:
-  BackgroundSDLTexture* background;
-  std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion;
-  CustomSDLRect* rect;
+  RegionID regionID;
+
+  BackgroundSDLTexture *background;
+  std::unordered_set<CustomSDLMaterialObject *> objectsOnRegion;
+  CustomSDLRect *rect;
 
  public:
-  enum Direction {
-    TOP,
-    BOTTOM,
-    LEFT,
-    RIGHT,
-    TOPLEFT,
-    TOPRIGHT,
-    BOTTOMLEFT,
-    BOTTOMRIGHT
-  };
-  static constexpr Direction directions[] = {
-      TOP, BOTTOM, LEFT, RIGHT, TOPLEFT, TOPRIGHT, BOTTOMLEFT, BOTTOMRIGHT};
-
-  typedef std::unordered_map<Direction, std::tuple<int, int>>
-      DirectionMatrixMap;
-  static DirectionMatrixMap directionMatrixMap;
-
   static const int fixedRegionWidth = 1920;
   static const int fixedRegionHeight = 1080;
 
- private:
-
-  std::unordered_map<Region::Direction,  std::future<Region*>> sideRegions;
-
  public:
-  Region(std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-         CustomSDLRect* rect, BackgroundSDLTexture* background);
+  Region(RegionID regionID, std::unordered_set<CustomSDLMaterialObject *> objectsOnRegion,
+         CustomSDLRect *rect, BackgroundSDLTexture *background);
   virtual ~Region();
-  void addObjectToRegion(CustomSDLMaterialObject* object);
-  void removeObjectFromRegion(CustomSDLMaterialObject* object);
-  CustomSDLRect* getRect();
-  CustomSDLRect* getDestinationRect(
-      CustomSDLRect* referenceRect);
-  Region* getSideRegion(Region::Direction direction);
-  BackgroundSDLTexture* getBackground();
-  CustomSDLRect* getSrcRect(CustomSDLRect* referenceRect);
+  void addObjectToRegion(CustomSDLMaterialObject *object);
+  void removeObjectFromRegion(CustomSDLMaterialObject *object);
+  RegionID getRegionId();
+  CustomSDLRect *getRect();
+  CustomSDLRect *getDestinationRect(CustomSDLRect *referenceRect);
+  BackgroundSDLTexture *getBackground();
+  CustomSDLRect *getSrcRect(CustomSDLRect *referenceRect);
+};
+
+class BlankRegion : public Region {
+ public:
+  BlankRegion(Region::RegionID regionId, std::unordered_set<CustomSDLMaterialObject *> objectsOnRegion,
+              CustomSDLRect *rect, BackgroundSDLTexture *background)
+      : Region(regionId, objectsOnRegion, rect, background){};
+  virtual ~BlankRegion(){};
 };
 
 class Stage {
  private:
   std::string id;  // ainda não estou usando isso
-  CustomSDLRect* rect;
-  Stage* nextStage;
-  Stage* previousStage;
+  CustomSDLRect *rect;
+  Stage *nextStage;
+  Stage *previousStage;
 
-  Region* activeRegion;
+  SDL_Texture *default_dynamic_texture;
 
-  SDL_Texture* default_dynamic_texture;
+  SDL_Renderer *renderer;
 
-  SDL_Renderer* renderer;
-
-  typedef std::tuple<int, int> CustomMatrixKey;
-  struct RegionMatrix_key_hash {
-    std::size_t operator()(const CustomMatrixKey& k) const {
-      return std::get<0>(k) ^ std::get<1>(k);
-    }
-  };
-  struct RegionMatrix_key_equal {
-    bool operator()(const CustomMatrixKey& v0,
-                    const CustomMatrixKey& v1) const {
-      return (std::get<0>(v0) == std::get<0>(v1) &&
-              std::get<1>(v0) == std::get<1>(v1));
-    }
-  };
-  typedef std::unordered_map<CustomMatrixKey, std::future<Region*>,
-                             RegionMatrix_key_hash, RegionMatrix_key_equal>
-      CustomMatrix;
-  CustomMatrix regionsMatrix;
+  LazyLoadMatrix<Region::RegionID, Region*,
+                             Region::RegionID_key_hash, Region::RegionID_key_equal> regionsMatrix;    
+  LazyLoadMatrix<Region::RegionID, Region*,
+                             Region::RegionID_key_hash, Region::RegionID_key_equal> blankRegionsMatrix;             
 
  public:
-  Stage(CustomSDLRect* rect, SDL_Renderer* renderer);
+  Stage(CustomSDLRect *rect, SDL_Renderer *renderer);
   ~Stage();
-  Stage* getNextStage();
-  Stage* getPreviousStage();
-  Region* getActiveRegion(SDL_Point* cameraCenter);
-  std::vector<CustomSDLMaterialObject*> getMaterialObjectsNear(
-      GlobalPositionalSDLObject* object);
-  SDL_Renderer* getRenderer();
+  Stage *getNextStage();
+  Stage *getPreviousStage();
+  Region *getRegion(SDL_Point point);
+  std::vector<CustomSDLMaterialObject *> getMaterialObjectsNear(
+      GlobalPositionalSDLObject *object);
+  SDL_Renderer *getRenderer();
 };
 
 class StageOutOfBounds : public std::exception {
  public:
-  char* what() {
-    return const_cast<char*>("Tried to access point outside the current stage");
+  char *what() {
+    return const_cast<char *>(
+        "Game API Error, Tried to access point outside the current stage");
   }
 };
 
 class StagesLoadError : public std::exception {
  public:
-  char* what() { return const_cast<char*>("Stages not properly loaded"); }
+  char *what() {
+    return const_cast<char *>("Game API Error, Stages not properly loaded");
+  }
 };
 
+class RegionLoadError : public std::exception {
+ private:
+  std::tuple<int, int> regionKey;
 
+ public:
+  RegionLoadError(std::tuple<int, int> regionKey) {
+    this->regionKey = regionKey;
+  };
+  std::tuple<int, int> getRegionKey() { return regionKey; };
+  char *what() {
+    return const_cast<char *>("Game API Error, Region not properly loaded");
+  }
+};
+
+class RegionNotLoaded : public RegionLoadError {
+ public:
+  RegionNotLoaded(std::tuple<int, int> regionKey)
+      : RegionLoadError(regionKey){};
+  char *what() {
+    return const_cast<char *>("Game API Error, Region not loaded");
+  }
+};
+class RegionNotLoadedYet : public RegionLoadError {
+ public:
+  RegionNotLoadedYet(std::tuple<int, int> regionKey)
+      : RegionLoadError(regionKey){};
+  char *what() {
+    return const_cast<char *>("Game API Error, Region load is not finished");
+  }
+};
 
 class DynamicRegion : public Region {
  public:
- static SDL_RWops* DEFAULT_TEXTURE_RWOPS;
+  static SDL_RWops *DEFAULT_TEXTURE_RWOPS;
 
-  DynamicRegion(std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-                CustomSDLRect* rect, SDL_Renderer* renderer, SDL_Texture* texture);
+  DynamicRegion(Region::RegionID regionId, std::unordered_set<CustomSDLMaterialObject *> objectsOnRegion,
+                CustomSDLRect *rect, SDL_Renderer *renderer,
+                SDL_Texture *texture);
   ~DynamicRegion();
 };
 #endif

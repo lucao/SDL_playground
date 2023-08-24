@@ -45,17 +45,17 @@ void Camera::moveCamera() {
         this->cameraRectResize_h == this->cameraRect->h)) {
     if (this->cameraRectResize_w > this->cameraRect->w) {
       this->cameraRect->w +=
-         (int) log2(abs(this->cameraRectResize_w - this->cameraRect->w));
+          (int)log2(abs(this->cameraRectResize_w - this->cameraRect->w));
     } else {
       this->cameraRect->w -=
-         (int) log2(abs(this->cameraRectResize_w - this->cameraRect->w));
+          (int)log2(abs(this->cameraRectResize_w - this->cameraRect->w));
     }
     if (this->cameraRectResize_h > this->cameraRect->h) {
       this->cameraRect->h +=
-         (int) log2(abs(this->cameraRectResize_h - this->cameraRect->h));
+          (int)log2(abs(this->cameraRectResize_h - this->cameraRect->h));
     } else {
       this->cameraRect->h -=
-         (int) log2(abs(this->cameraRectResize_h - this->cameraRect->h));
+          (int)log2(abs(this->cameraRectResize_h - this->cameraRect->h));
     }
     SDL_RenderSetLogicalSize(this->renderer, this->cameraRect->w,
                              this->cameraRect->h);
@@ -76,7 +76,7 @@ void Camera::moveCamera() {
   if (followedPoint->x > cameraInsideRect->x + cameraInsideRect->w ||
       followedPoint->x < cameraInsideRect->x) {
     int x_distance = followedPoint->x - cameraCenterPoint->x;
-    int x_smoothDistance = (int) log2(abs(x_distance));
+    int x_smoothDistance = (int)log2(abs(x_distance));
 
     if (x_distance > 0) {
       if (x_smoothDistance > this->speed) {
@@ -95,7 +95,7 @@ void Camera::moveCamera() {
   if (followedPoint->y > cameraInsideRect->y + cameraInsideRect->h ||
       followedPoint->y < cameraInsideRect->y) {
     int y_distance = followedPoint->y - cameraCenterPoint->y;
-    int y_smoothDistance = (int) log2(abs(y_distance));
+    int y_smoothDistance = (int)log2(abs(y_distance));
 
     if (y_distance > 0) {
       if (y_smoothDistance > this->speed) {
@@ -113,19 +113,12 @@ void Camera::moveCamera() {
   }
 }
 SDL_Renderer* Camera::film(Stage* stage) {
-  std::shared_ptr<SDL_Point> cameraCenter = this->cameraRect->createCenter();
-  Region* activeRegion = stage->getActiveRegion(
-      this->cameraRect->createCenter().get());
+  std::unordered_set<Region*> regionsToRender = {};
 
-  std::vector<Region*> regionsToRender = {};
-  regionsToRender.push_back(activeRegion);
-
-  for (Region::Direction direction : Region::directions) {
-    Region* sideRegion = activeRegion->getSideRegion(direction);
-    if (SDL_HasIntersection(sideRegion->getRect(), this->cameraRect)) {
-      regionsToRender.push_back(sideRegion);
-    }
+  for (SDL_Point point : this->cameraRect->getVertices()) {
+    regionsToRender.emplace(stage->getRegion(point));
   }
+
   if (regionsToRender.size() > 4) {
     throw std::logic_error(
         "Regions were not correctly clipped. only 4 or less regions can be "
@@ -135,9 +128,13 @@ SDL_Renderer* Camera::film(Stage* stage) {
       stage->getMaterialObjectsNear(this->followedObject);
 
   for (Region* region : regionsToRender) {
-    SDL_RenderCopy(this->renderer, region->getBackground()->getTexture(),
-                   std::make_unique<CustomSDLRect>(region->getSrcRect(this->cameraRect)).get(),
-                   std::make_unique<CustomSDLRect>(region->getDestinationRect(this->cameraRect)).get());
+    SDL_RenderCopy(
+        this->renderer, region->getBackground()->getTexture(),
+        std::make_unique<CustomSDLRect>(region->getSrcRect(this->cameraRect))
+            .get(),
+        std::make_unique<CustomSDLRect>(
+            region->getDestinationRect(this->cameraRect))
+            .get());
     for (CustomSDLMaterialObject* object : drawableObjects) {
       if (SDL_HasIntersection(object->getGlobalDestination(),
                               this->cameraRect)) {
