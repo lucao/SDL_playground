@@ -109,7 +109,7 @@ int main(int, char**) {
       new CustomPlayer(new CustomSDLRect(new SDL_Rect({0, 0, 300, 300})),
                        new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 10, 7);
 
-  Camera* camera(new Camera(screen->getWindow(), player, new int(1000)));
+  CameraSDL* camera(new CameraSDL(screen->getWindow(), player, new int(1000)));
 
   player->setTexture(IMG_LoadTextureTyped_RW(
       camera->getRenderer(),

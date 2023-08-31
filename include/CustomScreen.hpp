@@ -7,7 +7,7 @@
 #include <Stage.hpp>
 #include <vector>
 
-class Camera {
+class CameraSDL {
  private:
   CustomSDLRect* cameraRect;
   int cameraRectResize_w;
@@ -18,9 +18,9 @@ class Camera {
   int speed;
 
  public:
-  Camera(SDL_Window* window, CustomSDLMaterialObject* followedObject,
+  CameraSDL(SDL_Window* window, CustomSDLMaterialObject* followedObject,
          int* speed);
-  ~Camera();
+  ~CameraSDL();
   void setFollowedObject(CustomSDLMaterialObject* object);
   SDL_Renderer* getRenderer();
   CustomSDLRect* getCameraRect();

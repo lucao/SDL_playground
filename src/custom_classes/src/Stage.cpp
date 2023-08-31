@@ -107,13 +107,13 @@ Region* Stage::getRegion(SDL_Point point) {
         Region::RegionID neighbourRegionID = Region::RegionID::valueFrom(key);
 
         this->regionsMatrix.addElement(
-            neighbourRegionID, [this, neighbourRegionID]() {
+            neighbourRegionID, [this](Region::RegionID neighbourRegionIDKey) {
               return (Region*)new DynamicRegion(
-                  neighbourRegionID, {},
+                  neighbourRegionIDKey, {},
                   new CustomSDLRect(new SDL_Rect(
-                      {std::get<0>(neighbourRegionID.id) *
+                      {std::get<0>(neighbourRegionIDKey.id) *
                            Region::fixedRegionWidth,
-                       std::get<1>(neighbourRegionID.id) *
+                       std::get<1>(neighbourRegionIDKey.id) *
                            Region::fixedRegionHeight,
                        Region::fixedRegionWidth, Region::fixedRegionHeight})),
                   this->renderer, this->default_dynamic_texture);

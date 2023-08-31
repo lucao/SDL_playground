@@ -12,7 +12,6 @@ src/custom_classes/src/CustomScreen.cpp
 src/custom_classes/src/CustomSDLObject.cpp
 src/custom_classes/src/Stage.cpp
 src/custom_classes/src/World.cpp
-src/custom_classes/src/CustomUtils.cpp
 )
 
 set(IMGUI_SOURCES 

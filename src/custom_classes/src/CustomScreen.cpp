@@ -10,8 +10,8 @@
 #include <stdexcept>
 #include <vector>
 
-Camera::Camera(SDL_Window* window, CustomSDLMaterialObject* followedObject,
-               int* speed) {
+CameraSDL::CameraSDL(SDL_Window* window,
+                     CustomSDLMaterialObject* followedObject, int* speed) {
   Uint32 render_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
   this->renderer = SDL_CreateRenderer(window, -1, render_flags);
   int w, h;
@@ -23,23 +23,24 @@ Camera::Camera(SDL_Window* window, CustomSDLMaterialObject* followedObject,
   this->followedObject = followedObject;
   this->speed = *speed;
 }
-Camera::~Camera() {
+CameraSDL::~CameraSDL() {
   delete this->cameraRect;
   delete this->followedObject;
   SDL_DestroyRenderer(this->renderer);
 }
-void Camera::setFollowedObject(CustomSDLMaterialObject* object) {
+void CameraSDL::setFollowedObject(CustomSDLMaterialObject* object) {
   this->followedObject = object;
 }
-CustomSDLRect* Camera::getCameraRect() { return this->cameraRect; }
-void Camera::resize(int w, int h) {
+CustomSDLRect* CameraSDL::getCameraRect() { return this->cameraRect; }
+
+void CameraSDL::resize(int w, int h) { //TODO
   this->cameraRectResize_w = w;
   this->cameraRectResize_h = h;
 }
-SDL_Renderer* Camera::getRenderer() { return this->renderer; }
+SDL_Renderer* CameraSDL::getRenderer() { return this->renderer; }
 
 const uint8_t reduction = 3;
-void Camera::moveCamera() {
+void CameraSDL::moveCamera() {
   // zoom camera
   if (!(this->cameraRectResize_w == this->cameraRect->w &&
         this->cameraRectResize_h == this->cameraRect->h)) {
@@ -112,39 +113,26 @@ void Camera::moveCamera() {
     }
   }
 }
-SDL_Renderer* Camera::film(Stage* stage) {
-  std::unordered_set<Region*> regionsToRender = {};
-
+SDL_Renderer* CameraSDL::film(Stage* stage) {
+  //render regions
   for (SDL_Point point : this->cameraRect->getVertices()) {
-    regionsToRender.emplace(stage->getRegion(point));
-  }
-
-  if (regionsToRender.size() > 4) {
-    throw std::logic_error(
-        "Regions were not correctly clipped. only 4 or less regions can be "
-        "renderer at the same time on the screen.");
-  }
-  std::vector<CustomSDLMaterialObject*> drawableObjects =
-      stage->getMaterialObjectsNear(this->followedObject);
-
-  for (Region* region : regionsToRender) {
     SDL_RenderCopy(
-        this->renderer, region->getBackground()->getTexture(),
-        std::make_unique<CustomSDLRect>(region->getSrcRect(this->cameraRect))
+        this->renderer, stage->getRegion(point)->getBackground()->getTexture(),
+        std::make_unique<CustomSDLRect>(
+            stage->getRegion(point)->getSrcRect(this->cameraRect))
             .get(),
         std::make_unique<CustomSDLRect>(
-            region->getDestinationRect(this->cameraRect))
+            stage->getRegion(point)->getDestinationRect(this->cameraRect))
             .get());
-    for (CustomSDLMaterialObject* object : drawableObjects) {
-      if (SDL_HasIntersection(object->getGlobalDestination(),
-                              this->cameraRect)) {
-        drawableObjects.push_back(object);
-      }
-    }
   }
-  for (CustomSDLMaterialObject* object : drawableObjects) {
-    SDL_RenderCopy(this->renderer, object->getTexture(), object->getSrcRect(),
-                   object->getDestination(this->cameraRect));
+
+  //render objects
+  for (CustomSDLMaterialObject* object :
+       stage->getMaterialObjectsNear(this->followedObject)) {
+    if (SDL_HasIntersection(object->getGlobalDestination(), this->cameraRect)) {
+      SDL_RenderCopy(this->renderer, object->getTexture(), object->getSrcRect(),
+                     object->getDestination(this->cameraRect));
+    }
   }
 
   return this->renderer;
