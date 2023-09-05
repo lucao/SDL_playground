@@ -25,7 +25,6 @@ CameraSDL::CameraSDL(SDL_Window* window,
 }
 CameraSDL::~CameraSDL() {
   delete this->cameraRect;
-  delete this->followedObject;
   SDL_DestroyRenderer(this->renderer);
 }
 void CameraSDL::setFollowedObject(CustomSDLMaterialObject* object) {
@@ -93,6 +92,7 @@ void CameraSDL::moveCamera() {
       }
     }
   }
+  
   if (followedPoint->y > cameraInsideRect->y + cameraInsideRect->h ||
       followedPoint->y < cameraInsideRect->y) {
     int y_distance = followedPoint->y - cameraCenterPoint->y;

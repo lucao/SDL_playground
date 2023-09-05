@@ -31,12 +31,10 @@ enum Action {
 class CustomEvent {
  private:
   Action action;
-  long timeSinceLastEventProcess;
 
  public:
-  CustomEvent(Action action, long timeSinceLastEventProcess);
+  CustomEvent(Action action);
   virtual ~CustomEvent();
-  long getTimeSinceLastEventProcess();
   Action getAction();
 };
 

@@ -8,11 +8,10 @@
 #include <future>
 #include <memory>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <valarray>
-#include<vector>
+#include <vector>
 
 class Stage;
 
@@ -20,33 +19,43 @@ class Region {
  public:
   struct RegionID {
     static const std::valarray<std::valarray<int>> peripheralRegionsModifiers;
-    
-    std::tuple<int, int> id;
-    std::vector<std::tuple<int, int>> neighbourRegionsIDs;
 
-    static RegionID valueFrom(std::tuple<int, int> tuple) {
-      std::valarray<int> tuple_asvalarray {std::get<0>(tuple), std::get<1>(tuple)};
-      std::valarray<std::valarray<int>> neighbourIDs_asvalarray = tuple_asvalarray + Region::RegionID::peripheralRegionsModifiers;
+    std::pair<int, int> id;
+    std::vector<std::pair<int, int>> neighbourRegionsIDs;
 
-      std::vector<std::tuple<int, int>> neighbourRegionsIDs;
-      std::for_each(std::begin(neighbourIDs_asvalarray), std::end(neighbourIDs_asvalarray), [&neighbourRegionsIDs] (const std::valarray<int> n) {
-        neighbourRegionsIDs.push_back({n[0], n[1]});
-      });
+    static RegionID valueFrom(std::pair<int, int> pair) {
+      std::valarray<int> pair_asvalarray{pair.first, pair.second};
+      std::valarray<std::valarray<int>> neighbourIDs_asvalarray =
+          pair_asvalarray + Region::RegionID::peripheralRegionsModifiers;
 
-      return RegionID{tuple, neighbourRegionsIDs};
+      std::vector<std::pair<int, int>> neighbourRegionsIDs;
+      std::for_each(std::begin(neighbourIDs_asvalarray),
+                    std::end(neighbourIDs_asvalarray),
+                    [&neighbourRegionsIDs](const std::valarray<int> n) {
+                      neighbourRegionsIDs.push_back({n[0], n[1]});
+                    });
+
+      return RegionID{pair, neighbourRegionsIDs};
+    }
+
+    static constexpr std::pair<int, int> getIdFrom(int x, int y) {
+      return std::make_pair<int, int>(
+          x > 0 ? x / Region::fixedRegionWidth
+                : (x - Region::fixedRegionWidth) / Region::fixedRegionWidth,
+          y > 0 ? y / Region::fixedRegionHeight
+                : (y - Region::fixedRegionHeight) / Region::fixedRegionHeight);
     }
   };
 
   struct RegionID_key_hash {
     std::size_t operator()(const Region::RegionID &k) const {
-      return std::get<0>(k.id) ^ std::get<1>(k.id);
+      return k.id.first ^ k.id.second;
     }
   };
   struct RegionID_key_equal {
     bool operator()(const Region::RegionID &v0,
                     const Region::RegionID &v1) const {
-      return (std::get<0>(v0.id) == std::get<0>(v1.id) &&
-              std::get<1>(v0.id) == std::get<1>(v1.id));
+      return ((v0.id.first == v1.id.first) && v0.id.second == v1.id.second);
     }
   };
 
@@ -62,7 +71,8 @@ class Region {
   static const int fixedRegionHeight = 1080;
 
  public:
-  Region(RegionID regionID, std::unordered_set<CustomSDLMaterialObject *> objectsOnRegion,
+  Region(RegionID regionID,
+         std::unordered_set<CustomSDLMaterialObject *> objectsOnRegion,
          CustomSDLRect *rect, BackgroundSDLTexture *background);
   virtual ~Region();
   void addObjectToRegion(CustomSDLMaterialObject *object);
@@ -76,7 +86,8 @@ class Region {
 
 class BlankRegion : public Region {
  public:
-  BlankRegion(Region::RegionID regionId, std::unordered_set<CustomSDLMaterialObject *> objectsOnRegion,
+  BlankRegion(Region::RegionID regionId,
+              std::unordered_set<CustomSDLMaterialObject *> objectsOnRegion,
               CustomSDLRect *rect, BackgroundSDLTexture *background)
       : Region(regionId, objectsOnRegion, rect, background){};
   virtual ~BlankRegion(){};
@@ -93,10 +104,12 @@ class Stage {
 
   SDL_Renderer *renderer;
 
-  LazyLoadMatrix<Region::RegionID, Region*,
-                             Region::RegionID_key_hash, Region::RegionID_key_equal> regionsMatrix;    
-  LazyLoadMatrix<Region::RegionID, Region*,
-                             Region::RegionID_key_hash, Region::RegionID_key_equal> blankRegionsMatrix;             
+  LazyLoadMatrix<Region::RegionID, Region *, Region::RegionID_key_hash,
+                 Region::RegionID_key_equal>
+      regionsMatrix;
+  LazyLoadMatrix<Region::RegionID, Region *, Region::RegionID_key_hash,
+                 Region::RegionID_key_equal>
+      blankRegionsMatrix;
 
  public:
   Stage(CustomSDLRect *rect, SDL_Renderer *renderer);
@@ -126,13 +139,13 @@ class StagesLoadError : public std::exception {
 
 class RegionLoadError : public std::exception {
  private:
-  std::tuple<int, int> regionKey;
+  std::pair<int, int> regionKey;
 
  public:
-  RegionLoadError(std::tuple<int, int> regionKey) {
+  RegionLoadError(std::pair<int, int> regionKey) {
     this->regionKey = regionKey;
   };
-  std::tuple<int, int> getRegionKey() { return regionKey; };
+  std::pair<int, int> getRegionKey() { return regionKey; };
   char *what() {
     return const_cast<char *>("Game API Error, Region not properly loaded");
   }
@@ -140,15 +153,14 @@ class RegionLoadError : public std::exception {
 
 class RegionNotLoaded : public RegionLoadError {
  public:
-  RegionNotLoaded(std::tuple<int, int> regionKey)
-      : RegionLoadError(regionKey){};
+  RegionNotLoaded(std::pair<int, int> regionKey) : RegionLoadError(regionKey){};
   char *what() {
     return const_cast<char *>("Game API Error, Region not loaded");
   }
 };
 class RegionNotLoadedYet : public RegionLoadError {
  public:
-  RegionNotLoadedYet(std::tuple<int, int> regionKey)
+  RegionNotLoadedYet(std::pair<int, int> regionKey)
       : RegionLoadError(regionKey){};
   char *what() {
     return const_cast<char *>("Game API Error, Region load is not finished");
@@ -159,7 +171,8 @@ class DynamicRegion : public Region {
  public:
   static SDL_RWops *DEFAULT_TEXTURE_RWOPS;
 
-  DynamicRegion(Region::RegionID regionId, std::unordered_set<CustomSDLMaterialObject *> objectsOnRegion,
+  DynamicRegion(Region::RegionID regionId,
+                std::unordered_set<CustomSDLMaterialObject *> objectsOnRegion,
                 CustomSDLRect *rect, SDL_Renderer *renderer,
                 SDL_Texture *texture);
   ~DynamicRegion();

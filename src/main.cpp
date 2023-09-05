@@ -126,14 +126,18 @@ int main(int, char**) {
   printf("Start game loop...");
   EventControl* eventControl = new EventControl();
   eventControl->addEventListener(player);
-  FPSControl* fpsControl = new FPSControl(60);
+  // using VSYNC // FPSControl* fpsControl = new FPSControl(60);
+  Uint64 eventProcessedTick;
   while (!close) {
     // Events
     SDL_Event event;
+    /*
     SDL_PumpEvents();
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT,
-                          SDL_DISPLAYEVENT) &&
-           !close) {
+                          SDL_DISPLAYEVENT)) {
+                            */
+
+    while (SDL_PollEvent(&event) != 0) {
       switch (event.type) {
         case SDL_QUIT:
           // handling of close button
@@ -158,25 +162,23 @@ int main(int, char**) {
     const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
 
     if (keyboardState[SDL_SCANCODE_W] || keyboardState[SDL_SCANCODE_UP]) {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_UP,
-                                             fpsControl->getLastFrameTick()));
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_UP));
     } else if (keyboardState[SDL_SCANCODE_S] ||
                keyboardState[SDL_SCANCODE_DOWN]) {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_DOWN,
-                                             fpsControl->getLastFrameTick()));
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_DOWN));
     }
     if (keyboardState[SDL_SCANCODE_A] || keyboardState[SDL_SCANCODE_LEFT]) {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_LEFT,
-                                             fpsControl->getLastFrameTick()));
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_LEFT));
     } else if (keyboardState[SDL_SCANCODE_D] ||
                keyboardState[SDL_SCANCODE_RIGHT]) {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_RIGHT,
-                                             fpsControl->getLastFrameTick()));
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_RIGHT));
     }
+
+    eventProcessedTick = SDL_GetTicks64();
 
     eventControl->processEvents();
 
-    // Render
+    // Render phase
     camera->moveCamera();
 
     try {
@@ -187,7 +189,7 @@ int main(int, char**) {
       printf(err.what());
     }
   }
-  
+
   delete player;
   delete stage;
   delete camera;

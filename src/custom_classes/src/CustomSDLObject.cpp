@@ -54,7 +54,7 @@ std::vector<SDL_Point> CustomSDLRect::getVertices() {
   return std::vector<SDL_Point>({
     SDL_Point({this->x, this->y}),
     SDL_Point({this->x + this->w, this->y}),
-    SDL_Point({this->x, this->y = this->h}),
+    SDL_Point({this->x, this->y + this->h}),
     SDL_Point({this->x + this->w, this->y + this->h}),
   });
 }

@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <list>
 #include <memory>
-#include <tuple>
 #include <valarray>
 
 DynamicRegion::DynamicRegion(
@@ -89,38 +88,47 @@ SDL_Renderer* Stage::getRenderer() { return this->renderer; }
 
 Region* Stage::getRegion(SDL_Point point) {
   Region::RegionID regionId = Region::RegionID::valueFrom(
-      std::make_tuple<int, int>(point.x / Region::fixedRegionWidth,
-                                point.y / Region::fixedRegionHeight));
+      Region::RegionID::getIdFrom(point.x, point.y));
 
   Region* region;
   try {
     region = this->regionsMatrix.getElement(regionId);
-    return region;
-  } catch (ElementNotFountException ex) {
-    //TODO
-    region = this->regionsMatrix.getElement(regionId);
+  } catch (ElementNotFountException& ex) {
+    // load new region
+    region =
+        new Region(regionId, {},
+                   new CustomSDLRect(new SDL_Rect(
+                       {regionId.id.first * Region::fixedRegionWidth, regionId.id.second * Region::fixedRegionHeight,
+                        Region::fixedRegionWidth, Region::fixedRegionHeight})),
+                   new BackgroundSDLTexture(this->default_dynamic_texture));
+
+    this->regionsMatrix.addElement(
+        regionId, [this, region](Region::RegionID regionId) { return region; });
   }
 
+  // TODO o que eu faõ com isso?
   std::for_each(
       regionId.neighbourRegionsIDs.begin(), regionId.neighbourRegionsIDs.end(),
-      [this](std::tuple<int, int> key) {
+      [this](std::pair<int, int> key) {
         Region::RegionID neighbourRegionID = Region::RegionID::valueFrom(key);
 
-        this->regionsMatrix.addElement(
-            neighbourRegionID, [this](Region::RegionID neighbourRegionIDKey) {
-              return (Region*)new DynamicRegion(
-                  neighbourRegionIDKey, {},
-                  new CustomSDLRect(new SDL_Rect(
-                      {std::get<0>(neighbourRegionIDKey.id) *
-                           Region::fixedRegionWidth,
-                       std::get<1>(neighbourRegionIDKey.id) *
-                           Region::fixedRegionHeight,
-                       Region::fixedRegionWidth, Region::fixedRegionHeight})),
-                  this->renderer, this->default_dynamic_texture);
-            });
+        if (!this->regionsMatrix.contains(neighbourRegionID)) {
+          this->regionsMatrix.addElement(
+              neighbourRegionID, [this](Region::RegionID neighbourRegionIDKey) {
+                return (Region*)new DynamicRegion(
+                    neighbourRegionIDKey, {},
+                    new CustomSDLRect(new SDL_Rect(
+                        {neighbourRegionIDKey.id.first *
+                             Region::fixedRegionWidth,
+                         neighbourRegionIDKey.id.second *
+                             Region::fixedRegionHeight,
+                         Region::fixedRegionWidth, Region::fixedRegionHeight})),
+                    this->renderer, this->default_dynamic_texture);
+              });
+        }
       });
 
-  throw new RegionNotLoaded(regionId.id);
+  return region;
 }
 std::vector<CustomSDLMaterialObject*> Stage::getMaterialObjectsNear(
     GlobalPositionalSDLObject* object) {

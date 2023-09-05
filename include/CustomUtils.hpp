@@ -35,8 +35,13 @@ class LazyLoadMatrix {
       }
     }
 
-    throw new ElementNotFountException();
+    throw ElementNotFountException();
   }
+
+  bool contains(K key) {
+    return (this->valueMatrix.find(key) != this->valueMatrix.end()) || (this->loadMatrix.find(key) != this->loadMatrix.end());
+  }
+
   bool LazyLoadMatrix<K, V, H, E>::addElement(K key,
                                               std::function<V(K)> lambda) {
     std::pair<std::unordered_map<K, std::future<V>, H, E>::iterator, bool>

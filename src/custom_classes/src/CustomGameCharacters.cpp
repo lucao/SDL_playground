@@ -27,14 +27,10 @@ CustomGameCharacter::CustomGameCharacter(CustomSDLRect *srcRect,
 }
 CustomGameCharacter::~CustomGameCharacter() {}
 
-CustomEvent::CustomEvent(Action action, long timeSinceLastEventProcess) {
+CustomEvent::CustomEvent(Action action) {
   this->action = action;
-  this->timeSinceLastEventProcess = timeSinceLastEventProcess;
 }
 CustomEvent::~CustomEvent() {}
-long CustomEvent::getTimeSinceLastEventProcess() {
-  return this->timeSinceLastEventProcess;
-}
 Action CustomEvent::getAction() { return this->action; }
 
 bool EventListener::handleEvent(CustomEvent *event) {
@@ -62,10 +58,6 @@ CustomPlayer::~CustomPlayer() {}
 
 bool CustomPlayer::handleEvent(CustomEvent *event) {
   SDL_Rect *destination = this->getGlobalDestination();
-  const Uint8 *keyboardState = SDL_GetKeyboardState(NULL);
-
-  int pixelsMoved =
-      speed * (SDL_GetTicks() - event->getTimeSinceLastEventProcess());
 
   if (event->getAction() == Action::PLAYER_MOVE_UP) {
     destination->y -= speed;
