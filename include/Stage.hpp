@@ -95,21 +95,17 @@ class BlankRegion : public Region {
 
 class Stage {
  private:
-  std::string id;  // ainda não estou usando isso
   CustomSDLRect *rect;
   Stage *nextStage;
   Stage *previousStage;
 
-  SDL_Texture *default_dynamic_texture;
+  std::vector<CustomSDLMaterialObject*> objects;
 
-  SDL_Renderer *renderer;
+  SDL_Texture *default_dynamic_texture;
 
   LazyLoadMatrix<Region::RegionID, Region *, Region::RegionID_key_hash,
                  Region::RegionID_key_equal>
       regionsMatrix;
-  LazyLoadMatrix<Region::RegionID, Region *, Region::RegionID_key_hash,
-                 Region::RegionID_key_equal>
-      blankRegionsMatrix;
 
  public:
   Stage(CustomSDLRect *rect, SDL_Renderer *renderer);
@@ -117,9 +113,8 @@ class Stage {
   Stage *getNextStage();
   Stage *getPreviousStage();
   Region *getRegion(SDL_Point point);
-  std::vector<CustomSDLMaterialObject *> getMaterialObjectsNear(
-      GlobalPositionalSDLObject *object);
-  SDL_Renderer *getRenderer();
+  void placeMaterialObject(CustomSDLMaterialObject* object);
+  std::vector<CustomSDLMaterialObject *> getMaterialObjects();
 };
 
 class StageOutOfBounds : public std::exception {

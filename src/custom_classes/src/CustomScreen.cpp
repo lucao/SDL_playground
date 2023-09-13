@@ -127,8 +127,7 @@ SDL_Renderer* CameraSDL::film(Stage* stage) {
   }
 
   //render objects
-  for (CustomSDLMaterialObject* object :
-       stage->getMaterialObjectsNear(this->followedObject)) {
+  for (CustomSDLMaterialObject* object : stage->getMaterialObjects()) {
     if (SDL_HasIntersection(object->getGlobalDestination(), this->cameraRect)) {
       SDL_RenderCopy(this->renderer, object->getTexture(), object->getSrcRect(),
                      object->getDestination(this->cameraRect));

@@ -77,10 +77,6 @@ CustomSDLMaterialObject::~CustomSDLMaterialObject() {
   delete this->srcRect;
   SDL_DestroyTexture(this->texture);
 }
-void CustomSDLMaterialObject::setSrcRect(SDL_Rect *srcRect) {
-  delete this->srcRect;
-  this->srcRect = new CustomSDLRect(srcRect);
-}
 CustomSDLRect *CustomSDLMaterialObject::getSrcRect() { return this->srcRect; }
 void CustomSDLMaterialObject::setTexture(SDL_Texture *texture) {
   this->texture = texture;
@@ -103,31 +99,17 @@ CustomSDLRect *GlobalPositionalSDLObject::getDestination(
 
 GlobalPositionalSDLObject::GlobalPositionalSDLObject() {
   this->destination = new CustomSDLRect({});
-  this->lastDestination = NULL;
 }
 GlobalPositionalSDLObject::GlobalPositionalSDLObject(SDL_Rect *destination) {
   this->destination = new CustomSDLRect(destination);
-  this->lastDestination = NULL;
 }
 GlobalPositionalSDLObject::~GlobalPositionalSDLObject() {
   delete this->destination;
-  if (this->lastDestination) delete this->lastDestination;
-}
-GlobalPositionalSDLObject *
-GlobalPositionalSDLObject::getLastGlobalDestination() {
-  return this->lastDestination;
-}
-void GlobalPositionalSDLObject::setLastDestination(
-    GlobalPositionalSDLObject *lastDestination) {
-  this->lastDestination = lastDestination;
-}
-// acho que nao preciso desse método
-void GlobalPositionalSDLObject::move(SDL_Rect *destination) {
-  this->setLastDestination(this);
-  this->setDestination(destination);
 }
 
-//#include <stdlib.h>
+void CustomMovableSDLMaterialObject::move(SDL_Rect *destination) {
+  this->setDestination(destination); // verificar como implementar movimentação
+}
 
 BackgroundSDLTexture::BackgroundSDLTexture(SDL_Texture *texture) {
   // SDL_CreateRGBSurface(0, 640, 480, 32, 120, 120, 120, -1);

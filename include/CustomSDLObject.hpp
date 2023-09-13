@@ -24,8 +24,6 @@ struct CustomSDLRect : SDL_Rect {
 class GlobalPositionalSDLObject {
  private:
   CustomSDLRect *destination;
-  GlobalPositionalSDLObject *lastDestination;
-  void setLastDestination(GlobalPositionalSDLObject *lastDestination);
 
  public:
   GlobalPositionalSDLObject();
@@ -34,15 +32,14 @@ class GlobalPositionalSDLObject {
   CustomSDLRect *getGlobalDestination();
   void setDestination(SDL_Rect *destination);
   CustomSDLRect *getDestination(CustomSDLRect *referenceRect);
-  GlobalPositionalSDLObject *getLastGlobalDestination();
-
-  void move(SDL_Rect *destination);
 };
 
 class CustomSDLMaterialObject : public GlobalPositionalSDLObject {
  private:
   SDL_Texture *texture;
   CustomSDLRect *srcRect;
+
+  void setLastDestination(CustomSDLRect *lastDestination);
 
  public:
   CustomSDLMaterialObject(SDL_Texture *texture, CustomSDLRect *srcRect,
@@ -53,8 +50,38 @@ class CustomSDLMaterialObject : public GlobalPositionalSDLObject {
   void setTexture(SDL_Texture *texture);
   SDL_Texture *getTexture();
 
-  void setSrcRect(SDL_Rect *srcRect);
-  CustomSDLRect *getSrcRect();
+  virtual CustomSDLRect *getSrcRect();
+};
+
+class CustomMovableSDLMaterialObject : public CustomSDLMaterialObject {
+ public:
+  CustomMovableSDLMaterialObject(SDL_Texture *texture, CustomSDLRect *srcRect,
+                                 CustomSDLRect *destination);
+  CustomMovableSDLMaterialObject(CustomSDLRect *srcRect,
+                                 CustomSDLRect *destination);
+  virtual ~CustomMovableSDLMaterialObject();
+
+  void move(SDL_Rect *destination);
+};
+
+struct CustomSDLAnimation {};
+
+class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
+ private:
+  int typesOfAnimation;
+  int stepsOfAnimation;
+
+  Uint64 animationFrameGap;
+  Uint64 lastTick;
+//TODO
+ public:
+  CustomAnimatedSDLMaterialObject(SDL_Texture *texture, CustomSDLRect *srcRect,
+                                  CustomSDLRect *destination,
+                                  int typesOfAnimation, int stepsOfAnimation);
+  CustomAnimatedSDLMaterialObject(CustomSDLRect *srcRect,
+                                  CustomSDLRect *destination,
+                                  int typesOfAnimation, int stepsOfAnimation);
+  virtual ~CustomAnimatedSDLMaterialObject();
 };
 
 class BackgroundSDLTexture {

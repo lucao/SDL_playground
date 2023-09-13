@@ -121,6 +121,8 @@ int main(int, char**) {
       new Stage(new CustomSDLRect(new SDL_Rect({-40000, -40000, 80000, 80000})),
                 camera->getRenderer());
 
+  stage->placeMaterialObject(player);
+
   int close = 0;
 
   printf("Start game loop...");
@@ -160,18 +162,29 @@ int main(int, char**) {
     }
 
     const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
-
+  /*
     if (keyboardState[SDL_SCANCODE_W] || keyboardState[SDL_SCANCODE_UP]) {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_UP));
-    } else if (keyboardState[SDL_SCANCODE_S] ||
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_UP_KEY_PRESSED));
+    } else {
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_UP_KEY_RELEASED));
+    } 
+    if (keyboardState[SDL_SCANCODE_S] ||
                keyboardState[SDL_SCANCODE_DOWN]) {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_DOWN));
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_DOWN_KEY_PRESSED));
+    } else {
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_DOWN_KEY_RELEASED));
     }
+*/
     if (keyboardState[SDL_SCANCODE_A] || keyboardState[SDL_SCANCODE_LEFT]) {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_LEFT));
-    } else if (keyboardState[SDL_SCANCODE_D] ||
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_LEFT_KEY_PRESSED));
+    } else {
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_LEFT_KEY_RELEASED));
+    }
+    if (keyboardState[SDL_SCANCODE_D] ||
                keyboardState[SDL_SCANCODE_RIGHT]) {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_MOVE_RIGHT));
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_RIGHT_KEY_PRESSED));
+    } else {
+      eventControl->addEvent(new CustomEvent(Action::PLAYER_RIGHT_KEY_RELEASED));
     }
 
     eventProcessedTick = SDL_GetTicks64();

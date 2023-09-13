@@ -75,16 +75,14 @@ Region::RegionID Region::getRegionId() { return this->regionID; }
 
 Stage::Stage(CustomSDLRect* rect, SDL_Renderer* renderer) {
   this->rect = rect;
-  this->renderer = renderer;
+  this->objects = {};
   this->default_dynamic_texture = IMG_LoadTextureTyped_RW(
-      this->renderer,
+      renderer,
       SDL_RWFromFile("C:/Users/lucas/git/SDL_playground/media/img/praia.jpg",
                      "r"),
       1, "jpeg");
 }
 Stage::~Stage() { delete this->rect; }
-
-SDL_Renderer* Stage::getRenderer() { return this->renderer; }
 
 Region* Stage::getRegion(SDL_Point point) {
   Region::RegionID regionId = Region::RegionID::valueFrom(
@@ -93,7 +91,7 @@ Region* Stage::getRegion(SDL_Point point) {
   Region* region;
   try {
     region = this->regionsMatrix.getElement(regionId);
-  } catch (ElementNotFountException& ex) {
+  } catch (ElementNotFountException&) {
     // load new region
     region =
         new Region(regionId, {},
@@ -106,7 +104,6 @@ Region* Stage::getRegion(SDL_Point point) {
         regionId, [this, region](Region::RegionID regionId) { return region; });
   }
 
-  // TODO o que eu faõ com isso?
   std::for_each(
       regionId.neighbourRegionsIDs.begin(), regionId.neighbourRegionsIDs.end(),
       [this](std::pair<int, int> key) {
@@ -115,7 +112,7 @@ Region* Stage::getRegion(SDL_Point point) {
         if (!this->regionsMatrix.contains(neighbourRegionID)) {
           this->regionsMatrix.addElement(
               neighbourRegionID, [this](Region::RegionID neighbourRegionIDKey) {
-                return (Region*)new DynamicRegion(
+                return new Region(
                     neighbourRegionIDKey, {},
                     new CustomSDLRect(new SDL_Rect(
                         {neighbourRegionIDKey.id.first *
@@ -123,16 +120,22 @@ Region* Stage::getRegion(SDL_Point point) {
                          neighbourRegionIDKey.id.second *
                              Region::fixedRegionHeight,
                          Region::fixedRegionWidth, Region::fixedRegionHeight})),
-                    this->renderer, this->default_dynamic_texture);
+                    new BackgroundSDLTexture(this->default_dynamic_texture));
               });
         }
       });
 
+    //TODO delete faraway regions
+
   return region;
 }
-std::vector<CustomSDLMaterialObject*> Stage::getMaterialObjectsNear(
-    GlobalPositionalSDLObject* object) {
-  return {};
+
+void Stage::placeMaterialObject(CustomSDLMaterialObject* object) {
+  this->objects.insert(this->objects.begin(), object);
+}
+
+std::vector<CustomSDLMaterialObject*> Stage::getMaterialObjects() {
+  return this->objects;
 }
 Stage* Stage::getNextStage() { return this->nextStage; }
 Stage* Stage::getPreviousStage() { return this->previousStage; }
