@@ -17,53 +17,73 @@
 
 class FPSControl {
  private:
-  Uint32 tick;
-  Uint32 lastSecondTreshold;
-  Uint32 lastSecondTick;
-  Uint32 frameCounter;
-  Uint32 fpsLimit;
-  Uint32 defaultDelay;
-  std::deque<Uint32> samples;
+  Uint64 frameTick;
+  Uint64 lastFrameTick;
+
+  Uint64 lastSecondTick;
+
+  Uint16 frameCounter;
+  std::deque<Uint64> ticks;
+  std::deque<Uint16> samples;
 
  public:
   static const Uint32 secondinMS = 1000;
-  FPSControl(Uint32 fpsLimit) {
-    this->lastSecondTreshold = SDL_GetTicks();
-    this->tick = SDL_GetTicks();
-    this->lastSecondTick = SDL_GetTicks();
-    this->fpsLimit = fpsLimit;
-    this->defaultDelay = secondinMS / fpsLimit;
-    this->samples = std::deque<Uint32>(20, -1);
+  FPSControl() {
+    this->frameTick = SDL_GetTicks64();
+    this->lastFrameTick = SDL_GetTicks64();
+    this->lastSecondTick = 0;
+    this->ticks = std::deque<Uint64>(20, -1);
+    this->samples = std::deque<Uint16>(20, -1);
   }
 
-  Uint32 getLastSecondTreshold() { return this->lastSecondTreshold; }
+  void tick() {
+    this->lastFrameTick = this->frameTick;
+    this->frameTick = SDL_GetTicks64();
 
-  int getNecessarydelay() {
-    Uint32 timePassed = SDL_GetTicks() - this->tick;
-    this->tick = SDL_GetTicks();
-
-    Uint32 delay;
-    if (timePassed > this->defaultDelay) {
-      delay = 0;
-    } else if (timePassed <= this->defaultDelay) {
-      delay = this->defaultDelay;
-    }
+    if (this->ticks.size() > 19) this->ticks.pop_back();
+    this->ticks.push_front(this->frameTick);
 
     frameCounter++;
-    if (frameCounter >= 60 ||
-        (SDL_GetTicks() - this->lastSecondTick) >= secondinMS) {
-      this->lastSecondTreshold = SDL_GetTicks() - this->lastSecondTick;
-      this->lastSecondTick = SDL_GetTicks();
-      this->samples.pop_back();
+    if (SDL_GetTicks64() - this->lastSecondTick >= secondinMS) {
+      this->lastSecondTick = SDL_GetTicks64();
+
+      if (this->samples.size() > 19) this->samples.pop_back();
       this->samples.push_front(frameCounter);
+
       frameCounter = 0;
     }
-
-    return delay;
   }
 
-  long getLastFrameTick() { return this->tick; }
-  std::deque<Uint32> getFpsSamples() { return this->samples; }
+  Uint64 getLastFrameTick() { return this->lastFrameTick; }
+  Uint64 getFrameTick() { return this->frameTick; }
+  std::deque<Uint16> getFpsSamples() { return this->samples; }
+};
+
+class GameControl {
+ private:
+  bool gameLoopRunning;
+
+ public:
+  GameControl() {
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+      SDL_Log("Error initializing SDL: %s\n", SDL_GetError());
+
+      throw std::runtime_error("Error initializing SDL");
+    } else if (!IMG_Init(IMG_INIT_JPG)) {
+      SDL_Log("SDL_image could not initialize! SDL_image Error: %s\n",
+              IMG_GetError());
+
+      throw std::runtime_error("Error initializing SDL_image");
+    }
+
+    this->gameLoopRunning = true;
+  }
+
+  bool isGameLoopRunning() { return this->gameLoopRunning; }
+
+  void setGameLoopRunning(bool gameLoopRunning) {
+    this->gameLoopRunning = gameLoopRunning;
+  }
 };
 
 class EventControl {
@@ -81,9 +101,7 @@ class EventControl {
     while (!eventsQueue.empty()) {
       CustomEvent* event = this->eventsQueue.front();
       for (EventListener* listener : eventListeners) {
-        if (!listener->handleEvent(event)) {
-          // ERROR
-        }
+        listener->handleEvent(event);  // TODO handle exceptions
       }
       this->eventsQueue.pop();
       delete event;
@@ -93,123 +111,123 @@ class EventControl {
 
 int main(int, char**) {
   printf("Inicializando...");
-  if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-    SDL_Log("error initializing SDL: %s\n", SDL_GetError());
-    return 1;
-  } else if (!IMG_Init(IMG_INIT_JPG)) {
-    SDL_Log("SDL_image could not initialize! SDL_image Error: %s\n",
-            IMG_GetError());
-    return 1;
-  }
 
-  Screen* screen(new Screen(640, 480));
+  try {
+    GameControl* gameControl = new GameControl();
 
-  // TODO start screen
-  CustomPlayer* player =
-      new CustomPlayer(new CustomSDLRect(new SDL_Rect({0, 0, 300, 300})),
-                       new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 10, 7);
+    FPSControl* fpsControl = new FPSControl();
 
-  CameraSDL* camera(new CameraSDL(screen->getWindow(), player, new int(1000)));
+    Screen* screen(new Screen(640, 480));
 
-  player->setTexture(IMG_LoadTextureTyped_RW(
-      camera->getRenderer(),
-      SDL_RWFromFile(
-          "C:\\Users\\lucas\\git\\SDL_playground\\media\\img\\Naruto.jpg", "r"),
-      1, "jpeg"));
+    // TODO start screen
+    CustomPlayer* player = new CustomPlayer(
+        new CustomSDLRect(new SDL_Rect({0, 0, 300, 300})),
+        new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 0, 0, 7, 10);
 
-  Stage* stage =
-      new Stage(new CustomSDLRect(new SDL_Rect({-40000, -40000, 80000, 80000})),
-                camera->getRenderer());
+    CameraSDL* camera(
+        new CameraSDL(screen->getWindow(), player, new int(1000)));
 
-  stage->placeMaterialObject(player);
+    player->setTexture(IMG_LoadTextureTyped_RW(
+        camera->getRenderer(),
+        SDL_RWFromFile(
+            "C:\\Users\\lucas\\git\\SDL_playground\\media\\img\\Naruto.jpg",
+            "r"),
+        1, "jpeg"));
 
-  int close = 0;
+    Stage* stage = new Stage(
+        new CustomSDLRect(new SDL_Rect({-40000, -40000, 80000, 80000})),
+        camera->getRenderer());
 
-  printf("Start game loop...");
-  EventControl* eventControl = new EventControl();
-  eventControl->addEventListener(player);
-  // using VSYNC // FPSControl* fpsControl = new FPSControl(60);
-  Uint64 eventProcessedTick;
-  while (!close) {
-    // Events
-    SDL_Event event;
-    /*
-    SDL_PumpEvents();
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT,
-                          SDL_DISPLAYEVENT)) {
-                            */
+    stage->placeMaterialObject(player);
 
-    while (SDL_PollEvent(&event) != 0) {
-      switch (event.type) {
-        case SDL_QUIT:
-          // handling of close button
-          close = 1;
-          break;
-        case SDL_MOUSEWHEEL:
-          if (event.wheel.y > 0) {
-            // Put code for handling "scroll up" here!
-          } else if (event.wheel.y < 0) {
-            // Put code for handling "scroll down" here!
-          }
+    printf("Start game loop...");
+    EventControl* eventControl = new EventControl();
+    eventControl->addEventListener(player);
 
-          if (event.wheel.x > 0) {
-            // scroll right
-          } else if (event.wheel.x < 0) {
-            // scroll left
-          }
-          break;
+    while (gameControl->isGameLoopRunning()) {
+      fpsControl->tick();
+      // Events
+      SDL_Event event;
+      /*
+      SDL_PumpEvents();
+      while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT,
+                            SDL_DISPLAYEVENT)) {
+                              */
+
+      while (SDL_PollEvent(&event) != 0) {
+        switch (event.type) {
+          case SDL_QUIT:
+            // handling of close button
+            gameControl->setGameLoopRunning(false);
+            break;
+          case SDL_MOUSEWHEEL:
+            if (event.wheel.y > 0) {
+              // Put code for handling "scroll up" here!
+            } else if (event.wheel.y < 0) {
+              // Put code for handling "scroll down" here!
+            }
+
+            if (event.wheel.x > 0) {
+              // scroll right
+            } else if (event.wheel.x < 0) {
+              // scroll left
+            }
+            break;
+        }
+      }
+
+      const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
+      /*
+        if (keyboardState[SDL_SCANCODE_W] || keyboardState[SDL_SCANCODE_UP]) {
+          eventControl->addEvent(new
+        CustomEvent(Action::PLAYER_UP_KEY_PRESSED)); } else {
+          eventControl->addEvent(new
+        CustomEvent(Action::PLAYER_UP_KEY_RELEASED));
+        }
+        if (keyboardState[SDL_SCANCODE_S] ||
+                   keyboardState[SDL_SCANCODE_DOWN]) {
+          eventControl->addEvent(new
+        CustomEvent(Action::PLAYER_DOWN_KEY_PRESSED)); } else {
+          eventControl->addEvent(new
+        CustomEvent(Action::PLAYER_DOWN_KEY_RELEASED));
+        }
+    */
+
+      if (keyboardState[SDL_SCANCODE_A] || keyboardState[SDL_SCANCODE_LEFT]) {
+        eventControl->addEvent(new CustomEvent(Action::PLAYER_LEFT_KEY_PRESSED,
+                                               fpsControl->getLastFrameTick(),
+                                               fpsControl->getFrameTick()));
+      }
+      if (keyboardState[SDL_SCANCODE_D] || keyboardState[SDL_SCANCODE_RIGHT]) {
+        eventControl->addEvent(new CustomEvent(Action::PLAYER_RIGHT_KEY_PRESSED,
+                                               fpsControl->getLastFrameTick(),
+                                               fpsControl->getFrameTick()));
+      }
+
+      eventControl->processEvents();
+
+      // Render phase
+      camera->moveCamera();
+
+      try {
+        SDL_RenderClear(camera->getRenderer());
+        SDL_RenderPresent(camera->film(stage));
+      } catch (StageOutOfBounds err) {
+        // Load new stage
+        printf(err.what());
       }
     }
+    delete player;
+    delete stage;
+    delete camera;
+    delete screen;
 
-    const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
-  /*
-    if (keyboardState[SDL_SCANCODE_W] || keyboardState[SDL_SCANCODE_UP]) {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_UP_KEY_PRESSED));
-    } else {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_UP_KEY_RELEASED));
-    } 
-    if (keyboardState[SDL_SCANCODE_S] ||
-               keyboardState[SDL_SCANCODE_DOWN]) {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_DOWN_KEY_PRESSED));
-    } else {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_DOWN_KEY_RELEASED));
-    }
-*/
-    if (keyboardState[SDL_SCANCODE_A] || keyboardState[SDL_SCANCODE_LEFT]) {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_LEFT_KEY_PRESSED));
-    } else {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_LEFT_KEY_RELEASED));
-    }
-    if (keyboardState[SDL_SCANCODE_D] ||
-               keyboardState[SDL_SCANCODE_RIGHT]) {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_RIGHT_KEY_PRESSED));
-    } else {
-      eventControl->addEvent(new CustomEvent(Action::PLAYER_RIGHT_KEY_RELEASED));
-    }
+    // close SDL
+    SDL_Quit();
 
-    eventProcessedTick = SDL_GetTicks64();
-
-    eventControl->processEvents();
-
-    // Render phase
-    camera->moveCamera();
-
-    try {
-      SDL_RenderClear(camera->getRenderer());
-      SDL_RenderPresent(camera->film(stage));
-    } catch (StageOutOfBounds err) {
-      // Load new stage
-      printf(err.what());
-    }
+    return 0;
+  } catch (const std::runtime_error& e) {
+    SDL_Quit();
+    return 1;
   }
-
-  delete player;
-  delete stage;
-  delete camera;
-  delete screen;
-
-  // close SDL
-  SDL_Quit();
-
-  return 0;
 }

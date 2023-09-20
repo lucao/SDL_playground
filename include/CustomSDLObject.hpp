@@ -10,15 +10,22 @@
 struct CustomSDLRect : SDL_Rect {
   CustomSDLRect(SDL_Rect *rect);
   ~CustomSDLRect();
-  std::shared_ptr<SDL_Point> createCenter();
-  std::shared_ptr<CustomSDLRect> createRectWith0Axis();
-  std::shared_ptr<CustomSDLRect> createInsideMiddleRect(
+  const SDL_Point getPoint();
+  const SDL_Point getCenter();
+  std::unique_ptr<CustomSDLRect> createInsideMiddleRect(
       uint8_t reductionProportion);
   bool xPointIsInBounds(int x);
   bool yPointIsInBounds(int y);
   int xGetNearestBoundary(int x);
   int yGetNearestBoundary(int y);
-  std::vector<SDL_Point> getVertices();
+  std::vector<const SDL_Point> getVertices();
+
+  void setPoint(SDL_Point point);
+  void setRect(SDL_Rect rect);
+  void setX(int x);
+  void setY(int y);
+  void setW(int w);
+  void setH(int h);
 };
 
 class GlobalPositionalSDLObject {

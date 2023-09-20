@@ -8,21 +8,33 @@
 
 CustomSDLRect::CustomSDLRect(SDL_Rect *rect) : SDL_Rect(*rect) {}
 CustomSDLRect::~CustomSDLRect() {}
-std::shared_ptr<SDL_Point> CustomSDLRect::createCenter() {
-  return std::shared_ptr<SDL_Point>(
-      new SDL_Point({this->x + (this->w / 2), this->y + (this->h / 2)}));
+void CustomSDLRect::setX(int x) { this->x = x; }
+void CustomSDLRect::setY(int y) { this->y = y; }
+void CustomSDLRect::setW(int w) { this->w = w; }
+void CustomSDLRect::setH(int h) { this->h = h; }
+void CustomSDLRect::setPoint(SDL_Point point) {
+  this->x = point.x;
+  this->y = point.y;
 }
-std::shared_ptr<CustomSDLRect> CustomSDLRect::createInsideMiddleRect(
+void CustomSDLRect::setRect(SDL_Rect rect) {
+  this->x = rect.x;
+  this->y = rect.y;
+  this->w = rect.w;
+  this->h = rect.h;
+}
+
+const SDL_Point CustomSDLRect::getPoint() { return {this->x, this->y}; }
+std::unique_ptr<CustomSDLRect> CustomSDLRect::createInsideMiddleRect(
     uint8_t reductionProportion) {
   int w_reducted = this->w / reductionProportion;
   int h_reducted = this->h / reductionProportion;
-  return std::shared_ptr<CustomSDLRect>(new CustomSDLRect(new SDL_Rect(
+  return std::unique_ptr<CustomSDLRect>(new CustomSDLRect(new SDL_Rect(
       {(this->x + (this->w / 2) - (w_reducted / 2)),
        (this->y + (this->h / 2) - (h_reducted / 2)), w_reducted, h_reducted})));
 }
-std::shared_ptr<CustomSDLRect> CustomSDLRect::createRectWith0Axis() {
-  return std::shared_ptr<CustomSDLRect>(
-      new CustomSDLRect(new SDL_Rect({0, 0, this->w, this->h})));
+
+const SDL_Point CustomSDLRect::getCenter() {
+  return {this->x + (this->w / 2), this->y + (this->h / 2)};
 }
 bool CustomSDLRect::xPointIsInBounds(int x) {
   return (x < this->x + this->w && x > this->x);
@@ -31,31 +43,31 @@ bool CustomSDLRect::yPointIsInBounds(int y) {
   return (y < this->y + this->h && y > this->y);
 }
 int CustomSDLRect::xGetNearestBoundary(int x) {
-  std::shared_ptr<SDL_Point> centerPoint = this->createCenter();
-  if (x < centerPoint->x) {
+  SDL_Point centerPoint = this->getCenter();
+  if (x < centerPoint.x) {
     return this->x;
-  } else if (x > centerPoint->x) {
+  } else if (x > centerPoint.x) {
     return this->x + this->w;
   } else {
     return this->x;
   }
 }
 int CustomSDLRect::yGetNearestBoundary(int y) {
-  std::shared_ptr<SDL_Point> centerPoint = this->createCenter();
-  if (y < centerPoint->y) {
+  SDL_Point centerPoint = this->getCenter();
+  if (y < centerPoint.y) {
     return this->y;
-  } else if (y > centerPoint->y) {
+  } else if (y > centerPoint.y) {
     return this->y + this->h;
   } else {
     return this->y;
   }
 }
-std::vector<SDL_Point> CustomSDLRect::getVertices() {
-  return std::vector<SDL_Point>({
-    SDL_Point({this->x, this->y}),
-    SDL_Point({this->x + this->w, this->y}),
-    SDL_Point({this->x, this->y + this->h}),
-    SDL_Point({this->x + this->w, this->y + this->h}),
+std::vector<const SDL_Point> CustomSDLRect::getVertices() {
+  return std::vector<const SDL_Point>({
+      SDL_Point({this->x, this->y}),
+      SDL_Point({this->x + this->w, this->y}),
+      SDL_Point({this->x, this->y + this->h}),
+      SDL_Point({this->x + this->w, this->y + this->h}),
   });
 }
 
@@ -108,7 +120,7 @@ GlobalPositionalSDLObject::~GlobalPositionalSDLObject() {
 }
 
 void CustomMovableSDLMaterialObject::move(SDL_Rect *destination) {
-  this->setDestination(destination); // verificar como implementar movimentação
+  this->setDestination(destination);  // verificar como implementar movimentação
 }
 
 BackgroundSDLTexture::BackgroundSDLTexture(SDL_Texture *texture) {

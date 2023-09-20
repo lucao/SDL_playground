@@ -31,64 +31,64 @@ enum Action {
   PLAYER_LEFT_KEY_RELEASED = 1030,
   PLAYER_RIGHT_KEY_PRESSED = 1041,
   PLAYER_RIGHT_KEY_RELEASED = 1040,
-  PLAYER_INTERACT_KEY_PRESSED = 1000
+  PLAYER_INTERACT_KEY_PRESSED = 1000,
+
+  PLAYER_JUMP_KEY_PRESSED = 1051,
+  PLAYER_JUMP_KEY_RELEASED = 1050
 };
 
 class CustomEvent {
  private:
   Action action;
+  Uint64 initialTick;
+  Uint64 endTick;
 
  public:
-  CustomEvent(Action action);
+  CustomEvent(Action action, Uint64 initialTick, Uint64 endTick);
   virtual ~CustomEvent();
   Action getAction();
+  Uint64 getInitialTick();
+  Uint64 getEndTick();
 };
 
 class EventListener {
  public:
-  virtual bool handleEvent(CustomEvent *event);
+  virtual void handleEvent(CustomEvent *event);
 };
 
-enum Direction {
-  LEFT, RIGHT
+class Movement {
+ private:
+  bool jumping;
+  SDL_Point startPoint;
+  SDL_Point endPoint;
+  Uint64 startTick;
+  Uint64 endTick;
+
+ public:
+  Movement(SDL_Point startPoint, SDL_Point endPoint, bool jumping,
+               Uint64 startTick, Uint64 endTick);
 };
 
 class CustomPlayer : public CustomGameCharacter,
                      public EventListener,
                      public Collider<Platform> {
  private:
-  int maxSpeed;
-  int speed;
+  int normalSpeed;
 
-  bool startedMovingLeft;
-  Uint64 startedMovingLeftTick;
-  bool startedMovingRight;
-  Uint64 startedMovingRightTick;
-
-  bool isMovingLeft;
-  Uint64 isMovingLeftTick;
-  bool isMovingRight;
-  Uint64 isMovingRightTick;
-
-  int speedWhenStartedStopping;
-  bool stoppingMovement;
-  Uint64 stoppingMovementTick;
-  bool stopped;
+  std::list<Movement *> movingIntentList;
+  std::list<Movement *> movementDeFactoList;
 
  public:
   CustomPlayer(SDL_Texture *texture, CustomSDLRect *srcRect,
                CustomSDLRect *position, int typesOfAnimation,
-               int stepsOfAnimation, int lifePoints, int maxSpeed);
+               int stepsOfAnimation, int lifePoints, int normalSpeed);
   CustomPlayer(CustomSDLRect *srcRect, CustomSDLRect *position,
                int typesOfAnimation, int stepsOfAnimation, int lifePoints,
-               int maxSpeed);
+               int normalSpeed);
   ~CustomPlayer();
-  void move(Direction direction);
-  void stopMovement();
-  bool isStopped();
-  virtual int getStartMovingDelay();
-  virtual int getStopMovingDelay();
-  bool handleEvent(CustomEvent *event) override;
+  bool canJump();
+  bool isJumping();
+  void handleEvent(CustomEvent *event) override;
   bool colideWith(Platform *collider) override;
 };
 

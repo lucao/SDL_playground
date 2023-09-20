@@ -31,13 +31,27 @@ CustomGameCharacter::CustomGameCharacter(CustomSDLRect *srcRect,
 }
 CustomGameCharacter::~CustomGameCharacter() {}
 
-CustomEvent::CustomEvent(Action action) { this->action = action; }
+CustomEvent::CustomEvent(Action action, Uint64 initialTick, Uint64 endTick) {
+  this->action = action;
+  this->initialTick = initialTick;
+  this->endTick = endTick;
+}
 CustomEvent::~CustomEvent() {}
 Action CustomEvent::getAction() { return this->action; }
+Uint64 CustomEvent::getInitialTick() { return this->initialTick; }
+Uint64 CustomEvent::getEndTick() { return this->endTick; }
 
-bool EventListener::handleEvent(CustomEvent *event) {
+void EventListener::handleEvent(CustomEvent *event) {
   // handle general events
-  return true;
+}
+
+Movement::Movement(SDL_Point startPoint, SDL_Point endPoint, bool jumping,
+                   Uint64 startTick, Uint64 endTick) {
+  this->startPoint = startPoint;
+  this->endPoint = endPoint;
+  this->jumping = jumping;
+  this->startTick = startTick;
+  this->endTick = endTick;
 }
 
 /// @brief
@@ -45,120 +59,53 @@ bool EventListener::handleEvent(CustomEvent *event) {
 /// @param srcRect
 /// @param position
 /// @param lifePoints
-/// @param maxSpeed
+/// @param normalSpeed
 CustomPlayer::CustomPlayer(SDL_Texture *texture, CustomSDLRect *srcRect,
                            CustomSDLRect *position, int typesOfAnimation,
-                           int stepsOfAnimation, int lifePoints, int maxSpeed)
+                           int stepsOfAnimation, int lifePoints,
+                           int normalSpeed)
     : CustomGameCharacter(texture, srcRect, position, typesOfAnimation,
                           stepsOfAnimation, lifePoints) {
-  this->maxSpeed = maxSpeed;
-  this->speed = 0;
+  this->normalSpeed = normalSpeed;
 }
 CustomPlayer::CustomPlayer(CustomSDLRect *srcRect, CustomSDLRect *position,
                            int typesOfAnimation, int stepsOfAnimation,
-                           int lifePoints, int maxSpeed)
+                           int lifePoints, int normalSpeed)
     : CustomGameCharacter(srcRect, position, typesOfAnimation, stepsOfAnimation,
                           lifePoints) {
-  this->maxSpeed = maxSpeed;
-  this->speed = 0;
+  this->normalSpeed = normalSpeed;
 }
 CustomPlayer::~CustomPlayer() {}
 
-bool CustomPlayer::handleEvent(CustomEvent *event) {
-  if (event->getAction() == Action::PLAYER_LEFT_KEY_PRESSED) {
-    this->move(Direction::LEFT);
-  } else if (event->getAction() == Action::PLAYER_RIGHT_KEY_PRESSED) {
-    this->move(Direction::RIGHT);
-  } else if (event->getAction() == Action::PLAYER_RIGHT_KEY_RELEASED ||
-             event->getAction() == Action::PLAYER_LEFT_KEY_RELEASED) {
-    this->stopMovement();
+bool CustomPlayer::canJump() { return true; }
+
+void CustomPlayer::handleEvent(CustomEvent *event) {
+  bool jumping = this->isJumping();
+  if (event->getAction() == Action::PLAYER_JUMP_KEY_PRESSED) {
+    if (this->canJump()) jumping = true;
   }
+  if (event->getAction() == Action::PLAYER_RIGHT_KEY_PRESSED ||
+      event->getAction() == Action::PLAYER_LEFT_KEY_PRESSED) {
+    const SDL_Point startPosition = this->getGlobalDestination()->getPoint();
 
-  return true;
-}
-
-void CustomPlayer::move(Direction direction) {
-  if (Direction::LEFT == direction) {
-    if (this->isMovingRight || this->startedMovingRight) {
-      this->stopMovement();
-      return;
-    } else if (this->isStopped()) {
-      this->startedMovingLeft = true;
-      this->startedMovingLeftTick = SDL_GetTicks64();
-
-      this->stopped = false;
-    } else if (this->startedMovingLeft) {
-      Uint64 startedMovingLeftInterval =
-          SDL_GetTicks64() - this->startedMovingLeftTick;
-      if (startedMovingLeftInterval > this->getStartMovingDelay()) {
-        this->startedMovingLeft = false;
-        this->isMovingLeft = true;
-      }
-      this->speed = (this->maxSpeed * this->getStartMovingDelay()) /
-                    startedMovingLeftInterval;
-
-    } else if (this->isMovingLeft) {
-      this->speed = this->maxSpeed;
+    int xMoving = startPosition.x;
+    if (event->getAction() == Action::PLAYER_RIGHT_KEY_PRESSED) {
+      xMoving += this->normalSpeed;
+    } else if (event->getAction() == Action::PLAYER_LEFT_KEY_PRESSED) {
+      xMoving -= this->normalSpeed;
     }
-  } else if (Direction::RIGHT == direction) {
-    if (this->isMovingLeft || this->startedMovingLeft) {
-      this->stopMovement();
-      return;
-    } else if (this->isStopped()) {
-      this->startedMovingRight = true;
-      this->startedMovingRightTick = SDL_GetTicks64();
 
-      this->stopped = false;
-    } else if (this->startedMovingRight) {
-      Uint64 startedMovingRightInterval =
-          SDL_GetTicks64() - this->startedMovingRightTick;
-      if (startedMovingRightInterval > this->getStartMovingDelay()) {
-        this->startedMovingRight = false;
-        this->isMovingRight = true;
-      }
-      this->speed = ((this->maxSpeed * this->getStartMovingDelay()) /
-                     startedMovingRightInterval) *
-                    -1;
+    const SDL_Point endPosition{xMoving, endPosition.y};
 
-    } else if (this->isMovingLeft) {
-      this->speed = this->maxSpeed * -1;
-    }
-  }
-
-  this->getGlobalDestination()->x += this->speed;
-}
-
-void CustomPlayer::stopMovement() {
-  if (this->stoppingMovement) {
-    Uint64 stoppingMovementInterval =
-        SDL_GetTicks64() - this->stoppingMovementTick;
-
-    Uint64 stopMovingTickAdvantage =
-        (this->speedWhenStartedStopping * this->getStopMovingDelay()) /
-        this->speedWhenStartedStopping;
-    if (stoppingMovementInterval >
-        this->getStopMovingDelay() - stopMovingTickAdvantage) {
-      this->speed = 0;
-      this->stopped = true;
-      return;
-    } else {
-      Uint64 brakeSpeed = (this->maxSpeed * this->getStopMovingDelay()) /
-                          stoppingMovementInterval;
-      this->speed += this->speed > 0 ? brakeSpeed * -1 : brakeSpeed;
-    }
-    this->getGlobalDestination()->x += this->speed;
-  } else if (this->isStopped()) {
-    return;
-  } else {
-    this->speedWhenStartedStopping = this->speed;
-    this->stoppingMovement = true;
-    this->stoppingMovementTick = SDL_GetTicks64();
-
-    this->getGlobalDestination()->x += this->speed;
+    this->movingIntentList.push_front(
+        new Movement(startPosition, endPosition, jumping,
+                     event->getInitialTick(), event->getEndTick()));
   }
 }
 
-bool CustomPlayer::isStopped() { return this->stopped; }
+bool CustomPlayer::isJumping() {
+  // TODO
+}
 
 bool CustomPlayer::colideWith(Platform *collider) {
   return false;
