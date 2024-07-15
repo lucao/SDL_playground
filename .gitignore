@@ -3,3 +3,7 @@ build/**
 out/**
 src/test/*.exe
 
+/.vs/SDL_playground/FileContentIndex
+/.vs/SDL_playground/v17
+/.vs
+/vcpkg_installed

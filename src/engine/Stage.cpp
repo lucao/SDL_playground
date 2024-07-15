@@ -1,13 +1,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
-#include <CustomSDLObject.hpp>
-#include <CustomUtils.hpp>
 #include <Stage.hpp>
-#include <algorithm>
-#include <list>
-#include <memory>
-#include <valarray>
 
 DynamicRegion::DynamicRegion(
     Region::RegionID regionId,
@@ -73,17 +67,6 @@ CustomSDLRect* Region::getSrcRect(CustomSDLRect* referenceRect) {
 BackgroundSDLTexture* Region::getBackground() { return this->background; }
 Region::RegionID Region::getRegionId() { return this->regionID; }
 
-Stage::Stage(CustomSDLRect* rect, SDL_Renderer* renderer) {
-  this->rect = rect;
-  this->objects = {};
-  this->default_dynamic_texture = IMG_LoadTextureTyped_RW(
-      renderer,
-      SDL_RWFromFile("C:/Users/lucas/git/SDL_playground/media/img/praia.jpg",
-                     "r"),
-      1, "jpeg");
-}
-Stage::~Stage() { delete this->rect; }
-
 Region* Stage::getRegion(SDL_Point point) {
   Region::RegionID regionId = Region::RegionID::valueFrom(
       Region::RegionID::getIdFrom(point.x, point.y));
@@ -96,7 +79,8 @@ Region* Stage::getRegion(SDL_Point point) {
     region =
         new Region(regionId, {},
                    new CustomSDLRect(new SDL_Rect(
-                       {regionId.id.first * Region::fixedRegionWidth, regionId.id.second * Region::fixedRegionHeight,
+                       {regionId.id.first * Region::fixedRegionWidth,
+                        regionId.id.second * Region::fixedRegionHeight,
                         Region::fixedRegionWidth, Region::fixedRegionHeight})),
                    new BackgroundSDLTexture(this->default_dynamic_texture));
 
@@ -125,17 +109,32 @@ Region* Stage::getRegion(SDL_Point point) {
         }
       });
 
-    //TODO delete faraway regions
+  // TODO delete faraway regions
 
   return region;
 }
 
-void Stage::placeMaterialObject(CustomSDLMaterialObject* object) {
-  this->objects.insert(this->objects.begin(), object);
+Stage::~Stage() { delete this->rect; }
+Stage::Stage(Stage::StageId stageId, CustomSDLRect* rect,
+             SDL_Renderer* renderer) {
+  this->rect = rect;
+  this->id = stageId;
+  this->default_dynamic_texture = IMG_LoadTextureTyped_RW(
+      renderer,
+      SDL_RWFromFile("C:/Users/lucas/git/SDL_playground/media/img/praia.jpg",
+                     "r"),
+      1, "jpeg");
 }
 
-std::vector<CustomSDLMaterialObject*> Stage::getMaterialObjects() {
-  return this->objects;
+void Stage::placeEntity(entt::registry entity,
+                        std::initializer_list<GAME_ENTITY_TYPE> types) {
+  //TODO
 }
+
+  void placeEntity(entt::registry entity,
+                 std::initializer_list<GAME_ENTITY_TYPE> types);
+std::vector<entt::registry> getEntities(GAME_ENTITY_TYPE types...);
+
+Stage::StageId Stage::getId() { return Stage::StageId(); }
 Stage* Stage::getNextStage() { return this->nextStage; }
 Stage* Stage::getPreviousStage() { return this->previousStage; }

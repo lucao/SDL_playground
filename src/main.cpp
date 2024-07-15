@@ -1,19 +1,14 @@
 #include <SDL.h>
 #include <SDL_image.h>
-#include <SDL_thread.h>
-#include <stdio.h>
 
+#include <CustomPhysics.hpp>
 #include <CustomGameCharacters.hpp>
 #include <CustomScreen.hpp>
 #include <Stage.hpp>
 #include <World.hpp>
-#include <algorithm>
 #include <deque>
-#include <memory>
-#include <platform.hpp>
-#include <string>
-#include <tuple>
 #include <vector>
+#include <queue>
 
 class FPSControl {
  private:
@@ -63,6 +58,16 @@ class GameControl {
  private:
   bool gameLoopRunning;
 
+  CameraSDL* camera;
+  Screen* screen;
+
+  World* world;
+  Stage::StageId currentStageId;
+
+  PhysicsControl* physicsControl;
+
+  CustomPlayer* mainPlayer;
+
  public:
   GameControl() {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -76,13 +81,69 @@ class GameControl {
       throw std::runtime_error("Error initializing SDL_image");
     }
 
+    this->screen = new Screen(640, 480);
+    this->camera = new CameraSDL(screen->getWindow(), 1000);
+
     this->gameLoopRunning = true;
+
+    this->world = new World();
+
+    this->mainPlayer = new CustomPlayer(
+        new CustomSDLRect(new SDL_Rect({0, 0, 300, 300})),
+        new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 0, 0, 7, 10);
+    this->mainPlayer->setTexture(IMG_LoadTextureTyped_RW(
+        camera->getRenderer(),
+        SDL_RWFromFile(
+            "C:\\Users\\lucas\\git\\SDL_playground\\media\\img\\Naruto.jpg",
+            "r"),
+        1, "jpeg"));
+
+    Stage* stage = this->world->createBlankStage(camera->getRenderer());
+    this->currentStageId = stage->getId();
+    stage->placeObject(this->mainPlayer, {GAME_ENTITY_TYPE::PLAYABLE_OBJECT,
+                                          GAME_ENTITY_TYPE::PHYSICAL_OBJECT,
+                                          GAME_ENTITY_TYPE::MATERIAL_OBJECT});
+
+    this->camera->setFollowedObject(this->mainPlayer);
+    this->physicsControl = new PhysicsControl();
+  }
+
+  CustomPlayer* getMainPlayer() { return this->mainPlayer; }
+
+  void processLogic() noexcept {
+    Stage* stage = this->world->getStage(currentStageId);
+
+    std::vector<CustomPhysicalObject*> physicalObjects =
+        stage->getObjectsByType<CustomPhysicalObject>(
+            GAME_ENTITY_TYPE::PHYSICAL_OBJECT);
+
+    this->physicsControl->doPhysics(physicalObjects);
+
+    std::vector<std::pair<CustomPhysicalObject*, CustomPhysicalObject*>>
+        collisions = this->physicsControl->getCollisions(physicalObjects);
+
+    for (std::pair<CustomPhysicalObject*, CustomPhysicalObject*> pair :
+         collisions) {
+    }
   }
 
   bool isGameLoopRunning() { return this->gameLoopRunning; }
 
   void setGameLoopRunning(bool gameLoopRunning) {
     this->gameLoopRunning = gameLoopRunning;
+  }
+
+  void executeRenderPhase() {
+    this->camera->moveCamera();
+
+    try {
+      SDL_RenderClear(this->camera->getRenderer());
+      SDL_RenderPresent(
+          this->camera->film(this->world->getStage(currentStageId)));
+    } catch (StageOutOfBounds err) {
+      // Load new stage
+      printf(err.what());
+    }
   }
 };
 
@@ -117,32 +178,9 @@ int main(int, char**) {
 
     FPSControl* fpsControl = new FPSControl();
 
-    Screen* screen(new Screen(640, 480));
-
-    // TODO start screen
-    CustomPlayer* player = new CustomPlayer(
-        new CustomSDLRect(new SDL_Rect({0, 0, 300, 300})),
-        new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 0, 0, 7, 10);
-
-    CameraSDL* camera(
-        new CameraSDL(screen->getWindow(), player, new int(1000)));
-
-    player->setTexture(IMG_LoadTextureTyped_RW(
-        camera->getRenderer(),
-        SDL_RWFromFile(
-            "C:\\Users\\lucas\\git\\SDL_playground\\media\\img\\Naruto.jpg",
-            "r"),
-        1, "jpeg"));
-
-    Stage* stage = new Stage(
-        new CustomSDLRect(new SDL_Rect({-40000, -40000, 80000, 80000})),
-        camera->getRenderer());
-
-    stage->placeMaterialObject(player);
-
     printf("Start game loop...");
     EventControl* eventControl = new EventControl();
-    eventControl->addEventListener(player);
+    eventControl->addEventListener(gameControl->getMainPlayer());
 
     while (gameControl->isGameLoopRunning()) {
       fpsControl->tick();
@@ -194,34 +232,29 @@ int main(int, char**) {
     */
 
       if (keyboardState[SDL_SCANCODE_A] || keyboardState[SDL_SCANCODE_LEFT]) {
-        eventControl->addEvent(new CustomEvent(Action::PLAYER_LEFT_KEY_PRESSED,
-                                               fpsControl->getLastFrameTick(),
-                                               fpsControl->getFrameTick()));
+        eventControl->addEvent(new CustomEvent(
+            PLAYER_ACTION::PLAYER_LEFT_KEY_PRESSED,
+            fpsControl->getLastFrameTick(), fpsControl->getFrameTick()));
       }
       if (keyboardState[SDL_SCANCODE_D] || keyboardState[SDL_SCANCODE_RIGHT]) {
-        eventControl->addEvent(new CustomEvent(Action::PLAYER_RIGHT_KEY_PRESSED,
-                                               fpsControl->getLastFrameTick(),
-                                               fpsControl->getFrameTick()));
+        eventControl->addEvent(new CustomEvent(
+            PLAYER_ACTION::PLAYER_RIGHT_KEY_PRESSED,
+            fpsControl->getLastFrameTick(), fpsControl->getFrameTick()));
       }
 
       eventControl->processEvents();
 
-      // Render phase
-      camera->moveCamera();
+      gameControl->processLogic();
 
-      try {
-        SDL_RenderClear(camera->getRenderer());
-        SDL_RenderPresent(camera->film(stage));
-      } catch (StageOutOfBounds err) {
-        // Load new stage
-        printf(err.what());
-      }
+      // Render phase
+      gameControl->executeRenderPhase();
     }
+    /*
     delete player;
     delete stage;
     delete camera;
     delete screen;
-
+*/
     // close SDL
     SDL_Quit();
 

@@ -1,17 +1,11 @@
 #include <SDL.h>
 
-#include <CustomSDLObject.hpp>
 #include <CustomScreen.hpp>
-#include <Stage.hpp>
-#include <algorithm>
-#include <cmath>
-#include <map>
-#include <memory>
-#include <stdexcept>
-#include <vector>
 
-CameraSDL::CameraSDL(SDL_Window* window,
-                     CustomSDLMaterialObject* followedObject, int* speed) {
+#include <cmath>
+#include <memory>
+
+CameraSDL::CameraSDL(SDL_Window* window, int speed) {
   Uint32 render_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
   this->renderer = SDL_CreateRenderer(window, -1, render_flags);
   int w, h;
@@ -20,8 +14,7 @@ CameraSDL::CameraSDL(SDL_Window* window,
   this->cameraRectResize_w = w;
   this->cameraRectResize_h = h;
   this->cameraRect = new CustomSDLRect(new SDL_Rect({0, 0, w, h}));
-  this->followedObject = followedObject;
-  this->speed = *speed;
+  this->speed = speed;
 }
 CameraSDL::~CameraSDL() {
   delete this->cameraRect;
@@ -32,7 +25,7 @@ void CameraSDL::setFollowedObject(CustomSDLMaterialObject* object) {
 }
 CustomSDLRect* CameraSDL::getCameraRect() { return this->cameraRect; }
 
-void CameraSDL::resize(int w, int h) { //TODO
+void CameraSDL::resize(int w, int h) {  // TODO
   this->cameraRectResize_w = w;
   this->cameraRectResize_h = h;
 }
@@ -61,21 +54,18 @@ void CameraSDL::moveCamera() {
                              this->cameraRect->h);
   }
 
-  std::shared_ptr<SDL_Point> followedPoint;
-  followedPoint = this->followedObject->getGlobalDestination()->createCenter();
+  const SDL_Point followedPoint =
+      this->followedObject->getGlobalDestination()->getCenter();
 
-  std::shared_ptr<SDL_Rect> cameraInsideRect =
-      this->cameraRect->createInsideMiddleRect(
-          reduction);  // TODO modificar inside rect para ser proporcional ao
-                       // followed object
+  const SDL_Rect cameraInsideRect =
+      this->cameraRect->getInsideMiddleRect(reduction);
 
-  std::shared_ptr<SDL_Point> cameraCenterPoint =
-      this->cameraRect->createCenter();
+  const SDL_Point cameraCenterPoint = this->cameraRect->getCenter();
 
   // moving camera following the object
-  if (followedPoint->x > cameraInsideRect->x + cameraInsideRect->w ||
-      followedPoint->x < cameraInsideRect->x) {
-    int x_distance = followedPoint->x - cameraCenterPoint->x;
+  if (followedPoint.x > cameraInsideRect.x + cameraInsideRect.w ||
+      followedPoint.x < cameraInsideRect.x) {
+    int x_distance = followedPoint.x - cameraCenterPoint.x;
     int x_smoothDistance = (int)log2(abs(x_distance));
 
     if (x_distance > 0) {
@@ -92,10 +82,10 @@ void CameraSDL::moveCamera() {
       }
     }
   }
-  
-  if (followedPoint->y > cameraInsideRect->y + cameraInsideRect->h ||
-      followedPoint->y < cameraInsideRect->y) {
-    int y_distance = followedPoint->y - cameraCenterPoint->y;
+
+  if (followedPoint.y > cameraInsideRect.y + cameraInsideRect.h ||
+      followedPoint.y < cameraInsideRect.y) {
+    int y_distance = followedPoint.y - cameraCenterPoint.y;
     int y_smoothDistance = (int)log2(abs(y_distance));
 
     if (y_distance > 0) {
@@ -114,7 +104,7 @@ void CameraSDL::moveCamera() {
   }
 }
 SDL_Renderer* CameraSDL::film(Stage* stage) {
-  //render regions
+  // render regions
   for (SDL_Point point : this->cameraRect->getVertices()) {
     SDL_RenderCopy(
         this->renderer, stage->getRegion(point)->getBackground()->getTexture(),
@@ -126,8 +116,10 @@ SDL_Renderer* CameraSDL::film(Stage* stage) {
             .get());
   }
 
-  //render objects
-  for (CustomSDLMaterialObject* object : stage->getMaterialObjects()) {
+  // render objects
+  for (CustomSDLMaterialObject* object :
+       stage->getObjectsByType<CustomSDLMaterialObject>(
+           GAME_ENTITY_TYPE::MATERIAL_OBJECT)) {
     if (SDL_HasIntersection(object->getGlobalDestination(), this->cameraRect)) {
       SDL_RenderCopy(this->renderer, object->getTexture(), object->getSrcRect(),
                      object->getDestination(this->cameraRect));

@@ -1,28 +1,60 @@
-{
-    "version": 2,
-    "configurePresets": [
-        {
-            
-            "name": "default",
-            "displayName": "vcpkg preset",
-            "description": "Sets Ninja generator, build and install directory",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-             },
-            "cacheVariables": {
-                "CMAKE_CXX_STANDARD": "17",
-                "CMAKE_C_COMPILER": "cl",
-                "CMAKE_CXX_COMPILER": "cl",
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_TOOLCHAIN_FILE": {
-                    "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-                     "type": "FILEPATH"
-                  },
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
-            }
-        }
-    ]
+﻿{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "windows-base",
+      "description": "Fazer o direcionamento ao Windows com o ambiente de desenvolvimento do Visual Studio.",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg_toolchain_link/scripts/buildsystems/vcpkg.cmake",
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "x64-debug",
+      "displayName": "x64 Debug",
+      "description": "Destine ao Windows (64 bits) com o ambiente de desenvolvimento do Visual Studio. (Debug)",
+      "inherits": "windows-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "x64-release",
+      "displayName": "x64 Release",
+      "description": "Destine ao Windows (64 bits) com o ambiente de desenvolvimento do Visual Studio. (RelWithDebInfo)",
+      "inherits": "x64-debug",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "x86-debug",
+      "displayName": "x86 Debug",
+      "description": "Destine ao Windows (32 bits) com o ambiente de desenvolvimento do Visual Studio. (Debug)",
+      "inherits": "windows-base",
+      "architecture": {
+        "value": "x86",
+        "strategy": "external"
+      },
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "x86-release",
+      "displayName": "x86 Release",
+      "description": "Destine ao Windows (32 bits) com o ambiente de desenvolvimento do Visual Studio. (RelWithDebInfo)",
+      "inherits": "x86-debug",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    }
+  ]
 }

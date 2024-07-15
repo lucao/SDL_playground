@@ -5,7 +5,6 @@
 
 #include <CustomSDLObject.hpp>
 #include <Stage.hpp>
-#include <vector>
 
 class CameraSDL {
  private:
@@ -18,8 +17,8 @@ class CameraSDL {
   int speed;
 
  public:
-  CameraSDL(SDL_Window* window, CustomSDLMaterialObject* followedObject,
-         int* speed);
+  CameraSDL(SDL_Window* window,
+         int speed);
   ~CameraSDL();
   void setFollowedObject(CustomSDLMaterialObject* object);
   SDL_Renderer* getRenderer();

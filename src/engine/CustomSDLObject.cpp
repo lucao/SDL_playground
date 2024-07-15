@@ -2,6 +2,7 @@
 #include <SDL_image.h>
 
 #include <CustomSDLObject.hpp>
+#include <list>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -24,13 +25,11 @@ void CustomSDLRect::setRect(SDL_Rect rect) {
 }
 
 const SDL_Point CustomSDLRect::getPoint() { return {this->x, this->y}; }
-std::unique_ptr<CustomSDLRect> CustomSDLRect::createInsideMiddleRect(
-    uint8_t reductionProportion) {
+const SDL_Rect CustomSDLRect::getInsideMiddleRect(uint8_t reductionProportion) {
   int w_reducted = this->w / reductionProportion;
   int h_reducted = this->h / reductionProportion;
-  return std::unique_ptr<CustomSDLRect>(new CustomSDLRect(new SDL_Rect(
-      {(this->x + (this->w / 2) - (w_reducted / 2)),
-       (this->y + (this->h / 2) - (h_reducted / 2)), w_reducted, h_reducted})));
+  return {(this->x + (this->w / 2) - (w_reducted / 2)),
+          (this->y + (this->h / 2) - (h_reducted / 2)), w_reducted, h_reducted};
 }
 
 const SDL_Point CustomSDLRect::getCenter() {
@@ -62,8 +61,8 @@ int CustomSDLRect::yGetNearestBoundary(int y) {
     return this->y;
   }
 }
-std::vector<const SDL_Point> CustomSDLRect::getVertices() {
-  return std::vector<const SDL_Point>({
+std::vector<SDL_Point> CustomSDLRect::getVertices() {
+  return std::vector<SDL_Point>({
       SDL_Point({this->x, this->y}),
       SDL_Point({this->x + this->w, this->y}),
       SDL_Point({this->x, this->y + this->h}),
@@ -75,8 +74,8 @@ CustomSDLMaterialObject::CustomSDLMaterialObject(SDL_Texture *texture,
                                                  CustomSDLRect *srcRect,
                                                  CustomSDLRect *destination)
     : GlobalPositionalSDLObject(destination) {
-  this->srcRect = srcRect;
   this->texture = texture;
+  this->srcRect = srcRect;
 }
 
 CustomSDLMaterialObject::CustomSDLMaterialObject(CustomSDLRect *srcRect,
@@ -118,11 +117,6 @@ GlobalPositionalSDLObject::GlobalPositionalSDLObject(SDL_Rect *destination) {
 GlobalPositionalSDLObject::~GlobalPositionalSDLObject() {
   delete this->destination;
 }
-
-void CustomMovableSDLMaterialObject::move(SDL_Rect *destination) {
-  this->setDestination(destination);  // verificar como implementar movimentação
-}
-
 BackgroundSDLTexture::BackgroundSDLTexture(SDL_Texture *texture) {
   // SDL_CreateRGBSurface(0, 640, 480, 32, 120, 120, 120, -1);
   this->texture = texture;
@@ -133,3 +127,19 @@ BackgroundSDLTexture::~BackgroundSDLTexture() {
   SDL_DestroyTexture(this->texture);
 }
 SDL_Texture *BackgroundSDLTexture::getTexture() { return this->texture; }
+
+CustomAnimatedSDLMaterialObject::CustomAnimatedSDLMaterialObject(
+    SDL_Texture *texture, CustomSDLRect *srcRect, CustomSDLRect *destination,
+    int typesOfAnimation, int stepsOfAnimation)
+    : CustomSDLMaterialObject(texture, srcRect, destination) {
+  // TODO steps of animation
+}
+
+CustomAnimatedSDLMaterialObject::CustomAnimatedSDLMaterialObject(
+    CustomSDLRect *srcRect, CustomSDLRect *destination, int typesOfAnimation,
+    int stepsOfAnimation)
+    : CustomSDLMaterialObject(srcRect, destination) {
+  // TODO steps of animation
+}
+
+CustomAnimatedSDLMaterialObject::~CustomAnimatedSDLMaterialObject() {}

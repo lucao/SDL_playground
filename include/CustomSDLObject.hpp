@@ -3,8 +3,12 @@
 
 #include <SDL.h>
 
+#include<CustomPhysics.hpp>
+
+#include <list>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 struct CustomSDLRect : SDL_Rect {
@@ -12,13 +16,13 @@ struct CustomSDLRect : SDL_Rect {
   ~CustomSDLRect();
   const SDL_Point getPoint();
   const SDL_Point getCenter();
-  std::unique_ptr<CustomSDLRect> createInsideMiddleRect(
+  const SDL_Rect getInsideMiddleRect(
       uint8_t reductionProportion);
   bool xPointIsInBounds(int x);
   bool yPointIsInBounds(int y);
   int xGetNearestBoundary(int x);
   int yGetNearestBoundary(int y);
-  std::vector<const SDL_Point> getVertices();
+  std::vector<SDL_Point> getVertices();
 
   void setPoint(SDL_Point point);
   void setRect(SDL_Rect rect);
@@ -46,8 +50,6 @@ class CustomSDLMaterialObject : public GlobalPositionalSDLObject {
   SDL_Texture *texture;
   CustomSDLRect *srcRect;
 
-  void setLastDestination(CustomSDLRect *lastDestination);
-
  public:
   CustomSDLMaterialObject(SDL_Texture *texture, CustomSDLRect *srcRect,
                           CustomSDLRect *destination);
@@ -60,17 +62,6 @@ class CustomSDLMaterialObject : public GlobalPositionalSDLObject {
   virtual CustomSDLRect *getSrcRect();
 };
 
-class CustomMovableSDLMaterialObject : public CustomSDLMaterialObject {
- public:
-  CustomMovableSDLMaterialObject(SDL_Texture *texture, CustomSDLRect *srcRect,
-                                 CustomSDLRect *destination);
-  CustomMovableSDLMaterialObject(CustomSDLRect *srcRect,
-                                 CustomSDLRect *destination);
-  virtual ~CustomMovableSDLMaterialObject();
-
-  void move(SDL_Rect *destination);
-};
-
 struct CustomSDLAnimation {};
 
 class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
@@ -80,7 +71,7 @@ class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
 
   Uint64 animationFrameGap;
   Uint64 lastTick;
-//TODO
+  // TODO
  public:
   CustomAnimatedSDLMaterialObject(SDL_Texture *texture, CustomSDLRect *srcRect,
                                   CustomSDLRect *destination,

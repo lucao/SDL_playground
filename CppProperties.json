@@ -1,0 +1,23 @@
+{
+  "configurations": [
+    {
+      "cppStandard": "c++21",
+      "cStandard": "c21",
+      "defines": [
+        "WIN32",
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "includePath": [
+        "${env.INCLUDE}",
+        "${workspaceRoot}\\**"
+      ],
+      "inheritEnvironments": [
+        "msvc_x64"
+      ],
+      "intelliSenseMode": "windows-msvc-x64",
+      "name": "x64-Debug"
+    }
+  ]
+}

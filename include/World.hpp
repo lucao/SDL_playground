@@ -1,13 +1,19 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <unordered_set>
+#include <Stage.hpp>
+#include <unordered_map>
 
 class World {
- private:
- public:
-  World();
-  ~World();
+	private:
+
+	std::unordered_map<Stage::StageId, Stage*, Stage::StageId> stages;
+
+	public:
+	World();
+	~World();
+	Stage* createBlankStage(SDL_Renderer* renderer);
+	Stage* getStage(Stage::StageId id);
 };
 
 #endif
