@@ -71,15 +71,15 @@ class PhysicsControl {
       *dynamicsWorld;  // = new btDiscreteDynamicsWorld(dispatcher, broadphase,
   // solver, collisionConfiguration);
 
-  void addPhysicalObject(CustomPhysicalObject *object);
+  void addPhysicalObject(CustomPhysicalObject object);
 
  public:
   PhysicsControl();
   virtual ~PhysicsControl();
 
-  void doPhysics(std::vector<CustomPhysicalObject *> objects) noexcept;
-  std::vector<std::pair<CustomPhysicalObject *, CustomPhysicalObject *>>
-  getCollisions(std::vector<CustomPhysicalObject *> objects) noexcept;
+  void doPhysics(std::vector<CustomPhysicalObject> objects) noexcept;
+  std::vector<std::pair<CustomPhysicalObject, CustomPhysicalObject>>
+  getCollisions(std::vector<CustomPhysicalObject> objects) noexcept;
 };
 
 #endif

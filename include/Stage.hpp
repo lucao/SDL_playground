@@ -3,8 +3,7 @@
 
 #include <SDL.h>
 
-#include<entt/entt.hpp>
-
+#include <CustomGameObjects.hpp>
 #include <CustomPhysics.hpp>
 #include <CustomSDLObject.hpp>
 #include <CustomUtils.hpp>
@@ -12,8 +11,6 @@
 #include <unordered_set>
 #include <valarray>
 #include <vector>
-#include <CustomGameObjects.hpp>
-
 
 class Region {
  public:
@@ -108,7 +105,7 @@ class Stage {
   Stage* nextStage;
   Stage* previousStage;
 
-  std::vector<entt::registry> entities;
+  std::vector<CustomSDLMaterialObject> materialObjects;
 
   SDL_Texture* default_dynamic_texture;
 
@@ -124,9 +121,8 @@ class Stage {
   Stage* getNextStage();
   Stage* getPreviousStage();
   Region* getRegion(SDL_Point point);
-  void placeEntity(entt::registry entity,
-                   std::initializer_list<GAME_ENTITY_TYPE> types...);
-  std::vector<entt::registry> getEntities(GAME_ENTITY_TYPE types...);
+  void placeMaterialObject(CustomSDLMaterialObject* materialObject);
+  std::vector<CustomSDLMaterialObject> getMaterialObjects();
 };
 
 class StageOutOfBounds : public std::exception {

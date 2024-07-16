@@ -1,14 +1,14 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
-#include <CustomPhysics.hpp>
 #include <CustomGameCharacters.hpp>
+#include <CustomPhysics.hpp>
 #include <CustomScreen.hpp>
 #include <Stage.hpp>
 #include <World.hpp>
 #include <deque>
-#include <vector>
 #include <queue>
+#include <vector>
 
 class FPSControl {
  private:
@@ -62,11 +62,28 @@ class GameControl {
   Screen* screen;
 
   World* world;
-  Stage::StageId currentStageId;
+  Stage* currentStage;
 
   PhysicsControl* physicsControl;
 
   CustomPlayer* mainPlayer;
+
+  std::vector<EventListener> eventListeners;
+
+  std::vector<CustomPhysicalObject> physicalObjects;
+
+  CustomPlayer* createLocalPlayer() {
+    CustomPlayer* localPlayer = new CustomPlayer(
+        new CustomSDLRect(new SDL_Rect({0, 0, 300, 300})),
+        new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 0, 0, 7, 10);
+    localPlayer->setTexture(IMG_LoadTextureTyped_RW(
+        camera->getRenderer(),
+        SDL_RWFromFile(
+            "C:\\Users\\lucas\\git\\SDL_playground\\media\\img\\Naruto.jpg",
+            "r"),
+        1, "jpeg"));
+    return localPlayer;
+  }
 
  public:
   GameControl() {
@@ -88,41 +105,30 @@ class GameControl {
 
     this->world = new World();
 
-    this->mainPlayer = new CustomPlayer(
-        new CustomSDLRect(new SDL_Rect({0, 0, 300, 300})),
-        new CustomSDLRect(new SDL_Rect({0, 0, 50, 50})), 0, 0, 7, 10);
-    this->mainPlayer->setTexture(IMG_LoadTextureTyped_RW(
-        camera->getRenderer(),
-        SDL_RWFromFile(
-            "C:\\Users\\lucas\\git\\SDL_playground\\media\\img\\Naruto.jpg",
-            "r"),
-        1, "jpeg"));
+    this->mainPlayer = this->createLocalPlayer();
 
-    Stage* stage = this->world->createBlankStage(camera->getRenderer());
-    this->currentStageId = stage->getId();
-    stage->placeObject(this->mainPlayer, {GAME_ENTITY_TYPE::PLAYABLE_OBJECT,
-                                          GAME_ENTITY_TYPE::PHYSICAL_OBJECT,
-                                          GAME_ENTITY_TYPE::MATERIAL_OBJECT});
+    this->physicalObjects.push_back(*this->mainPlayer);
+
+    this->eventListeners.push_back(*this->mainPlayer);
+
+    this->currentStage = this->world->createBlankStage(camera->getRenderer());
+    this->currentStage->placeMaterialObject(this->mainPlayer);
 
     this->camera->setFollowedObject(this->mainPlayer);
     this->physicsControl = new PhysicsControl();
   }
 
-  CustomPlayer* getMainPlayer() { return this->mainPlayer; }
+  std::vector<EventListener> getEventListeners() {
+    return this->eventListeners;
+  }
 
   void processLogic() noexcept {
-    Stage* stage = this->world->getStage(currentStageId);
+    this->physicsControl->doPhysics(this->physicalObjects);
 
-    std::vector<CustomPhysicalObject*> physicalObjects =
-        stage->getObjectsByType<CustomPhysicalObject>(
-            GAME_ENTITY_TYPE::PHYSICAL_OBJECT);
+    std::vector<std::pair<CustomPhysicalObject, CustomPhysicalObject>>
+        collisions = this->physicsControl->getCollisions(this->physicalObjects);
 
-    this->physicsControl->doPhysics(physicalObjects);
-
-    std::vector<std::pair<CustomPhysicalObject*, CustomPhysicalObject*>>
-        collisions = this->physicsControl->getCollisions(physicalObjects);
-
-    for (std::pair<CustomPhysicalObject*, CustomPhysicalObject*> pair :
+    for (std::pair<CustomPhysicalObject, CustomPhysicalObject> pair :
          collisions) {
     }
   }
@@ -138,8 +144,7 @@ class GameControl {
 
     try {
       SDL_RenderClear(this->camera->getRenderer());
-      SDL_RenderPresent(
-          this->camera->film(this->world->getStage(currentStageId)));
+      SDL_RenderPresent(this->camera->film(this->currentStage));
     } catch (StageOutOfBounds err) {
       // Load new stage
       printf(err.what());
@@ -149,23 +154,22 @@ class GameControl {
 
 class EventControl {
  private:
-  std::queue<CustomEvent*> eventsQueue;
-  std::vector<EventListener*> eventListeners;
+  std::queue<CustomEvent> eventsQueue;
+  std::vector<EventListener> eventListeners;
 
  public:
   virtual ~EventControl() {}
-  void addEventListener(EventListener* listener) {
+  void addEventListener(EventListener listener) {
     eventListeners.push_back(listener);
   }
-  virtual void addEvent(CustomEvent* event) { eventsQueue.push(event); }
+  virtual void addEvent(CustomEvent event) { eventsQueue.push(event); }
   void processEvents() {
     while (!eventsQueue.empty()) {
-      CustomEvent* event = this->eventsQueue.front();
-      for (EventListener* listener : eventListeners) {
-        listener->handleEvent(event);  // TODO handle exceptions
+      CustomEvent event = this->eventsQueue.front();
+      for (EventListener listener : eventListeners) {
+        listener.handleEvent(event);  // TODO handle exceptions
       }
       this->eventsQueue.pop();
-      delete event;
     }
   }
 };
@@ -180,7 +184,10 @@ int main(int, char**) {
 
     printf("Start game loop...");
     EventControl* eventControl = new EventControl();
-    eventControl->addEventListener(gameControl->getMainPlayer());
+
+    for (EventListener listener : gameControl->getEventListeners()) {
+      eventControl->addEventListener(listener);
+    }
 
     while (gameControl->isGameLoopRunning()) {
       fpsControl->tick();
@@ -232,12 +239,12 @@ int main(int, char**) {
     */
 
       if (keyboardState[SDL_SCANCODE_A] || keyboardState[SDL_SCANCODE_LEFT]) {
-        eventControl->addEvent(new CustomEvent(
+        eventControl->addEvent(CustomEvent(
             PLAYER_ACTION::PLAYER_LEFT_KEY_PRESSED,
             fpsControl->getLastFrameTick(), fpsControl->getFrameTick()));
       }
       if (keyboardState[SDL_SCANCODE_D] || keyboardState[SDL_SCANCODE_RIGHT]) {
-        eventControl->addEvent(new CustomEvent(
+        eventControl->addEvent(CustomEvent(
             PLAYER_ACTION::PLAYER_RIGHT_KEY_PRESSED,
             fpsControl->getLastFrameTick(), fpsControl->getFrameTick()));
       }

@@ -43,7 +43,7 @@ class CustomPlayer : public CustomGameCharacter,
         bool isJumping() const override;
         int getJumpForce() const override;
 
-        void handleEvent(CustomEvent* event) override;
+        void handleEvent(CustomEvent event) override;
 };
 
 #endif

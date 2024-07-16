@@ -57,25 +57,25 @@ inline bool CustomPlayer::isJumping() const { return false; }
 // calcular com base em atributos
 inline int CustomPlayer::getJumpForce() const { return 10; }
 
-void CustomPlayer::handleEvent(CustomEvent* event) {
+void CustomPlayer::handleEvent(CustomEvent event) {
   bool jumping = this->isJumping();
-  if (event->getAction() == PLAYER_ACTION::PLAYER_JUMP_KEY_PRESSED) {
+  if (event.getAction() == PLAYER_ACTION::PLAYER_JUMP_KEY_PRESSED) {
     if (this->canJump()) {
       this->move(Jump(this->getJumpForce(),
                       this->getGlobalDestination()->getPoint(),
-                      event->getInitialTick(), event->getEndTick()));
+                      event.getInitialTick(), event.getEndTick()));
     }
   }
 
   if (this->canMove()) {
-    if (event->getAction() == PLAYER_ACTION::PLAYER_RIGHT_KEY_PRESSED) {
+    if (event.getAction() == PLAYER_ACTION::PLAYER_RIGHT_KEY_PRESSED) {
       this->move(Walk(this->normalSpeed, Direction::RIGHT,
                       this->getGlobalDestination()->getPoint(),
-                      event->getInitialTick(), event->getEndTick()));
-    } else if (event->getAction() == PLAYER_ACTION::PLAYER_LEFT_KEY_PRESSED) {
+                      event.getInitialTick(), event.getEndTick()));
+    } else if (event.getAction() == PLAYER_ACTION::PLAYER_LEFT_KEY_PRESSED) {
       this->move(Walk(this->normalSpeed, Direction::LEFT,
                       this->getGlobalDestination()->getPoint(),
-                      event->getInitialTick(), event->getEndTick()));
+                      event.getInitialTick(), event.getEndTick()));
     }
   }
 }

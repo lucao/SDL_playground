@@ -85,7 +85,6 @@ CustomSDLMaterialObject::CustomSDLMaterialObject(CustomSDLRect *srcRect,
 }
 
 CustomSDLMaterialObject::~CustomSDLMaterialObject() {
-  delete this->srcRect;
   SDL_DestroyTexture(this->texture);
 }
 CustomSDLRect *CustomSDLMaterialObject::getSrcRect() { return this->srcRect; }
@@ -114,9 +113,7 @@ GlobalPositionalSDLObject::GlobalPositionalSDLObject() {
 GlobalPositionalSDLObject::GlobalPositionalSDLObject(SDL_Rect *destination) {
   this->destination = new CustomSDLRect(destination);
 }
-GlobalPositionalSDLObject::~GlobalPositionalSDLObject() {
-  delete this->destination;
-}
+GlobalPositionalSDLObject::~GlobalPositionalSDLObject() {}
 BackgroundSDLTexture::BackgroundSDLTexture(SDL_Texture *texture) {
   // SDL_CreateRGBSurface(0, 640, 480, 32, 120, 120, 120, -1);
   this->texture = texture;

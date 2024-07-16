@@ -117,12 +117,11 @@ SDL_Renderer* CameraSDL::film(Stage* stage) {
   }
 
   // render objects
-  for (CustomSDLMaterialObject* object :
-       stage->getObjectsByType<CustomSDLMaterialObject>(
-           GAME_ENTITY_TYPE::MATERIAL_OBJECT)) {
-    if (SDL_HasIntersection(object->getGlobalDestination(), this->cameraRect)) {
-      SDL_RenderCopy(this->renderer, object->getTexture(), object->getSrcRect(),
-                     object->getDestination(this->cameraRect));
+  for (CustomSDLMaterialObject object :
+       stage->getMaterialObjects()) {
+    if (SDL_HasIntersection(object.getGlobalDestination(), this->cameraRect)) {
+      SDL_RenderCopy(this->renderer, object.getTexture(), object.getSrcRect(),
+                     object.getDestination(this->cameraRect));
     }
   }
 

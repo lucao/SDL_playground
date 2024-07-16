@@ -3,10 +3,12 @@
 CustomPhysicalObject::CustomPhysicalObject(CollisionMasks collisionMask,
                                            CollisionFilters collisionFilter,
                                            btCollisionObject* body) {
-  // TODO
+  this->collisionFilter = collisionFilter;
+  this->collisionMask = collisionMask;
+  this->body = body;
 }
 
-CustomPhysicalObject::~CustomPhysicalObject() { delete this->body; }
+CustomPhysicalObject::~CustomPhysicalObject() {}
 
 btCollisionObject* CustomPhysicalObject::getCollisionObject() {
   return this->body;
@@ -66,13 +68,16 @@ PhysicsControl::~PhysicsControl() {
 }
 
 void PhysicsControl::doPhysics(
-    std::vector<CustomPhysicalObject*> objects) noexcept {}
-std::vector<std::pair<CustomPhysicalObject*, CustomPhysicalObject*>>
+    std::vector<CustomPhysicalObject> objects) noexcept {}
+
+std::vector<std::pair<CustomPhysicalObject, CustomPhysicalObject>>
 PhysicsControl::getCollisions(
-    std::vector<CustomPhysicalObject*> objects) noexcept {
-  for (CustomPhysicalObject* object : objects) {
+    std::vector<CustomPhysicalObject> objects) noexcept {
+  /*
+  for (CustomPhysicalObject object : objects) {
     this->addPhysicalObject(object);
   }
+  
 
   this->dynamicsWorld->stepSimulation(1 / 60.f, 10);
 
@@ -93,11 +98,12 @@ PhysicsControl::getCollisions(
       // has hit
     }
   }
-
-  return std::vector<std::pair<CustomPhysicalObject*, CustomPhysicalObject*>>();
+  */
+  return {};//std::vector<std::pair<CustomPhysicalObject, CustomPhysicalObject>>();
 }
 
-void PhysicsControl::addPhysicalObject(CustomPhysicalObject* object) {
+void PhysicsControl::addPhysicalObject(CustomPhysicalObject object) {
   // TODO add physical object by it's type (rigid body, collision object or
   // character)
+  return;
 }

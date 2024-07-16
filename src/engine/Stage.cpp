@@ -125,15 +125,12 @@ Stage::Stage(Stage::StageId stageId, CustomSDLRect* rect,
                      "r"),
       1, "jpeg");
 }
-
-void Stage::placeEntity(entt::registry entity,
-                        std::initializer_list<GAME_ENTITY_TYPE> types) {
-  //TODO
+void Stage::placeMaterialObject(CustomSDLMaterialObject* materialObject) {
+  this->materialObjects.push_back(*materialObject);
 }
-
-  void placeEntity(entt::registry entity,
-                 std::initializer_list<GAME_ENTITY_TYPE> types);
-std::vector<entt::registry> getEntities(GAME_ENTITY_TYPE types...);
+std::vector<CustomSDLMaterialObject> Stage::getMaterialObjects() {
+  return this->materialObjects;
+}
 
 Stage::StageId Stage::getId() { return Stage::StageId(); }
 Stage* Stage::getNextStage() { return this->nextStage; }

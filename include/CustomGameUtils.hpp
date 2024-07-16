@@ -73,7 +73,7 @@ class CustomEvent {
 
 class EventListener {
  public:
-  virtual void handleEvent(CustomEvent* event);
+  virtual void handleEvent(CustomEvent event);
 };
 
 class Walk : public Movement {

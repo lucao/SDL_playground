@@ -32,6 +32,6 @@ PLAYER_ACTION CustomEvent::getAction() { return this->action; }
 Uint64 CustomEvent::getInitialTick() { return this->initialTick; }
 Uint64 CustomEvent::getEndTick() { return this->endTick; }
 
-void EventListener::handleEvent(CustomEvent* event) {
+void EventListener::handleEvent(CustomEvent event) {
   // handle general events
 }

@@ -3,8 +3,15 @@
   "version-string": "0.1.0",
   "dependencies": [
     "boost",
-    "sdl2",
-    "sdl2-image",
+    {
+      "name": "sdl2",
+      "default-features": true
+    },
+    {
+      "name": "sdl2-image",
+      "features": [ "libjpeg-turbo" ]
+    },
+    "libjpeg-turbo",
     "imgui",
     "bullet3",
     "entt"

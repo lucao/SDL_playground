@@ -8,7 +8,6 @@ find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_image CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(Bullet CONFIG REQUIRED)
-find_package(EnTT CONFIG REQUIRED)
     
 set(SOURCES 
 src/engine/CustomGameCharacters.cpp 
@@ -17,19 +16,14 @@ src/engine/CustomScreen.cpp
 src/engine/CustomSDLObject.cpp
 src/engine/Stage.cpp
 src/engine/World.cpp
-src/engine/CustomGameUtils.cpp)
+src/engine/CustomGameUtils.cpp 
+src/engine/CustomGameComponents.cpp)
 
 add_executable(game src/main.cpp ${SOURCES})
 
-target_link_libraries(game PRIVATE $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)
+target_link_libraries(game PRIVATE SDL2::SDL2 SDL2::SDL2main SDL2_image::SDL2_image)
 target_link_libraries(game PRIVATE imgui::imgui)
-target_link_libraries(game
-        PRIVATE
-        $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
-        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
-    )
-        target_link_libraries(game PRIVATE ${BULLET_LIBRARIES})
-target_link_libraries(game PRIVATE EnTT::EnTT)
+target_link_libraries(game PRIVATE ${BULLET_LIBRARIES})
 
 target_include_directories(game PUBLIC include)
 target_include_directories(game PUBLIC include/macros)
