@@ -7,3 +7,5 @@ src/test/*.exe
 /.vs/SDL_playground/v17
 /.vs
 /vcpkg_installed
+/libs/d3d9.dll
+/libs/d3d9.lib

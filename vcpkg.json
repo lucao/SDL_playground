@@ -14,7 +14,11 @@
     "libjpeg-turbo",
     "imgui",
     "bullet3",
-    "entt"
+    "entt",
+    {
+      "name": "imgui",
+      "features": [ "dx9-binding", "win32-binding" ]
+    }
   ],
   "builtin-baseline": "3f530d4827b064f5894e94a8946473d40999826e"
 }

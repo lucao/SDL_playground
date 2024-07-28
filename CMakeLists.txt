@@ -21,9 +21,18 @@ src/engine/CustomGameComponents.cpp)
 
 add_executable(game src/main.cpp ${SOURCES})
 
-target_link_libraries(game PRIVATE SDL2::SDL2 SDL2::SDL2main SDL2_image::SDL2_image)
+link_directories(libs)
+
+target_link_libraries(game PRIVATE d3d9)
+target_link_libraries(game
+    PRIVATE
+    $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+    $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+    )
+target_link_libraries(game PRIVATE $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)
 target_link_libraries(game PRIVATE imgui::imgui)
 target_link_libraries(game PRIVATE ${BULLET_LIBRARIES})
+target_link_libraries(game PRIVATE d3d9)
 
 target_include_directories(game PUBLIC include)
 target_include_directories(game PUBLIC include/macros)
@@ -33,6 +42,7 @@ set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
 
 install(TARGETS game RUNTIME DESTINATION bin)
+install(FILES "${CMAKE_SOURCE_DIR}/libs/d3d9.dll" DESTINATION bin)
 
 include(CTest)
 enable_testing()
