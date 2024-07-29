@@ -100,29 +100,37 @@ void CameraSDL::moveCamera() {
   }
 }
 SDL_Renderer* CameraSDL::film(Stage* stage) {
-  // render regions
-  for (SDL_Point point : this->cameraRect.getVertices()) {
-    SDL_RenderCopy(
-        this->renderer, stage->getRegion(point)->getBackground()->getTexture(),
-        std::make_unique<CustomSDLRect>(
-            stage->getRegion(point)->getSrcRect(this->cameraRect))
-            .get(),
-        std::make_unique<CustomSDLRect>(
-            stage->getRegion(point)->cropRectInside(this->cameraRect))
-            .get());
-  }
+  SDL_SetRenderDrawColor(this->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+  SDL_RenderClear(this->renderer);
 
+  // render regions
+  std::vector<Region*> regionsToRender;
+  for (SDL_Point point : this->cameraRect.getVertices()) {
+    Region* region = stage->getRegion(point);
+    if (std::find(regionsToRender.begin(), regionsToRender.end(), region) ==
+        regionsToRender.end()) {
+      regionsToRender.push_back(region);
+    }
+  }
+  for (Region* regionToRender : regionsToRender) {
+    SDL_RenderCopy(
+        this->renderer, regionToRender->getBackground()->getTexture(),
+        &CustomSDLRect(regionToRender->getSrcRect(this->cameraRect)),
+        &CustomSDLRect(regionToRender->cropRectInside(this->cameraRect)));
+  }
   // render objects
-  for (CustomSDLMaterialObject object : stage->getMaterialObjects()) {
+  for (CustomSDLMaterialObject* object : stage->getMaterialObjects()) {
     const SDL_Rect screenDestination = {
-        object.getDestination().x - this->cameraRect.x,
-        object.getDestination().y - this->cameraRect.y,
-        object.getDestination().w, object.getDestination().h};
-    if (SDL_HasIntersection(&object.getDestination(), &this->cameraRect)) {
-      SDL_RenderCopy(this->renderer, object.getTexture(), &object.getSrcRect(),
+        object->getDestination().x - this->cameraRect.x,
+        object->getDestination().y - this->cameraRect.y,
+        object->getDestination().w, object->getDestination().h};
+    if (SDL_HasIntersection(&object->getDestination(), &this->cameraRect)) {
+      SDL_RenderCopy(this->renderer, object->getTexture(), &object->getSrcRect(),
                      &screenDestination);
     }
   }
+
+  SDL_RenderPresent(this->renderer);
   return this->renderer;
 }
 

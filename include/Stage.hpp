@@ -106,7 +106,7 @@ class Stage {
   Stage* nextStage;
   Stage* previousStage;
 
-  std::vector<CustomSDLMaterialObject> materialObjects;
+  std::vector<CustomSDLMaterialObject*> materialObjects;
 
   SDL_Texture* default_dynamic_texture;
 
@@ -123,7 +123,7 @@ class Stage {
   Stage* getPreviousStage();
   Region* getRegion(SDL_Point point);
   void placeMaterialObject(CustomSDLMaterialObject* materialObject);
-  std::vector<CustomSDLMaterialObject> getMaterialObjects();
+  std::vector<CustomSDLMaterialObject*> getMaterialObjects();
 };
 
 class StageOutOfBounds : public std::exception {

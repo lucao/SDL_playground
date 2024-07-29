@@ -121,9 +121,9 @@ Stage::Stage(Stage::StageId stageId, CustomSDLRect rect,
       1, "jpeg");
 }
 void Stage::placeMaterialObject(CustomSDLMaterialObject* materialObject) {
-  this->materialObjects.push_back(*materialObject);
+  this->materialObjects.push_back(materialObject);
 }
-std::vector<CustomSDLMaterialObject> Stage::getMaterialObjects() {
+std::vector<CustomSDLMaterialObject*> Stage::getMaterialObjects() {
   return this->materialObjects;
 }
 

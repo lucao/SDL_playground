@@ -81,8 +81,8 @@ class GameControl {
 
   CustomPlayer* createLocalPlayer() {
     CustomPlayer* localPlayer =
-        new CustomPlayer(CustomSDLRect(SDL_Rect({0, 0, 300, 300})),
-                         CustomSDLRect(SDL_Rect({0, 0, 50, 50})), 0, 0, 7, 10);
+        new CustomPlayer(CustomSDLRect(SDL_Rect({27, 8, 40, 50})),
+                         CustomSDLRect(SDL_Rect({0, 0, 40, 50})), 0, 0, 7, 5);
     localPlayer->setTexture(IMG_LoadTextureTyped_RW(
         camera->getRenderer(),
         SDL_RWFromFile(
@@ -152,8 +152,7 @@ class GameControl {
     this->camera->moveCamera();
 
     try {
-      SDL_RenderClear(this->camera->getRenderer());
-      SDL_RenderPresent(this->camera->film(this->currentStage));
+      this->camera->film(this->currentStage);
     } catch (StageOutOfBounds err) {
       // Load new stage
       printf(err.what());
