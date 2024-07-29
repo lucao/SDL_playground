@@ -61,7 +61,7 @@ class Region {
 
   BackgroundSDLTexture* background;
   std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion;
-  CustomSDLRect* rect;
+  CustomSDLRect rect;
 
  public:
   static const int fixedRegionWidth = 1920;
@@ -70,22 +70,23 @@ class Region {
  public:
   Region(RegionID regionID,
          std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-         CustomSDLRect* rect, BackgroundSDLTexture* background);
+         CustomSDLRect rect, BackgroundSDLTexture* background);
   virtual ~Region();
   void addObjectToRegion(CustomSDLMaterialObject* object);
   void removeObjectFromRegion(CustomSDLMaterialObject* object);
   RegionID getRegionId();
-  CustomSDLRect* getRect();
-  CustomSDLRect* getDestinationRect(CustomSDLRect* referenceRect);
+  CustomSDLRect getRect();
   BackgroundSDLTexture* getBackground();
-  CustomSDLRect* getSrcRect(CustomSDLRect* referenceRect);
+  CustomSDLRect getSrcRect(CustomSDLRect referenceRect);
+
+  CustomSDLRect cropRectInside(CustomSDLRect referenceRect);
 };
 
 class BlankRegion : public Region {
  public:
   BlankRegion(Region::RegionID regionId,
               std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-              CustomSDLRect* rect, BackgroundSDLTexture* background)
+              CustomSDLRect rect, BackgroundSDLTexture* background)
       : Region(regionId, objectsOnRegion, rect, background){};
   virtual ~BlankRegion(){};
 };
@@ -101,7 +102,7 @@ class Stage {
 
  private:
   Stage::StageId id;
-  CustomSDLRect* rect;
+  CustomSDLRect rect;
   Stage* nextStage;
   Stage* previousStage;
 
@@ -114,7 +115,7 @@ class Stage {
       regionsMatrix;
 
  public:
-  Stage(Stage::StageId stageId, CustomSDLRect* rect, SDL_Renderer* renderer);
+  Stage(Stage::StageId stageId, CustomSDLRect rect, SDL_Renderer* renderer);
   ~Stage();
 
   Stage::StageId getId();
@@ -176,7 +177,7 @@ class DynamicRegion : public Region {
 
   DynamicRegion(Region::RegionID regionId,
                 std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-                CustomSDLRect* rect, SDL_Renderer* renderer,
+                CustomSDLRect rect, SDL_Renderer* renderer,
                 SDL_Texture* texture);
   ~DynamicRegion();
 };

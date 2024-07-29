@@ -6,7 +6,7 @@
 DynamicRegion::DynamicRegion(
     Region::RegionID regionId,
     std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-    CustomSDLRect* rect, SDL_Renderer* renderer, SDL_Texture* texture)
+    CustomSDLRect rect, SDL_Renderer* renderer, SDL_Texture* texture)
     : Region(regionId, objectsOnRegion, rect,
              new BackgroundSDLTexture(texture)) {}
 DynamicRegion::~DynamicRegion() {}
@@ -19,48 +19,43 @@ const std::valarray<std::valarray<int>>
 
 Region::Region(Region::RegionID regionId,
                std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-               CustomSDLRect* rect, BackgroundSDLTexture* background) {
+               CustomSDLRect rect, BackgroundSDLTexture* background) {
   this->regionID = regionId;
   this->rect = rect;
   this->objectsOnRegion = objectsOnRegion;
   this->background = background;
 }
-Region::~Region() {
-  delete this->rect;
-  delete this->background;
-}
+Region::~Region() { delete this->background; }
 void Region::addObjectToRegion(CustomSDLMaterialObject* object) {
   this->objectsOnRegion.insert(object);
 }
 void Region::removeObjectFromRegion(CustomSDLMaterialObject* object) {
   this->objectsOnRegion.erase(object);
 }
-CustomSDLRect* Region::getRect() { return this->rect; }
-CustomSDLRect* Region::getDestinationRect(CustomSDLRect* referenceRect) {
-  std::unique_ptr<CustomSDLRect> referenceDestinationRect =
-      std::make_unique<CustomSDLRect>(
-          new SDL_Rect({0, 0, referenceRect->w, referenceRect->h}));
+CustomSDLRect Region::getRect() { return this->rect; }
 
-  std::unique_ptr<CustomSDLRect> thisDestinationRect =
-      std::make_unique<CustomSDLRect>(new SDL_Rect(
-          {this->rect->x - referenceRect->x, this->rect->y - referenceRect->y,
-           this->rect->w, this->rect->h}));
+CustomSDLRect Region::cropRectInside(CustomSDLRect rect) {
+  CustomSDLRect referenceDestinationRect =
+      CustomSDLRect(SDL_Rect({0, 0, rect.w, rect.h}));
 
-  CustomSDLRect* destinationRect = new CustomSDLRect(new SDL_Rect());
-  if (SDL_IntersectRect(thisDestinationRect.get(),
-                        referenceDestinationRect.get(), destinationRect)) {
+  CustomSDLRect thisDestinationRect =
+      CustomSDLRect(SDL_Rect({this->rect.x - rect.x, this->rect.y - rect.y,
+                              this->rect.w, this->rect.h}));
+
+  CustomSDLRect destinationRect;
+  if (SDL_IntersectRect(&thisDestinationRect, &referenceDestinationRect,
+                        &destinationRect)) {
     return destinationRect;
   } else {  // throw exception
-    return new CustomSDLRect(new SDL_Rect());
+    return CustomSDLRect(SDL_Rect());
   }
 }
-CustomSDLRect* Region::getSrcRect(CustomSDLRect* referenceRect) {
-  CustomSDLRect* srcRect = new CustomSDLRect(new SDL_Rect());
+CustomSDLRect Region::getSrcRect(CustomSDLRect referenceRect) {
+  CustomSDLRect srcRect;
+  SDL_IntersectRect(&this->rect, &referenceRect, &srcRect);
 
-  SDL_IntersectRect(this->rect, referenceRect, srcRect);
-
-  srcRect->x -= this->rect->x;
-  srcRect->y -= this->rect->y;
+  srcRect.x -= this->rect.x;
+  srcRect.y -= this->rect.y;
 
   return srcRect;
 }
@@ -76,13 +71,13 @@ Region* Stage::getRegion(SDL_Point point) {
     region = this->regionsMatrix.getElement(regionId);
   } catch (ElementNotFountException&) {
     // load new region
-    region =
-        new Region(regionId, {},
-                   new CustomSDLRect(new SDL_Rect(
-                       {regionId.id.first * Region::fixedRegionWidth,
-                        regionId.id.second * Region::fixedRegionHeight,
-                        Region::fixedRegionWidth, Region::fixedRegionHeight})),
-                   new BackgroundSDLTexture(this->default_dynamic_texture));
+    region = new Region(
+        regionId, {},
+        CustomSDLRect(
+            SDL_Rect({regionId.id.first * Region::fixedRegionWidth,
+                      regionId.id.second * Region::fixedRegionHeight,
+                      Region::fixedRegionWidth, Region::fixedRegionHeight})),
+        new BackgroundSDLTexture(this->default_dynamic_texture));
 
     this->regionsMatrix.addElement(
         regionId, [this, region](Region::RegionID regionId) { return region; });
@@ -98,12 +93,12 @@ Region* Stage::getRegion(SDL_Point point) {
               neighbourRegionID, [this](Region::RegionID neighbourRegionIDKey) {
                 return new Region(
                     neighbourRegionIDKey, {},
-                    new CustomSDLRect(new SDL_Rect(
-                        {neighbourRegionIDKey.id.first *
-                             Region::fixedRegionWidth,
-                         neighbourRegionIDKey.id.second *
-                             Region::fixedRegionHeight,
-                         Region::fixedRegionWidth, Region::fixedRegionHeight})),
+                    CustomSDLRect(SDL_Rect({neighbourRegionIDKey.id.first *
+                                                Region::fixedRegionWidth,
+                                            neighbourRegionIDKey.id.second *
+                                                Region::fixedRegionHeight,
+                                            Region::fixedRegionWidth,
+                                            Region::fixedRegionHeight})),
                     new BackgroundSDLTexture(this->default_dynamic_texture));
               });
         }
@@ -114,8 +109,8 @@ Region* Stage::getRegion(SDL_Point point) {
   return region;
 }
 
-Stage::~Stage() { delete this->rect; }
-Stage::Stage(Stage::StageId stageId, CustomSDLRect* rect,
+Stage::~Stage() {}
+Stage::Stage(Stage::StageId stageId, CustomSDLRect rect,
              SDL_Renderer* renderer) {
   this->rect = rect;
   this->id = stageId;

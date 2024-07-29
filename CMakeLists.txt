@@ -36,6 +36,7 @@ target_link_libraries(game PRIVATE d3d9)
 
 target_include_directories(game PUBLIC include)
 target_include_directories(game PUBLIC include/macros)
+target_include_directories(game PUBLIC include/debug)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

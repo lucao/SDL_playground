@@ -8,7 +8,7 @@
 
 class CameraSDL {
  private:
-  CustomSDLRect* cameraRect;
+  CustomSDLRect cameraRect;
   int cameraRectResize_w;
   int cameraRectResize_h;
   CustomSDLMaterialObject* followedObject;
@@ -22,7 +22,7 @@ class CameraSDL {
   ~CameraSDL();
   void setFollowedObject(CustomSDLMaterialObject* object);
   SDL_Renderer* getRenderer();
-  CustomSDLRect* getCameraRect();
+  CustomSDLRect getCameraRect();
   void resize(int w, int h);
   SDL_Renderer* film(Stage* stage);
   void moveCamera();

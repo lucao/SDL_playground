@@ -22,6 +22,8 @@ CollisionFilters CustomPhysicalObject::getCollisionFilter() {
   return this->collisionFilter;
 }
 
+void CustomPhysicalObject::doPhysics(Uint64 startTick, Uint64 endTick) {}
+
 CustomDynamicPhysicalObject::CustomDynamicPhysicalObject(
     CollisionMasks collisionMask, CollisionFilters collisionFilter,
     btCollisionObject* body)
@@ -33,9 +35,9 @@ CustomDynamicPhysicalObject::~CustomDynamicPhysicalObject() {
   delete this->motionState;
 }
 
-void CustomDynamicPhysicalObject::move(Movement movement) {
+void CustomDynamicPhysicalObject::move(Movement* movement) {
   // TODO verificar tamanho máximo da lista e lógica de inserção de movements
-  this->movementList.insert(movement);
+  this->movementList.push_back(movement);
 }
 
 PhysicsControl::PhysicsControl() {
@@ -67,17 +69,22 @@ PhysicsControl::~PhysicsControl() {
   delete this->dynamicsWorld;
 }
 
-void PhysicsControl::doPhysics(
-    std::vector<CustomPhysicalObject> objects) noexcept {}
+void PhysicsControl::doPhysics(std::vector<CustomPhysicalObject*> objects,
+                               Uint64 startTick, Uint64 endTick) noexcept {
+  // TODO
+  for (CustomPhysicalObject* object : objects) {
+    object->doPhysics(startTick, endTick);
+  }
+}
 
-std::vector<std::pair<CustomPhysicalObject, CustomPhysicalObject>>
+std::vector<std::pair<CustomPhysicalObject*, CustomPhysicalObject*>>
 PhysicsControl::getCollisions(
-    std::vector<CustomPhysicalObject> objects) noexcept {
+    std::vector<CustomPhysicalObject*> objects) noexcept {
   /*
   for (CustomPhysicalObject object : objects) {
     this->addPhysicalObject(object);
   }
-  
+
 
   this->dynamicsWorld->stepSimulation(1 / 60.f, 10);
 
@@ -99,10 +106,11 @@ PhysicsControl::getCollisions(
     }
   }
   */
-  return {};//std::vector<std::pair<CustomPhysicalObject, CustomPhysicalObject>>();
+  return {};  // std::vector<std::pair<CustomPhysicalObject,
+              // CustomPhysicalObject>>();
 }
 
-void PhysicsControl::addPhysicalObject(CustomPhysicalObject object) {
+void PhysicsControl::addPhysicalObject(CustomPhysicalObject* object) {
   // TODO add physical object by it's type (rigid body, collision object or
   // character)
   return;

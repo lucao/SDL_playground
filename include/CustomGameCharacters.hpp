@@ -13,13 +13,15 @@ class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
 	int lifePoints;
 
 	public:
-	CustomGameCharacter(SDL_Texture* texture, CustomSDLRect* srcRect,
-		CustomSDLRect* position, int typesOfAnimation,
+	CustomGameCharacter(SDL_Texture* texture, CustomSDLRect srcRect,
+		CustomSDLRect position, int typesOfAnimation,
 		int stepsOfAnimation, int lifePoints);
-	CustomGameCharacter(CustomSDLRect* srcRect, CustomSDLRect* position,
+	CustomGameCharacter(CustomSDLRect srcRect, CustomSDLRect position,
 		int typesOfAnimation, int stepsOfAnimation,
 		int lifePoints);
 	virtual ~CustomGameCharacter();
+
+    void doPhysics(Uint64 startTick, Uint64 endTick) override;
 };
 
 class CustomPlayer : public CustomGameCharacter,
@@ -29,10 +31,10 @@ class CustomPlayer : public CustomGameCharacter,
         int normalSpeed;
 
        public:
-        CustomPlayer(SDL_Texture* texture, CustomSDLRect* srcRect,
-                     CustomSDLRect* position, int typesOfAnimation,
+        CustomPlayer(SDL_Texture* texture, CustomSDLRect srcRect,
+                     CustomSDLRect position, int typesOfAnimation,
                      int stepsOfAnimation, int lifePoints, int normalSpeed);
-        CustomPlayer(CustomSDLRect* srcRect, CustomSDLRect* position,
+        CustomPlayer(CustomSDLRect srcRect, CustomSDLRect position,
                      int typesOfAnimation, int stepsOfAnimation, int lifePoints,
                      int normalSpeed);
         ~CustomPlayer();

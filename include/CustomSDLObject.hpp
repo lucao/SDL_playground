@@ -12,11 +12,12 @@
 #include <vector>
 
 struct CustomSDLRect : SDL_Rect {
-  CustomSDLRect(SDL_Rect *rect);
+  CustomSDLRect();
+  CustomSDLRect(SDL_Rect rect);
   ~CustomSDLRect();
-  const SDL_Point getPoint();
-  const SDL_Point getCenter();
-  const SDL_Rect getInsideMiddleRect(
+  SDL_Point getPoint();
+  SDL_Point getCenter();
+  SDL_Rect getInsideMiddleRect(
       uint8_t reductionProportion);
   bool xPointIsInBounds(int x);
   bool yPointIsInBounds(int y);
@@ -34,32 +35,32 @@ struct CustomSDLRect : SDL_Rect {
 
 class GlobalPositionalSDLObject {
  private:
-  CustomSDLRect *destination;
+  CustomSDLRect destination;
 
  public:
   GlobalPositionalSDLObject();
-  GlobalPositionalSDLObject(SDL_Rect *destination);
+  GlobalPositionalSDLObject(SDL_Rect destination);
   virtual ~GlobalPositionalSDLObject();
-  CustomSDLRect *getGlobalDestination();
-  void setDestination(SDL_Rect *destination);
-  CustomSDLRect *getDestination(CustomSDLRect *referenceRect);
+  CustomSDLRect getDestination();
+  void setDestination(SDL_Rect destination);
+  void setDestination(SDL_Point destination);
 };
 
 class CustomSDLMaterialObject : public GlobalPositionalSDLObject {
  private:
   SDL_Texture *texture;
-  CustomSDLRect *srcRect;
+  CustomSDLRect srcRect;
 
  public:
-  CustomSDLMaterialObject(SDL_Texture *texture, CustomSDLRect *srcRect,
-                          CustomSDLRect *destination);
-  CustomSDLMaterialObject(CustomSDLRect *srcRect, CustomSDLRect *destination);
+  CustomSDLMaterialObject(SDL_Texture *texture, CustomSDLRect srcRect,
+                          CustomSDLRect destination);
+  CustomSDLMaterialObject(CustomSDLRect srcRect, CustomSDLRect destination);
   virtual ~CustomSDLMaterialObject();
 
   void setTexture(SDL_Texture *texture);
   SDL_Texture *getTexture();
 
-  virtual CustomSDLRect *getSrcRect();
+  virtual CustomSDLRect getSrcRect();
 };
 
 struct CustomSDLAnimation {};
@@ -73,11 +74,11 @@ class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
   Uint64 lastTick;
   // TODO
  public:
-  CustomAnimatedSDLMaterialObject(SDL_Texture *texture, CustomSDLRect *srcRect,
-                                  CustomSDLRect *destination,
+  CustomAnimatedSDLMaterialObject(SDL_Texture *texture, CustomSDLRect srcRect,
+                                  CustomSDLRect destination,
                                   int typesOfAnimation, int stepsOfAnimation);
-  CustomAnimatedSDLMaterialObject(CustomSDLRect *srcRect,
-                                  CustomSDLRect *destination,
+  CustomAnimatedSDLMaterialObject(CustomSDLRect srcRect,
+                                  CustomSDLRect destination,
                                   int typesOfAnimation, int stepsOfAnimation);
   virtual ~CustomAnimatedSDLMaterialObject();
 };

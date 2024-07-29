@@ -30,16 +30,22 @@ enum Direction { LEFT, RIGHT };
 enum MOVEMENT_TYPE { MOVEMENT, WALK, RUN, JUMP };
 
 class Movement {
- private:
+ protected:
   SDL_Point startPoint;
   Uint64 startTick;
   Uint64 endTick;
   SDL_Point endPoint;
 
  public:
-  Movement(SDL_Point startPoint, Uint64 startTick, Uint64 endTick);
+  Movement(SDL_Point startPoint, Uint64 startTick, Uint64 endTick,
+           SDL_Point endPoint);
   Movement(const Movement& other) = default;
   Movement& operator=(const Movement& other) = default;
+
+  SDL_Point getStartPoint() const { return this->startPoint;}
+  SDL_Point getEndPoint() const { return this->endPoint; }
+  Uint64 getStartTick() const { return this->startTick; }
+  Uint64 getEndTick() const { return this->endTick; }
 
   virtual MOVEMENT_TYPE getType() const { return MOVEMENT_TYPE::MOVEMENT; }
 
@@ -83,7 +89,6 @@ class Walk : public Movement {
  public:
   Walk(int speed, Direction direction, SDL_Point startPoint, Uint64 startTick,
        Uint64 endTick);
-
   virtual MOVEMENT_TYPE getType() const override { return MOVEMENT_TYPE::WALK; }
 };
 

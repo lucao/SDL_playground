@@ -2,7 +2,6 @@
 #define CUSTOM_PHYSICS_H
 
 #include <SDL.h>
-
 #include <bullet/btBulletCollisionCommon.h>
 #include <bullet/btBulletDynamicsCommon.h>
 
@@ -29,12 +28,14 @@ class CustomPhysicalObject {
   btCollisionObject *getCollisionObject();
   CollisionMasks getCollisionMask();
   CollisionFilters getCollisionFilter();
+  virtual void doPhysics(Uint64 startTick, Uint64 endTick);
 };
 
 class CustomDynamicPhysicalObject : public CustomPhysicalObject {
- private:
-  std::unordered_set<Movement> movementList;
+ protected:
+  std::list<Movement*> movementList;
 
+ private:
   btTransform transform;
   btDefaultMotionState *motionState;
 
@@ -44,9 +45,7 @@ class CustomDynamicPhysicalObject : public CustomPhysicalObject {
                               btCollisionObject *body);
 
   virtual ~CustomDynamicPhysicalObject();
-
-  // void setTransform(btTransform transform);
-  void move(Movement movement);
+  void move(Movement* movement);
 };
 
 class PhysicsControl {
@@ -71,15 +70,16 @@ class PhysicsControl {
       *dynamicsWorld;  // = new btDiscreteDynamicsWorld(dispatcher, broadphase,
   // solver, collisionConfiguration);
 
-  void addPhysicalObject(CustomPhysicalObject object);
+  void addPhysicalObject(CustomPhysicalObject *object);
 
  public:
   PhysicsControl();
   virtual ~PhysicsControl();
 
-  void doPhysics(std::vector<CustomPhysicalObject> objects) noexcept;
-  std::vector<std::pair<CustomPhysicalObject, CustomPhysicalObject>>
-  getCollisions(std::vector<CustomPhysicalObject> objects) noexcept;
+  void doPhysics(std::vector<CustomPhysicalObject *> physicalObjects,
+                 Uint64 startTick, Uint64 endTick) noexcept;
+  std::vector<std::pair<CustomPhysicalObject *, CustomPhysicalObject *>>
+  getCollisions(std::vector<CustomPhysicalObject *> objects) noexcept;
 };
 
 #endif
