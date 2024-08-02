@@ -1,24 +1,20 @@
 
 #include <CustomGameCharacters.hpp>
 
-CustomGameCharacter::CustomGameCharacter(SDL_Texture* texture,
-                                         CustomSDLRect srcRect,
-                                         CustomSDLRect position,
-                                         int typesOfAnimation,
-                                         int stepsOfAnimation, int lifePoints)
-    : CustomAnimatedSDLMaterialObject(texture, srcRect, position,
-                                      typesOfAnimation, stepsOfAnimation),
+CustomGameCharacter::CustomGameCharacter(
+    SDL_Texture* texture,
+    std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
+    CustomSDLRect position, int lifePoints)
+    : CustomAnimatedSDLMaterialObject(texture, animationSprites, position),
       CustomDynamicPhysicalObject(CollisionMasks::CHARACTER,
                                   CollisionFilters::CHARACTERS,
                                   new btCollisionObject()) {
   this->lifePoints = lifePoints;
 }
-CustomGameCharacter::CustomGameCharacter(CustomSDLRect srcRect,
-                                         CustomSDLRect position,
-                                         int typesOfAnimation,
-                                         int stepsOfAnimation, int lifePoints)
-    : CustomAnimatedSDLMaterialObject(srcRect, position, typesOfAnimation,
-                                      stepsOfAnimation),
+CustomGameCharacter::CustomGameCharacter(
+    std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
+    CustomSDLRect position, int lifePoints)
+    : CustomAnimatedSDLMaterialObject(animationSprites, position),
       CustomDynamicPhysicalObject(CollisionMasks::CHARACTER,
                                   CollisionFilters::CHARACTERS,
                                   new btCollisionObject()) {
@@ -50,19 +46,19 @@ void CustomGameCharacter::doPhysics(Uint64 startTick, Uint64 endTick) {
 /// @param position
 /// @param lifePoints
 /// @param normalSpeed
-CustomPlayer::CustomPlayer(SDL_Texture* texture, CustomSDLRect srcRect,
-                           CustomSDLRect position, int typesOfAnimation,
-                           int stepsOfAnimation, int lifePoints,
-                           int normalSpeed)
-    : CustomGameCharacter(texture, srcRect, position, typesOfAnimation,
-                          stepsOfAnimation, lifePoints) {
+CustomPlayer::CustomPlayer(
+    SDL_Texture* texture,
+    std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
+    CustomSDLRect position,
+
+    int lifePoints, int normalSpeed)
+    : CustomGameCharacter(texture, animationSprites, position, lifePoints) {
   this->normalSpeed = normalSpeed;
 }
-CustomPlayer::CustomPlayer(CustomSDLRect srcRect, CustomSDLRect position,
-                           int typesOfAnimation, int stepsOfAnimation,
-                           int lifePoints, int normalSpeed)
-    : CustomGameCharacter(srcRect, position, typesOfAnimation, stepsOfAnimation,
-                          lifePoints) {
+CustomPlayer::CustomPlayer(
+    std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
+    CustomSDLRect position, int lifePoints, int normalSpeed)
+    : CustomGameCharacter(animationSprites, position, lifePoints) {
   this->normalSpeed = normalSpeed;
 }
 CustomPlayer::~CustomPlayer() {}
@@ -79,20 +75,21 @@ void CustomPlayer::handleEvent(CustomEvent event) {
   bool jumping = this->isJumping();
   if (event.getAction() == PLAYER_ACTION::PLAYER_JUMP_KEY_PRESSED) {
     if (this->canJump()) {
-      this->move(new Jump(this->getJumpForce(), this->getDestination().getPoint(),
-                      event.getInitialTick(), event.getEndTick()));
+      this->move(new Jump(this->getJumpForce(),
+                          this->getDestination().getPoint(),
+                          event.getInitialTick(), event.getEndTick()));
     }
   }
 
   if (this->canMove()) {
     if (event.getAction() == PLAYER_ACTION::PLAYER_RIGHT_KEY_PRESSED) {
       this->move(new Walk(this->normalSpeed, Direction::RIGHT,
-                      this->getDestination().getPoint(), event.getInitialTick(),
-                      event.getEndTick()));
+                          this->getDestination().getPoint(),
+                          event.getInitialTick(), event.getEndTick()));
     } else if (event.getAction() == PLAYER_ACTION::PLAYER_LEFT_KEY_PRESSED) {
       this->move(new Walk(this->normalSpeed, Direction::LEFT,
-                      this->getDestination().getPoint(), event.getInitialTick(),
-                      event.getEndTick()));
+                          this->getDestination().getPoint(),
+                          event.getInitialTick(), event.getEndTick()));
     }
   }
 }

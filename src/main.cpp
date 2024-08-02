@@ -80,16 +80,20 @@ class GameControl {
   std::vector<CustomPhysicalObject*> physicalObjects;
 
   CustomPlayer* createLocalPlayer() {
-    CustomPlayer* localPlayer =
-        new CustomPlayer(CustomSDLRect(SDL_Rect({27, 8, 40, 50})),
-                         CustomSDLRect(SDL_Rect({0, 0, 40, 50})), 0, 0, 7, 5);
-    localPlayer->setTexture(IMG_LoadTextureTyped_RW(
-        camera->getRenderer(),
-        SDL_RWFromFile(
-            "C:\\Users\\lucas\\git\\SDL_playground\\media\\img\\Naruto.jpg",
-            "r"),
-        1, "jpeg"));
-    return localPlayer;
+    std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites;
+    animationSprites[ANIMATION_TYPE::IDLE] = std::vector<SDL_Rect>{
+        SDL_Rect{27, 8, 40, 50},  SDL_Rect{76, 8, 40, 50},
+        SDL_Rect{128, 8, 40, 50}, SDL_Rect{176, 8, 40, 50},
+        SDL_Rect{225, 8, 40, 50}, SDL_Rect{272, 8, 40, 50}};
+
+    return new CustomPlayer(
+        IMG_LoadTextureTyped_RW(
+            camera->getRenderer(),
+            SDL_RWFromFile(
+                "C:\\Users\\lucas\\git\\SDL_playground\\media\\img\\Naruto.jpg",
+                "r"),
+            1, "jpeg"),
+        animationSprites, CustomSDLRect({0, 0, 40, 50}), 10, 5);
   }
 
  public:

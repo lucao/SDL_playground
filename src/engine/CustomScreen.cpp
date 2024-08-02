@@ -120,13 +120,11 @@ SDL_Renderer* CameraSDL::film(Stage* stage) {
   }
   // render objects
   for (CustomSDLMaterialObject* object : stage->getMaterialObjects()) {
-    const SDL_Rect screenDestination = {
-        object->getDestination().x - this->cameraRect.x,
-        object->getDestination().y - this->cameraRect.y,
-        object->getDestination().w, object->getDestination().h};
     if (SDL_HasIntersection(&object->getDestination(), &this->cameraRect)) {
-      SDL_RenderCopy(this->renderer, object->getTexture(), &object->getSrcRect(),
-                     &screenDestination);
+      object->render({object->getDestination().x - this->cameraRect.x,
+                      object->getDestination().y - this->cameraRect.y,
+                      object->getDestination().w, object->getDestination().h},
+                     this->renderer);
     }
   }
 

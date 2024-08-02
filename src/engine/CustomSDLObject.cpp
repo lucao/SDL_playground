@@ -87,14 +87,11 @@ CustomSDLMaterialObject::CustomSDLMaterialObject(CustomSDLRect srcRect,
 CustomSDLMaterialObject::~CustomSDLMaterialObject() {
   SDL_DestroyTexture(this->texture);
 }
-CustomSDLRect CustomSDLMaterialObject::getSrcRect() { return this->srcRect; }
-void CustomSDLMaterialObject::setTexture(SDL_Texture *texture) {
-  this->texture = texture;
+void CustomSDLMaterialObject::render(const SDL_Rect screenDestination,
+                                     SDL_Renderer *renderer) {
+  SDL_RenderCopy(renderer, this->texture, &this->srcRect, &screenDestination);
 }
-SDL_Texture *CustomSDLMaterialObject::getTexture() { return this->texture; }
-void GlobalPositionalSDLObject::setDestination(SDL_Rect destination) {
-  this->destination = CustomSDLRect(destination);
-}
+
 void GlobalPositionalSDLObject::setDestination(SDL_Point destination) {
   this->destination.x = destination.x;
   this->destination.y = destination.y;
@@ -122,17 +119,22 @@ BackgroundSDLTexture::~BackgroundSDLTexture() {
 SDL_Texture *BackgroundSDLTexture::getTexture() { return this->texture; }
 
 CustomAnimatedSDLMaterialObject::CustomAnimatedSDLMaterialObject(
-    SDL_Texture *texture, CustomSDLRect srcRect, CustomSDLRect destination,
-    int typesOfAnimation, int stepsOfAnimation)
-    : CustomSDLMaterialObject(texture, srcRect, destination) {
+    SDL_Texture *texture,
+    std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
+    CustomSDLRect destination)
+    : CustomSDLMaterialObject(
+          texture, animationSprites.at(ANIMATION_TYPE::IDLE)[0], destination) {
   // TODO steps of animation
 }
 
 CustomAnimatedSDLMaterialObject::CustomAnimatedSDLMaterialObject(
-    CustomSDLRect srcRect, CustomSDLRect destination, int typesOfAnimation,
-    int stepsOfAnimation)
-    : CustomSDLMaterialObject(srcRect, destination) {
+    std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
+    CustomSDLRect destination)
+    : CustomSDLMaterialObject(animationSprites.at(ANIMATION_TYPE::IDLE)[0],
+                              destination) {
   // TODO steps of animation
 }
+
+//TODO
 
 CustomAnimatedSDLMaterialObject::~CustomAnimatedSDLMaterialObject() {}

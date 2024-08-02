@@ -123,6 +123,7 @@ Stage::Stage(Stage::StageId stageId, CustomSDLRect rect,
 void Stage::placeMaterialObject(CustomSDLMaterialObject* materialObject) {
   this->materialObjects.push_back(materialObject);
 }
+
 std::vector<CustomSDLMaterialObject*> Stage::getMaterialObjects() {
   return this->materialObjects;
 }

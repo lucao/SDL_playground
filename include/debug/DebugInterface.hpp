@@ -146,13 +146,8 @@ class DebugWindows {
 
     ImGui::Begin("Player 1 Window");
 
-    ImGui::Text("srcRect x %d", this->player->getSrcRect().x);
-    ImGui::Text("srcRect y %d", this->player->getSrcRect().y);
-    ImGui::Text("srcRect w %d", this->player->getSrcRect().w);
-    ImGui::Text("srcRect h %d", this->player->getSrcRect().h);
-
     ImGui::Separator();
-    
+
     ImGui::Text("destination x %d", this->player->getDestination().x);
     ImGui::Text("destination y %d", this->player->getDestination().y);
     ImGui::Text("destination w %d", this->player->getDestination().w);
