@@ -6,23 +6,10 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+
 CustomSDLRect::CustomSDLRect() {}
 CustomSDLRect::CustomSDLRect(SDL_Rect rect) : SDL_Rect(rect) {}
 CustomSDLRect::~CustomSDLRect() {}
-void CustomSDLRect::setX(int x) { this->x = x; }
-void CustomSDLRect::setY(int y) { this->y = y; }
-void CustomSDLRect::setW(int w) { this->w = w; }
-void CustomSDLRect::setH(int h) { this->h = h; }
-void CustomSDLRect::setPoint(SDL_Point point) {
-  this->x = point.x;
-  this->y = point.y;
-}
-void CustomSDLRect::setRect(SDL_Rect rect) {
-  this->x = rect.x;
-  this->y = rect.y;
-  this->w = rect.w;
-  this->h = rect.h;
-}
 
 SDL_Point CustomSDLRect::getPoint() { return {this->x, this->y}; }
 SDL_Rect CustomSDLRect::getInsideMiddleRect(uint8_t reductionProportion) {
@@ -71,15 +58,15 @@ std::vector<SDL_Point> CustomSDLRect::getVertices() {
 }
 
 CustomSDLMaterialObject::CustomSDLMaterialObject(SDL_Texture *texture,
-                                                 CustomSDLRect srcRect,
-                                                 CustomSDLRect destination)
+                                                 SDL_Rect srcRect,
+                                                 SDL_Rect destination)
     : GlobalPositionalSDLObject(destination) {
   this->texture = texture;
   this->srcRect = srcRect;
 }
 
-CustomSDLMaterialObject::CustomSDLMaterialObject(CustomSDLRect srcRect,
-                                                 CustomSDLRect destination)
+CustomSDLMaterialObject::CustomSDLMaterialObject(SDL_Rect srcRect,
+                                                 SDL_Rect destination)
     : GlobalPositionalSDLObject(destination) {
   this->srcRect = srcRect;
 }
@@ -122,19 +109,47 @@ CustomAnimatedSDLMaterialObject::CustomAnimatedSDLMaterialObject(
     SDL_Texture *texture,
     std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
     CustomSDLRect destination)
-    : CustomSDLMaterialObject(
-          texture, animationSprites.at(ANIMATION_TYPE::IDLE)[0], destination) {
-  // TODO steps of animation
+    : CustomSDLMaterialObject(texture,
+                              animationSprites.at(ANIMATION_TYPE::IDLE).front(),
+                              destination) {
+  this->animationSprites = animationSprites;
+  this->currentFrameIterator = CyclicIterator<std::vector<SDL_Rect>::iterator>(
+      this->animationSprites.at(ANIMATION_TYPE::IDLE).begin(),
+      this->animationSprites.at(ANIMATION_TYPE::IDLE).end());
+  this->currentAnimationType = ANIMATION_TYPE::IDLE;
+  this->lastTick = SDL_GetTicks64();
 }
 
 CustomAnimatedSDLMaterialObject::CustomAnimatedSDLMaterialObject(
     std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
     CustomSDLRect destination)
-    : CustomSDLMaterialObject(animationSprites.at(ANIMATION_TYPE::IDLE)[0],
+    : CustomSDLMaterialObject(animationSprites.at(ANIMATION_TYPE::IDLE).front(),
                               destination) {
-  // TODO steps of animation
+  this->animationSprites = animationSprites;
+  this->currentFrameIterator = CyclicIterator<std::vector<SDL_Rect>::iterator>(
+      this->animationSprites.at(ANIMATION_TYPE::IDLE).begin(),
+      this->animationSprites.at(ANIMATION_TYPE::IDLE).end());
+  this->currentAnimationType = ANIMATION_TYPE::IDLE;
+  this->lastTick = SDL_GetTicks64();
 }
 
-//TODO
+void CustomAnimatedSDLMaterialObject::changeAnimation(
+    ANIMATION_TYPE animationType) {
+  this->currentFrameIterator = CyclicIterator<std::vector<SDL_Rect>::iterator>(
+      this->animationSprites.at(animationType).begin(),
+      this->animationSprites.at(animationType).end());
+  this->currentAnimationType = animationType;
+}
+
+void CustomAnimatedSDLMaterialObject::render(const SDL_Rect screenDestination,
+                                             SDL_Renderer *renderer) {
+  if (SDL_GetTicks64() > (this->lastTick + this->animationFrameGap)) {
+    this->lastTick = SDL_GetTicks64();
+    ++this->currentFrameIterator;
+  }
+  SDL_RenderCopy(renderer, this->texture, &*this->currentFrameIterator,
+                 &screenDestination);
+}
+// TODO
 
 CustomAnimatedSDLMaterialObject::~CustomAnimatedSDLMaterialObject() {}

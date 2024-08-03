@@ -1,8 +1,8 @@
 {
   "configurations": [
     {
-      "cppStandard": "c++21",
-      "cStandard": "c21",
+      "cppStandard": "c++23",
+      "cStandard": "c23",
       "defines": [
         "WIN32",
         "_DEBUG",

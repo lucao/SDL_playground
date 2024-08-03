@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <CyclicIterator.hpp>
 
 struct CustomSDLRect : SDL_Rect {
   CustomSDLRect();
@@ -23,13 +24,6 @@ struct CustomSDLRect : SDL_Rect {
   int xGetNearestBoundary(int x);
   int yGetNearestBoundary(int y);
   std::vector<SDL_Point> getVertices();
-
-  void setPoint(SDL_Point point);
-  void setRect(SDL_Rect rect);
-  void setX(int x);
-  void setY(int y);
-  void setW(int w);
-  void setH(int h);
 };
 
 class GlobalPositionalSDLObject {
@@ -45,26 +39,32 @@ class GlobalPositionalSDLObject {
 };
 
 class CustomSDLMaterialObject : public GlobalPositionalSDLObject {
- private:
+ protected:
   SDL_Texture *texture;
+
+ private:
   CustomSDLRect srcRect;
 
  public:
-  CustomSDLMaterialObject(SDL_Texture *texture, CustomSDLRect srcRect,
-                          CustomSDLRect destination);
-  CustomSDLMaterialObject(CustomSDLRect srcRect, CustomSDLRect destination);
+  CustomSDLMaterialObject(SDL_Texture *texture, SDL_Rect srcRect,
+                          SDL_Rect destination);
+  CustomSDLMaterialObject(SDL_Rect srcRect, SDL_Rect destination);
   virtual ~CustomSDLMaterialObject();
-  virtual void render(const SDL_Rect cameraRect, SDL_Renderer * renderer);
+  virtual void render(const SDL_Rect cameraRect, SDL_Renderer *renderer);
 };
 
 const enum ANIMATION_TYPE { IDLE = 0, WALKING = 1, RUNNING = 2 };
 
 class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
  private:
-  std::unordered_map<ANIMATION_TYPE, CustomSDLRect[]> animationSprites;
+  std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites;
 
-  Uint64 animationFrameGap;
+  const Uint64 animationFrameGap = 90;
   Uint64 lastTick;
+
+ protected:
+  CyclicIterator<std::vector<SDL_Rect>::iterator> currentFrameIterator;
+  ANIMATION_TYPE currentAnimationType;
   // TODO
  public:
   CustomAnimatedSDLMaterialObject(
@@ -77,6 +77,11 @@ class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
           animationSprites,
       CustomSDLRect destination);
   virtual ~CustomAnimatedSDLMaterialObject();
+
+  void changeAnimation(ANIMATION_TYPE animationType);
+
+  virtual void render(const SDL_Rect cameraRect,
+                      SDL_Renderer *renderer) override;
 };
 
 class BackgroundSDLTexture {

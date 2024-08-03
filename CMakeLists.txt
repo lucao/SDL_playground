@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12.0)
 project(game VERSION 0.1.0)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(SDL2 CONFIG REQUIRED)
@@ -35,6 +35,7 @@ target_link_libraries(game PRIVATE ${BULLET_LIBRARIES})
 target_link_libraries(game PRIVATE d3d9)
 
 target_include_directories(game PUBLIC include)
+target_include_directories(game PUBLIC include/utils)
 target_include_directories(game PUBLIC include/macros)
 target_include_directories(game PUBLIC include/debug)
 

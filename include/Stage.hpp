@@ -6,7 +6,7 @@
 #include <CustomGameObjects.hpp>
 #include <CustomPhysics.hpp>
 #include <CustomSDLObject.hpp>
-#include <CustomUtils.hpp>
+#include <LazyLoadMatrix.hpp>
 #include <unordered_map>
 #include <unordered_set>
 #include <valarray>
