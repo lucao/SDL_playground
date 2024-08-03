@@ -27,8 +27,9 @@ void CameraSDL::resize(int w, int h) {  // TODO
 }
 SDL_Renderer* CameraSDL::getRenderer() { return this->renderer; }
 
-const uint8_t reduction = 3;
-void CameraSDL::moveCamera() {
+const static int reductionProportion = 10;
+const static float cameraSmoothLerp = 0.005f;
+void CameraSDL::moveCamera(Uint64 startTick, Uint64 endTick) {
   // zoom camera
   if (!(this->cameraRectResize_w == this->cameraRect.w &&
         this->cameraRectResize_h == this->cameraRect.h)) {
@@ -53,53 +54,15 @@ void CameraSDL::moveCamera() {
   const SDL_Point followedPoint =
       this->followedObject->getDestination().getCenter();
 
-  const SDL_Rect cameraInsideRect =
-      this->cameraRect.getInsideMiddleRect(reduction);
+  const SDL_Point cameraCenter = this->cameraRect.getCenter();
 
-  const SDL_Point cameraCenterPoint = this->cameraRect.getCenter();
-
-  // moving camera following the object
-  if (followedPoint.x > cameraInsideRect.x + cameraInsideRect.w ||
-      followedPoint.x < cameraInsideRect.x) {
-    int x_distance = followedPoint.x - cameraCenterPoint.x;
-    int x_smoothDistance = (int)log2(abs(x_distance));
-
-    if (x_distance > 0) {
-      if (x_smoothDistance > this->speed) {
-        this->cameraRect.x += this->speed;
-      } else {
-        this->cameraRect.x += x_smoothDistance;
-      }
-    } else if (x_distance < 0) {
-      if (x_smoothDistance > this->speed) {
-        this->cameraRect.x -= this->speed;
-      } else {
-        this->cameraRect.x -= x_smoothDistance;
-      }
-    }
-  }
-
-  if (followedPoint.y > cameraInsideRect.y + cameraInsideRect.h ||
-      followedPoint.y < cameraInsideRect.y) {
-    int y_distance = followedPoint.y - cameraCenterPoint.y;
-    int y_smoothDistance = (int)log2(abs(y_distance));
-
-    if (y_distance > 0) {
-      if (y_smoothDistance > this->speed) {
-        this->cameraRect.y += this->speed;
-      } else {
-        this->cameraRect.y += y_smoothDistance;
-      }
-    } else if (y_distance < 0) {
-      if (y_smoothDistance > this->speed) {
-        this->cameraRect.y -= this->speed;
-      } else {
-        this->cameraRect.y -= y_smoothDistance;
-      }
-    }
-  }
+  const Uint64 deltaTime = (endTick - startTick);
+  this->cameraRect.x +=
+      (followedPoint.x - cameraCenter.x) * cameraSmoothLerp * deltaTime;
+  this->cameraRect.y +=
+      (followedPoint.y - cameraCenter.y) * cameraSmoothLerp * deltaTime;
 }
-SDL_Renderer* CameraSDL::film(Stage* stage) {
+SDL_Renderer* CameraSDL::film(Stage* stage, Uint64 startTick, Uint64 endTick) {
   SDL_SetRenderDrawColor(this->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
   SDL_RenderClear(this->renderer);
 

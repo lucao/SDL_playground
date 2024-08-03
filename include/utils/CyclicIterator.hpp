@@ -3,6 +3,11 @@
 
 template <typename Iterator>
 class CyclicIterator {
+ private:
+  Iterator begin_;
+  Iterator end_;
+  Iterator current_;
+
  public:
   // Default constructor
   CyclicIterator() : begin_(), end_(), current_() {}
@@ -37,11 +42,6 @@ class CyclicIterator {
     end_ = end;
     current_ = begin_;
   }
-
- private:
-  Iterator begin_;
-  Iterator end_;
-  Iterator current_;
 };
 
 #endif

@@ -6,6 +6,8 @@
 #include <unordered_set>
 
 enum PLAYER_ACTION {
+  PLAYER_IDLE_INPUT = 0,
+
   PLAYER_UP_KEY_PRESSED = 1011,
   PLAYER_UP_KEY_RELEASED = 1010,
   PLAYER_DOWN_KEY_PRESSED = 1021,
@@ -42,7 +44,7 @@ class Movement {
   Movement(const Movement& other) = default;
   Movement& operator=(const Movement& other) = default;
 
-  SDL_Point getStartPoint() const { return this->startPoint;}
+  SDL_Point getStartPoint() const { return this->startPoint; }
   SDL_Point getEndPoint() const { return this->endPoint; }
   Uint64 getStartTick() const { return this->startTick; }
   Uint64 getEndTick() const { return this->endTick; }

@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <vector>
 #include <CyclicIterator.hpp>
+#include "CustomGameUtils.hpp"
 
 struct CustomSDLRect : SDL_Rect {
   CustomSDLRect();
@@ -18,7 +19,6 @@ struct CustomSDLRect : SDL_Rect {
   ~CustomSDLRect();
   SDL_Point getPoint();
   SDL_Point getCenter();
-  SDL_Rect getInsideMiddleRect(uint8_t reductionProportion);
   bool xPointIsInBounds(int x);
   bool yPointIsInBounds(int y);
   int xGetNearestBoundary(int x);
@@ -65,7 +65,7 @@ class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
  protected:
   CyclicIterator<std::vector<SDL_Rect>::iterator> currentFrameIterator;
   ANIMATION_TYPE currentAnimationType;
-  // TODO
+  Direction currentAnimationDirection;
  public:
   CustomAnimatedSDLMaterialObject(
       SDL_Texture *texture,
@@ -78,7 +78,7 @@ class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
       CustomSDLRect destination);
   virtual ~CustomAnimatedSDLMaterialObject();
 
-  void changeAnimation(ANIMATION_TYPE animationType);
+  void changeAnimation(ANIMATION_TYPE animationType, Direction direction);
 
   virtual void render(const SDL_Rect cameraRect,
                       SDL_Renderer *renderer) override;

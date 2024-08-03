@@ -24,8 +24,8 @@ class CameraSDL {
   SDL_Renderer* getRenderer();
   CustomSDLRect getCameraRect();
   void resize(int w, int h);
-  SDL_Renderer* film(Stage* stage);
-  void moveCamera();
+  SDL_Renderer* film(Stage* stage, Uint64 startTick, Uint64 endTick);
+  void moveCamera(Uint64 startTick, Uint64 endTick);
 };
 
 class Screen {

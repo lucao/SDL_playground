@@ -12,12 +12,6 @@ CustomSDLRect::CustomSDLRect(SDL_Rect rect) : SDL_Rect(rect) {}
 CustomSDLRect::~CustomSDLRect() {}
 
 SDL_Point CustomSDLRect::getPoint() { return {this->x, this->y}; }
-SDL_Rect CustomSDLRect::getInsideMiddleRect(uint8_t reductionProportion) {
-  int w_reducted = this->w / reductionProportion;
-  int h_reducted = this->h / reductionProportion;
-  return {(this->x + (this->w / 2) - (w_reducted / 2)),
-          (this->y + (this->h / 2) - (h_reducted / 2)), w_reducted, h_reducted};
-}
 
 SDL_Point CustomSDLRect::getCenter() {
   return {this->x + (this->w / 2), this->y + (this->h / 2)};
@@ -117,6 +111,7 @@ CustomAnimatedSDLMaterialObject::CustomAnimatedSDLMaterialObject(
       this->animationSprites.at(ANIMATION_TYPE::IDLE).begin(),
       this->animationSprites.at(ANIMATION_TYPE::IDLE).end());
   this->currentAnimationType = ANIMATION_TYPE::IDLE;
+  this->currentAnimationDirection = Direction::RIGHT;
   this->lastTick = SDL_GetTicks64();
 }
 
@@ -130,15 +125,21 @@ CustomAnimatedSDLMaterialObject::CustomAnimatedSDLMaterialObject(
       this->animationSprites.at(ANIMATION_TYPE::IDLE).begin(),
       this->animationSprites.at(ANIMATION_TYPE::IDLE).end());
   this->currentAnimationType = ANIMATION_TYPE::IDLE;
+  this->currentAnimationDirection = Direction::RIGHT;
   this->lastTick = SDL_GetTicks64();
 }
 
 void CustomAnimatedSDLMaterialObject::changeAnimation(
-    ANIMATION_TYPE animationType) {
-  this->currentFrameIterator = CyclicIterator<std::vector<SDL_Rect>::iterator>(
-      this->animationSprites.at(animationType).begin(),
-      this->animationSprites.at(animationType).end());
-  this->currentAnimationType = animationType;
+    ANIMATION_TYPE animationType, Direction direction) {
+  if (this->currentAnimationDirection != direction ||
+      this->currentAnimationType != animationType) {
+    this->currentFrameIterator =
+        CyclicIterator<std::vector<SDL_Rect>::iterator>(
+            this->animationSprites.at(animationType).begin(),
+            this->animationSprites.at(animationType).end());
+    this->currentAnimationType = animationType;
+    this->currentAnimationDirection = direction;
+  }
 }
 
 void CustomAnimatedSDLMaterialObject::render(const SDL_Rect screenDestination,
@@ -147,9 +148,13 @@ void CustomAnimatedSDLMaterialObject::render(const SDL_Rect screenDestination,
     this->lastTick = SDL_GetTicks64();
     ++this->currentFrameIterator;
   }
-  SDL_RenderCopy(renderer, this->texture, &*this->currentFrameIterator,
-                 &screenDestination);
+
+  SDL_RendererFlip flip = SDL_FLIP_NONE;
+  if (this->currentAnimationDirection == Direction::LEFT)
+    flip = SDL_FLIP_HORIZONTAL;
+
+  SDL_RenderCopyEx(renderer, this->texture, &*this->currentFrameIterator,
+                   &screenDestination, 0, NULL, flip);
 }
-// TODO
 
 CustomAnimatedSDLMaterialObject::~CustomAnimatedSDLMaterialObject() {}

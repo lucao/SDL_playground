@@ -80,16 +80,20 @@ void CustomPlayer::handleEvent(CustomEvent event) {
                           event.getInitialTick(), event.getEndTick()));
     }
   }
-
-  if (this->canMove()) {
+  if (event.getAction() == PLAYER_ACTION::PLAYER_IDLE_INPUT) {
+    this->changeAnimation(ANIMATION_TYPE::IDLE,
+                          this->currentAnimationDirection);
+  } else {
     if (event.getAction() == PLAYER_ACTION::PLAYER_RIGHT_KEY_PRESSED) {
       this->move(new Walk(this->normalSpeed, Direction::RIGHT,
                           this->getDestination().getPoint(),
                           event.getInitialTick(), event.getEndTick()));
+      this->changeAnimation(ANIMATION_TYPE::WALKING, Direction::RIGHT);
     } else if (event.getAction() == PLAYER_ACTION::PLAYER_LEFT_KEY_PRESSED) {
       this->move(new Walk(this->normalSpeed, Direction::LEFT,
                           this->getDestination().getPoint(),
                           event.getInitialTick(), event.getEndTick()));
+      this->changeAnimation(ANIMATION_TYPE::WALKING, Direction::LEFT);
     }
   }
 }

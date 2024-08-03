@@ -82,19 +82,32 @@ class GameControl {
   CustomPlayer* createLocalPlayer() {
     std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites;
     animationSprites[ANIMATION_TYPE::IDLE] = std::vector<SDL_Rect>{
-        SDL_Rect{27, 7, 40, 50},  SDL_Rect{76, 7, 40, 50},
-        SDL_Rect{128, 7, 40, 50}, SDL_Rect{176, 7, 40, 50},
-        SDL_Rect{225, 7, 40, 50}, SDL_Rect{272, 7, 40, 50}};
+        SDL_Rect{20, 14, 40, 50},  SDL_Rect{65, 14, 40, 50},
+        SDL_Rect{115, 14, 40, 50}, SDL_Rect{162, 14, 40, 50},
+        SDL_Rect{209, 14, 40, 50}, SDL_Rect{259, 14, 40, 50},
+        SDL_Rect{209, 14, 40, 50}, SDL_Rect{162, 14, 40, 50},
+        SDL_Rect{115, 14, 40, 50}, SDL_Rect{65, 14, 40, 50}};
 
-    SDL_Texture* texture = IMG_LoadTextureTyped_RW(
-        camera->getRenderer(),
-        SDL_RWFromFile(
-            "C:\\Users\\lucas\\git\\SDL_playground\\media\\img\\Naruto.jpg",
-            "r"),
-        1, "jpeg");
+    animationSprites[ANIMATION_TYPE::WALKING] = std::vector<SDL_Rect>{
+        SDL_Rect{16, 80, 30, 50},  SDL_Rect{48, 80, 30, 50},
+        SDL_Rect{76, 80, 30, 50},  SDL_Rect{107, 80, 30, 50},
+        SDL_Rect{145, 80, 30, 50}, SDL_Rect{178, 80, 30, 50}};
+
+    SDL_Surface* surface = IMG_Load(
+        "C:\\Users\\lucas\\git\\SDL_playground\\media\\img\\Sakura.png");
+
+    // azul de fundo da imagem
+    Uint8 r = 144;
+    Uint8 g = 176;
+    Uint8 b = 216;
+    SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(surface->format, r, g, b));
+
+    SDL_Texture* texture =
+        SDL_CreateTextureFromSurface(camera->getRenderer(), surface);
+    SDL_FreeSurface(surface);
 
     return new CustomPlayer(texture, animationSprites, SDL_Rect({0, 0, 40, 50}),
-                            10, 5);
+                            10, 8);
   }
 
  public:
@@ -153,11 +166,11 @@ class GameControl {
     this->gameLoopRunning = gameLoopRunning;
   }
 
-  void executeRenderPhase() {
-    this->camera->moveCamera();
+  void executeRenderPhase(Uint64 startTick, Uint64 endTick) {
+    this->camera->moveCamera(startTick, endTick);
 
     try {
-      this->camera->film(this->currentStage);
+      this->camera->film(this->currentStage, startTick, endTick);
     } catch (StageOutOfBounds err) {
       // Load new stage
       printf(err.what());
@@ -262,16 +275,24 @@ int main(int, char**) {
         CustomEvent(PLAYER_ACTION::PLAYER_DOWN_KEY_RELEASED));
         }
     */
-
+      boolean idle_input = true;
       if (keyboardState[SDL_SCANCODE_A] || keyboardState[SDL_SCANCODE_LEFT]) {
         eventControl->addEvent(CustomEvent(
             PLAYER_ACTION::PLAYER_LEFT_KEY_PRESSED,
             fpsControl->getLastFrameTick(), fpsControl->getFrameTick()));
+        idle_input = false;
       }
       if (keyboardState[SDL_SCANCODE_D] || keyboardState[SDL_SCANCODE_RIGHT]) {
         eventControl->addEvent(CustomEvent(
             PLAYER_ACTION::PLAYER_RIGHT_KEY_PRESSED,
             fpsControl->getLastFrameTick(), fpsControl->getFrameTick()));
+        idle_input = false;
+      }
+
+      if (idle_input) {
+        eventControl->addEvent(CustomEvent(PLAYER_ACTION::PLAYER_IDLE_INPUT,
+                                           fpsControl->getLastFrameTick(),
+                                           fpsControl->getFrameTick()));
       }
 
       eventControl->processEvents();
@@ -280,7 +301,8 @@ int main(int, char**) {
                                 fpsControl->getFrameTick());
 
       // Render phase
-      gameControl->executeRenderPhase();
+      gameControl->executeRenderPhase(fpsControl->getLastFrameTick(),
+                                      fpsControl->getFrameTick());
     }
     /*
     delete player;
