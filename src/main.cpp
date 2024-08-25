@@ -16,6 +16,7 @@
 #ifdef DEBUG
 #include <DebugInterface.hpp>
 #endif
+#include <CustomTexture.hpp>
 
 class FPSControl {
  private:
@@ -80,35 +81,40 @@ class GameControl {
   std::vector<CustomPhysicalObject*> physicalObjects;
 
   CustomPlayer* createLocalPlayer() {
+    SDL_Surface* surface_idle = IMG_Load(
+        "C:\\Users\\lucas\\git\\SDL_"
+        "playground\\media\\img\\Woodcutter\\Woodcutter_idle.png");
+    // preto de fundo da imagem
+    Uint8 r = 255;
+    Uint8 g = 255;
+    Uint8 b = 255;
+    SDL_SetColorKey(surface_idle, SDL_TRUE,
+                    SDL_MapRGB(surface_idle->format, r, g, b));
+    std::unordered_map<ANIMATION_TYPE, SDL_Texture*> textures;
+    textures[ANIMATION_TYPE::IDLE] =
+        SDL_CreateTextureFromSurface(camera->getRenderer(), surface_idle);
+    CustomTextureManager* texturesManager = new CustomTextureManager(textures);
+
+    SDL_FreeSurface(surface_idle);
+
     std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites;
     animationSprites[ANIMATION_TYPE::IDLE] = std::vector<SDL_Rect>{
-        SDL_Rect{20, 14, 40, 50},  SDL_Rect{65, 14, 40, 50},
-        SDL_Rect{115, 14, 40, 50}, SDL_Rect{162, 14, 40, 50},
-        SDL_Rect{209, 14, 40, 50}, SDL_Rect{259, 14, 40, 50},
-        SDL_Rect{209, 14, 40, 50}, SDL_Rect{162, 14, 40, 50},
-        SDL_Rect{115, 14, 40, 50}, SDL_Rect{65, 14, 40, 50}};
+        SDL_Rect{20, 14, 40, 50}, SDL_Rect{65, 14, 40, 50},
+        SDL_Rect{115, 14, 40, 50}, SDL_Rect{162, 14, 40, 50}};
 
+    /*
     animationSprites[ANIMATION_TYPE::WALKING] = std::vector<SDL_Rect>{
         SDL_Rect{16, 80, 30, 50},  SDL_Rect{48, 80, 30, 50},
         SDL_Rect{76, 80, 30, 50},  SDL_Rect{107, 80, 30, 50},
         SDL_Rect{145, 80, 30, 50}, SDL_Rect{178, 80, 30, 50}};
+        */
 
-    SDL_Surface* surface = IMG_Load(
-        "C:\\Users\\lucas\\git\\SDL_playground\\media\\img\\Sakura.png");
-
-    // azul de fundo da imagem
-    Uint8 r = 144;
-    Uint8 g = 176;
-    Uint8 b = 216;
-    SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(surface->format, r, g, b));
-
-    SDL_Texture* texture =
-        SDL_CreateTextureFromSurface(camera->getRenderer(), surface);
-    SDL_FreeSurface(surface);
-
-    return new CustomPlayer(texture, animationSprites, SDL_Rect({0, 0, 40, 50}),
-                            10, 8);
+    return new CustomPlayer(texturesManager, animationSprites,
+                            SDL_Rect({0, 0, 40, 50}),
+                            10, 4);
   }
+
+
 
  public:
   GameControl() {

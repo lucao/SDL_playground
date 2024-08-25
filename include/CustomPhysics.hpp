@@ -12,9 +12,12 @@
 enum CollisionMasks { PLAYER, CHARACTER };
 enum CollisionFilters { PLAYERS, CHARACTERS };
 
+
 class CustomPhysicalObject {
  protected:
-  btCollisionObject *body;
+  btCollisionShape * shape;
+  btDefaultMotionState * motionState;
+  btRigidBody *rigidBody;
 
   CollisionMasks collisionMask;
   CollisionFilters collisionFilter;
@@ -22,10 +25,9 @@ class CustomPhysicalObject {
  public:
   CustomPhysicalObject(CollisionMasks collisionMask,
                        CollisionFilters collisionFilter,
-                       btCollisionObject *body);
+                       btCollisionShape *shape);
   virtual ~CustomPhysicalObject();
 
-  btCollisionObject *getCollisionObject();
   CollisionMasks getCollisionMask();
   CollisionFilters getCollisionFilter();
   virtual void doPhysics(Uint64 startTick, Uint64 endTick);
@@ -37,7 +39,6 @@ class CustomDynamicPhysicalObject : public CustomPhysicalObject {
 
  private:
   btTransform transform;
-  btDefaultMotionState *motionState;
 
  public:
   CustomDynamicPhysicalObject(CollisionMasks collisionMask,
@@ -50,6 +51,8 @@ class CustomDynamicPhysicalObject : public CustomPhysicalObject {
 
 class PhysicsControl {
  private:
+
+
   // Set up the broadphase
   btBroadphaseInterface *broadphase;  // = new btDbvtBroadphase();
 

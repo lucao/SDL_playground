@@ -27,7 +27,8 @@ void CameraSDL::resize(int w, int h) {  // TODO
 }
 SDL_Renderer* CameraSDL::getRenderer() { return this->renderer; }
 
-const static int reductionProportion = 10;
+const static std::pair<int, int> cameraToleranceBounds =
+    std::make_pair<int, int>(-10, 10);
 const static float cameraSmoothLerp = 0.005f;
 void CameraSDL::moveCamera(Uint64 startTick, Uint64 endTick) {
   // zoom camera
@@ -53,14 +54,18 @@ void CameraSDL::moveCamera(Uint64 startTick, Uint64 endTick) {
 
   const SDL_Point followedPoint =
       this->followedObject->getDestination().getCenter();
-
   const SDL_Point cameraCenter = this->cameraRect.getCenter();
 
   const Uint64 deltaTime = (endTick - startTick);
-  this->cameraRect.x +=
-      (followedPoint.x - cameraCenter.x) * cameraSmoothLerp * deltaTime;
-  this->cameraRect.y +=
-      (followedPoint.y - cameraCenter.y) * cameraSmoothLerp * deltaTime;
+
+  int delta_x = (followedPoint.x - cameraCenter.x);
+  int delta_y = (followedPoint.y - cameraCenter.y);
+  if ((delta_x < cameraToleranceBounds.first) ||
+      (delta_x > cameraToleranceBounds.second))
+    this->cameraRect.x += delta_x * cameraSmoothLerp * deltaTime;
+  if ((delta_y < cameraToleranceBounds.first) ||
+      (delta_y > cameraToleranceBounds.second))
+    this->cameraRect.y += delta_y * cameraSmoothLerp * deltaTime;
 }
 SDL_Renderer* CameraSDL::film(Stage* stage, Uint64 startTick, Uint64 endTick) {
   SDL_SetRenderDrawColor(this->renderer, 0xFF, 0xFF, 0xFF, 0xFF);

@@ -51,11 +51,11 @@ std::vector<SDL_Point> CustomSDLRect::getVertices() {
   });
 }
 
-CustomSDLMaterialObject::CustomSDLMaterialObject(SDL_Texture *texture,
+CustomSDLMaterialObject::CustomSDLMaterialObject(CustomTextureManager textureManager,
                                                  SDL_Rect srcRect,
                                                  SDL_Rect destination)
     : GlobalPositionalSDLObject(destination) {
-  this->texture = texture;
+  this->textureManager = textureManager;
   this->srcRect = srcRect;
 }
 
@@ -70,7 +70,9 @@ CustomSDLMaterialObject::~CustomSDLMaterialObject() {
 }
 void CustomSDLMaterialObject::render(const SDL_Rect screenDestination,
                                      SDL_Renderer *renderer) {
-  SDL_RenderCopy(renderer, this->texture, &this->srcRect, &screenDestination);
+  SDL_RenderCopy(renderer, this->textureManager.getDefaultTexture(),
+                 &this->srcRect,
+                 &screenDestination);
 }
 
 void GlobalPositionalSDLObject::setDestination(SDL_Point destination) {
@@ -100,10 +102,10 @@ BackgroundSDLTexture::~BackgroundSDLTexture() {
 SDL_Texture *BackgroundSDLTexture::getTexture() { return this->texture; }
 
 CustomAnimatedSDLMaterialObject::CustomAnimatedSDLMaterialObject(
-    SDL_Texture *texture,
+    CustomTextureManager textureManager,
     std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
     CustomSDLRect destination)
-    : CustomSDLMaterialObject(texture,
+    : CustomSDLMaterialObject(textureManager,
                               animationSprites.at(ANIMATION_TYPE::IDLE).front(),
                               destination) {
   this->animationSprites = animationSprites;
@@ -153,7 +155,8 @@ void CustomAnimatedSDLMaterialObject::render(const SDL_Rect screenDestination,
   if (this->currentAnimationDirection == Direction::LEFT)
     flip = SDL_FLIP_HORIZONTAL;
 
-  SDL_RenderCopyEx(renderer, this->texture, &*this->currentFrameIterator,
+  SDL_RenderCopyEx(renderer, this->textureManager.getTexture(this->currentAnimationType),
+                   &*this->currentFrameIterator,
                    &screenDestination, 0, NULL, flip);
 }
 

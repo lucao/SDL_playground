@@ -2,17 +2,13 @@
 
 CustomPhysicalObject::CustomPhysicalObject(CollisionMasks collisionMask,
                                            CollisionFilters collisionFilter,
-                                           btCollisionObject* body) {
+                                           btCollisionShape* shape) {
   this->collisionFilter = collisionFilter;
   this->collisionMask = collisionMask;
-  this->body = body;
+  this->shape = shape;
 }
 
 CustomPhysicalObject::~CustomPhysicalObject() {}
-
-btCollisionObject* CustomPhysicalObject::getCollisionObject() {
-  return this->body;
-}
 
 CollisionMasks CustomPhysicalObject::getCollisionMask() {
   return this->collisionMask;

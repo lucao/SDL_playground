@@ -35,6 +35,7 @@ class DebugWindows {
   WNDCLASSEXW wc;
 
   CustomPlayer* player;
+  CameraSDL* camera;
 
  public:
   DebugWindows() {

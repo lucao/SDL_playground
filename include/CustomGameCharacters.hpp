@@ -13,7 +13,7 @@ class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
   int lifePoints;
 
  public:
-  CustomGameCharacter(SDL_Texture* texture,
+  CustomGameCharacter(CustomTextureManager texture,
                       std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
                           animationSprites,
                       CustomSDLRect position, int lifePoints);
@@ -32,7 +32,7 @@ class CustomPlayer : public CustomGameCharacter,
   int normalSpeed;
 
  public:
-  CustomPlayer(SDL_Texture* texture,
+  CustomPlayer(CustomTextureManager textureManager,
                std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
                    animationSprites,
                CustomSDLRect position, int lifePoints, int normalSpeed);

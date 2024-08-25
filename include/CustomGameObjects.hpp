@@ -10,6 +10,8 @@ enum GAME_ENTITY_TYPE {
   LOGIC_OBJECT
 };
 
+const enum ANIMATION_TYPE { IDLE = 0, WALKING = 1, RUNNING = 2 };
+
 class GameObject {};
 
 class CustomPlayerMovement {

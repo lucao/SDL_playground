@@ -9,3 +9,4 @@ src/test/*.exe
 /vcpkg_installed
 /libs/d3d9.dll
 /libs/d3d9.lib
+/media/img

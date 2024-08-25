@@ -17,7 +17,7 @@ src/engine/CustomSDLObject.cpp
 src/engine/Stage.cpp
 src/engine/World.cpp
 src/engine/CustomGameUtils.cpp 
-src/engine/CustomGameComponents.cpp)
+src/engine/CustomGameComponents.cpp "src/engine/CustomTexture.cpp")
 
 add_executable(game src/main.cpp ${SOURCES})
 

@@ -12,6 +12,7 @@
 #include <vector>
 #include <CyclicIterator.hpp>
 #include "CustomGameUtils.hpp"
+#include <CustomTexture.hpp>
 
 struct CustomSDLRect : SDL_Rect {
   CustomSDLRect();
@@ -40,20 +41,20 @@ class GlobalPositionalSDLObject {
 
 class CustomSDLMaterialObject : public GlobalPositionalSDLObject {
  protected:
-  SDL_Texture *texture;
+  CustomTextureManager textureManager;
 
  private:
   CustomSDLRect srcRect;
 
  public:
-  CustomSDLMaterialObject(SDL_Texture *texture, SDL_Rect srcRect,
+  CustomSDLMaterialObject(CustomTextureManager textureManager, SDL_Rect srcRect,
                           SDL_Rect destination);
   CustomSDLMaterialObject(SDL_Rect srcRect, SDL_Rect destination);
   virtual ~CustomSDLMaterialObject();
   virtual void render(const SDL_Rect cameraRect, SDL_Renderer *renderer);
 };
 
-const enum ANIMATION_TYPE { IDLE = 0, WALKING = 1, RUNNING = 2 };
+
 
 class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
  private:
@@ -68,7 +69,7 @@ class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
   Direction currentAnimationDirection;
  public:
   CustomAnimatedSDLMaterialObject(
-      SDL_Texture *texture,
+      CustomTextureManager textureManager,
       std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
           animationSprites,
       CustomSDLRect destination);
