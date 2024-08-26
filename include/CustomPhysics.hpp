@@ -12,12 +12,16 @@
 enum CollisionMasks { PLAYER, CHARACTER };
 enum CollisionFilters { PLAYERS, CHARACTERS };
 
+//TODO enum of shapes
+
 
 class CustomPhysicalObject {
- protected:
+ private:
   btCollisionShape * shape;
   btDefaultMotionState * motionState;
   btRigidBody *rigidBody;
+
+  btScalar mass;
 
   CollisionMasks collisionMask;
   CollisionFilters collisionFilter;
@@ -25,7 +29,7 @@ class CustomPhysicalObject {
  public:
   CustomPhysicalObject(CollisionMasks collisionMask,
                        CollisionFilters collisionFilter,
-                       btCollisionShape *shape);
+                       btCollisionShape *shape, btScalar mass);
   virtual ~CustomPhysicalObject();
 
   CollisionMasks getCollisionMask();
@@ -42,8 +46,7 @@ class CustomDynamicPhysicalObject : public CustomPhysicalObject {
 
  public:
   CustomDynamicPhysicalObject(CollisionMasks collisionMask,
-                              CollisionFilters collisionFilter,
-                              btCollisionObject *body);
+                              CollisionFilters collisionFilter);
 
   virtual ~CustomDynamicPhysicalObject();
   void move(Movement* movement);
@@ -51,24 +54,13 @@ class CustomDynamicPhysicalObject : public CustomPhysicalObject {
 
 class PhysicsControl {
  private:
-
-
-  // Set up the broadphase
   btBroadphaseInterface *broadphase;  // = new btDbvtBroadphase();
-
-  // Set up the collision configuration
   btDefaultCollisionConfiguration
       *collisionConfiguration;  // = new btDefaultCollisionConfiguration();
-
-  // Set up the dispatcher
   btCollisionDispatcher
       *dispatcher;  // = new btCollisionDispatcher(collisionConfiguration);
-
-  // Set up the solver
   btSequentialImpulseConstraintSolver
       *solver;  // = new btSequentialImpulseConstraintSolver();
-
-  // Set up the dynamics world
   btDiscreteDynamicsWorld
       *dynamicsWorld;  // = new btDiscreteDynamicsWorld(dispatcher, broadphase,
   // solver, collisionConfiguration);
@@ -81,8 +73,6 @@ class PhysicsControl {
 
   void doPhysics(std::vector<CustomPhysicalObject *> physicalObjects,
                  Uint64 startTick, Uint64 endTick) noexcept;
-  std::vector<std::pair<CustomPhysicalObject *, CustomPhysicalObject *>>
-  getCollisions(std::vector<CustomPhysicalObject *> objects) noexcept;
 };
 
 #endif

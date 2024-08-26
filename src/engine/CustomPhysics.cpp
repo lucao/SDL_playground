@@ -2,13 +2,24 @@
 
 CustomPhysicalObject::CustomPhysicalObject(CollisionMasks collisionMask,
                                            CollisionFilters collisionFilter,
-                                           btCollisionShape* shape) {
+                                           btCollisionShape* shape,
+                                           btScalar mass) {
   this->collisionFilter = collisionFilter;
   this->collisionMask = collisionMask;
+
   this->shape = shape;
+  this->motionState = new btDefaultMotionState(
+      btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 10, 0)));
+  btRigidBody::btRigidBodyConstructionInfo collisionInfo(
+      mass, this->motionState, this->shape, btVector3(0, 0, 0));
+  this->rigidBody = new btRigidBody(collisionInfo);
 }
 
-CustomPhysicalObject::~CustomPhysicalObject() {}
+CustomPhysicalObject::~CustomPhysicalObject() {
+  delete this->shape;
+  delete this->motionState;
+  delete this->rigidBody;
+}
 
 CollisionMasks CustomPhysicalObject::getCollisionMask() {
   return this->collisionMask;
@@ -68,11 +79,9 @@ PhysicsControl::~PhysicsControl() {
 void PhysicsControl::doPhysics(std::vector<CustomPhysicalObject*> objects,
                                Uint64 startTick, Uint64 endTick) noexcept {
   // TODO
-  for (CustomPhysicalObject* object : objects) {
-    object->doPhysics(startTick, endTick);
-  }
 }
 
+//TODO
 std::vector<std::pair<CustomPhysicalObject*, CustomPhysicalObject*>>
 PhysicsControl::getCollisions(
     std::vector<CustomPhysicalObject*> objects) noexcept {
