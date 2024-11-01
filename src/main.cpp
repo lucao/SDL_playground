@@ -158,12 +158,6 @@ class GameControl {
   void processLogic(Uint64 startTick, Uint64 endTick) noexcept {
     this->physicsControl->doPhysics(this->physicalObjects, startTick, endTick);
 
-    std::vector<std::pair<CustomPhysicalObject*, CustomPhysicalObject*>>
-        collisions = this->physicsControl->getCollisions(this->physicalObjects);
-
-    for (std::pair<CustomPhysicalObject*, CustomPhysicalObject*> pair :
-         collisions) {
-    }
   }
 
   bool isGameLoopRunning() { return this->gameLoopRunning; }

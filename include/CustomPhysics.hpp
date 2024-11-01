@@ -7,18 +7,18 @@
 
 #include <CustomGameObjects.hpp>
 #include <CustomGameUtils.hpp>
+#include <queue>
 #include <unordered_set>
 
 enum CollisionMasks { PLAYER, CHARACTER };
 enum CollisionFilters { PLAYERS, CHARACTERS };
 
-//TODO enum of shapes
-
+// TODO enum of shapes
 
 class CustomPhysicalObject {
- private:
-  btCollisionShape * shape;
-  btDefaultMotionState * motionState;
+ protected:
+  btCollisionShape *shape;
+  btDefaultMotionState *motionState;
   btRigidBody *rigidBody;
 
   btScalar mass;
@@ -34,22 +34,23 @@ class CustomPhysicalObject {
 
   CollisionMasks getCollisionMask();
   CollisionFilters getCollisionFilter();
-  virtual void doPhysics(Uint64 startTick, Uint64 endTick);
+
+  virtual void doPhysics(Uint64 startTick, Uint64 endTick) = 0;
 };
 
 class CustomDynamicPhysicalObject : public CustomPhysicalObject {
  protected:
-  std::list<Movement*> movementList;
+  std::list<Movement *const> movementList;
 
- private:
-  btTransform transform;
+  btTransform getTransform(const Uint64 startTick, const Uint64 endTick);
 
  public:
   CustomDynamicPhysicalObject(CollisionMasks collisionMask,
-                              CollisionFilters collisionFilter);
+                              CollisionFilters collisionFilter,
+                              btCollisionShape *shape, btScalar mass);
 
   virtual ~CustomDynamicPhysicalObject();
-  void move(Movement* movement);
+  void addMovement(Movement *movement);
 };
 
 class PhysicsControl {
@@ -65,7 +66,9 @@ class PhysicsControl {
       *dynamicsWorld;  // = new btDiscreteDynamicsWorld(dispatcher, broadphase,
   // solver, collisionConfiguration);
 
-  void addPhysicalObject(CustomPhysicalObject *object);
+  std::unordered_map<CollisionMasks, CustomPhysicalObject *> physicalObjects;
+
+  // void addPhysicalObject(CustomPhysicalObject *object);
 
  public:
   PhysicsControl();

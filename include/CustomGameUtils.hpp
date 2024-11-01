@@ -49,6 +49,10 @@ class Movement {
   Uint64 getStartTick() const { return this->startTick; }
   Uint64 getEndTick() const { return this->endTick; }
 
+  //velocidade em pixels/milisegundos
+  int getVelocityX() { endPoint.x - startPoint.x / endTick - startTick; }
+  int getVelocityY() { startPoint.y - endPoint.y / endTick - startTick; }
+
   virtual MOVEMENT_TYPE getType() const { return MOVEMENT_TYPE::MOVEMENT; }
 
   bool operator==(const Movement& other) const {

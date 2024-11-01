@@ -14,12 +14,4 @@ const enum ANIMATION_TYPE { IDLE = 0, WALKING = 1, RUNNING = 2 };
 
 class GameObject {};
 
-class CustomPlayerMovement {
-  virtual bool canMove() const = 0;
-
-  virtual bool canJump() const = 0;
-  virtual bool isJumping() const = 0;
-  virtual int getJumpForce() const = 0;
-};
-
 #endif

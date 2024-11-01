@@ -9,8 +9,9 @@
 class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
                             public CustomDynamicPhysicalObject,
                             public GameObject {
- private:
+ protected:
   int lifePoints;
+  int normalSpeed;
 
  public:
   CustomGameCharacter(CustomTextureManager texture,
@@ -23,13 +24,16 @@ class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
   virtual ~CustomGameCharacter();
 
   void doPhysics(Uint64 startTick, Uint64 endTick) override;
+
+  bool canMove() const;
+
+  bool canJump() const;
+  bool isJumping() const;
+  int getJumpForce() const;
 };
 
 class CustomPlayer : public CustomGameCharacter,
-                     public EventListener,
-                     public CustomPlayerMovement {
- private:
-  int normalSpeed;
+                     public EventListener { 
 
  public:
   CustomPlayer(CustomTextureManager textureManager,
@@ -40,12 +44,6 @@ class CustomPlayer : public CustomGameCharacter,
                    animationSprites,
                CustomSDLRect position, int lifePoints, int normalSpeed);
   ~CustomPlayer();
-
-  bool canMove() const override;
-
-  bool canJump() const override;
-  bool isJumping() const override;
-  int getJumpForce() const override;
 
   void handleEvent(CustomEvent event) override;
 };

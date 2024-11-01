@@ -29,20 +29,24 @@ CollisionFilters CustomPhysicalObject::getCollisionFilter() {
   return this->collisionFilter;
 }
 
-void CustomPhysicalObject::doPhysics(Uint64 startTick, Uint64 endTick) {}
+btTransform CustomDynamicPhysicalObject::getTransform(const Uint64 startTick,
+                                                      const Uint64 endTick) {
+  btTransform transform;
+  this->rigidBody->getMotionState()->getWorldTransform(transform);
+
+  return transform;
+}
 
 CustomDynamicPhysicalObject::CustomDynamicPhysicalObject(
     CollisionMasks collisionMask, CollisionFilters collisionFilter,
-    btCollisionObject* body)
-    : CustomPhysicalObject(collisionMask, collisionFilter, body) {
+    btCollisionShape* shape, btScalar mass)
+    : CustomPhysicalObject(collisionMask, collisionFilter, shape, mass) {
   // TODO
 }
 
-CustomDynamicPhysicalObject::~CustomDynamicPhysicalObject() {
-  delete this->motionState;
-}
+CustomDynamicPhysicalObject::~CustomDynamicPhysicalObject() {}
 
-void CustomDynamicPhysicalObject::move(Movement* movement) {
+void CustomDynamicPhysicalObject::addMovement(Movement* const movement) {
   // TODO verificar tamanho máximo da lista e lógica de inserção de movements
   this->movementList.push_back(movement);
 }
@@ -78,14 +82,18 @@ PhysicsControl::~PhysicsControl() {
 
 void PhysicsControl::doPhysics(std::vector<CustomPhysicalObject*> objects,
                                Uint64 startTick, Uint64 endTick) noexcept {
-  // TODO
+  for (CustomPhysicalObject* object : objects) {
+    object->doPhysics(startTick, endTick);
+  }
+  this->dynamicsWorld->stepSimulation(endTick - startTick / 1000.0, 1);
 }
 
-//TODO
+// TODO
+/*
 std::vector<std::pair<CustomPhysicalObject*, CustomPhysicalObject*>>
 PhysicsControl::getCollisions(
     std::vector<CustomPhysicalObject*> objects) noexcept {
-  /*
+
   for (CustomPhysicalObject object : objects) {
     this->addPhysicalObject(object);
   }
@@ -110,13 +118,11 @@ PhysicsControl::getCollisions(
       // has hit
     }
   }
-  */
-  return {};  // std::vector<std::pair<CustomPhysicalObject,
-              // CustomPhysicalObject>>();
-}
 
-void PhysicsControl::addPhysicalObject(CustomPhysicalObject* object) {
-  // TODO add physical object by it's type (rigid body, collision object or
-  // character)
-  return;
-}
+}*/
+
+// void PhysicsControl::addPhysicalObject(CustomPhysicalObject* object) {
+//  TODO add physical object by it's type (rigid body, collision object or
+//  character)
+//  return;
+//}
