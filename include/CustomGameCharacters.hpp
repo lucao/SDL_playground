@@ -14,11 +14,8 @@ class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
   int normalSpeed;
 
  public:
-  CustomGameCharacter(CustomTextureManager texture,
+  CustomGameCharacter(CustomTextureManager* texture,
                       std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
-                          animationSprites,
-                      CustomSDLRect position, int lifePoints);
-  CustomGameCharacter(std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
                           animationSprites,
                       CustomSDLRect position, int lifePoints);
   virtual ~CustomGameCharacter();
@@ -30,17 +27,14 @@ class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
   bool canJump() const;
   bool isJumping() const;
   int getJumpForce() const;
+
+  virtual CustomSDLRect getDestination() override;
 };
 
-class CustomPlayer : public CustomGameCharacter,
-                     public EventListener { 
-
+class CustomPlayer : public CustomGameCharacter, public EventListener {
  public:
-  CustomPlayer(CustomTextureManager textureManager,
+  CustomPlayer(CustomTextureManager* textureManager,
                std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
-                   animationSprites,
-               CustomSDLRect position, int lifePoints, int normalSpeed);
-  CustomPlayer(std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
                    animationSprites,
                CustomSDLRect position, int lifePoints, int normalSpeed);
   ~CustomPlayer();

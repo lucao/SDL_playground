@@ -1,20 +1,19 @@
 #ifndef CUSTOM_SDL_OBJECT_H
 #define CUSTOM_SDL_OBJECT_H
 
-#include <SDL.h>
 
-#include <CustomPhysics.hpp>
-#include <list>
-#include <memory>
-#include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <CyclicIterator.hpp>
 #include "CustomGameUtils.hpp"
 #include <CustomTexture.hpp>
+#include "CustomGameObjects.hpp"
+#include "SDL_rect.h"
+#include "SDL_render.h"
+#include "SDL_stdinc.h"
 
 struct CustomSDLRect : SDL_Rect {
+  CustomSDLRect(int x, int y, int w, int h);
   CustomSDLRect();
   CustomSDLRect(SDL_Rect rect);
   ~CustomSDLRect();
@@ -28,28 +27,26 @@ struct CustomSDLRect : SDL_Rect {
 };
 
 class GlobalPositionalSDLObject {
- private:
+ protected:
   CustomSDLRect destination;
 
  public:
   GlobalPositionalSDLObject();
   GlobalPositionalSDLObject(SDL_Rect destination);
   virtual ~GlobalPositionalSDLObject();
-  CustomSDLRect getDestination();
-  void setDestination(SDL_Point destination);
+  virtual CustomSDLRect getDestination();
 };
 
 class CustomSDLMaterialObject : public GlobalPositionalSDLObject {
  protected:
-  CustomTextureManager textureManager;
+  CustomTextureManager* textureManager;
 
  private:
   CustomSDLRect srcRect;
 
  public:
-  CustomSDLMaterialObject(CustomTextureManager textureManager, SDL_Rect srcRect,
+  CustomSDLMaterialObject(CustomTextureManager* textureManager, SDL_Rect srcRect,
                           SDL_Rect destination);
-  CustomSDLMaterialObject(SDL_Rect srcRect, SDL_Rect destination);
   virtual ~CustomSDLMaterialObject();
   virtual void render(const SDL_Rect cameraRect, SDL_Renderer *renderer);
 };
@@ -69,11 +66,7 @@ class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
   Direction currentAnimationDirection;
  public:
   CustomAnimatedSDLMaterialObject(
-      CustomTextureManager textureManager,
-      std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
-          animationSprites,
-      CustomSDLRect destination);
-  CustomAnimatedSDLMaterialObject(
+      CustomTextureManager* textureManager,
       std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
           animationSprites,
       CustomSDLRect destination);

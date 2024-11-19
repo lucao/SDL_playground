@@ -1,15 +1,17 @@
 #include <CustomPhysics.hpp>
 
-CustomPhysicalObject::CustomPhysicalObject(CollisionMasks collisionMask,
-                                           CollisionFilters collisionFilter,
-                                           btCollisionShape* shape,
-                                           btScalar mass) {
-  this->collisionFilter = collisionFilter;
+std::atomic_int CustomPhysicalObject::_id_counter{0};
+CustomPhysicalObject::CustomPhysicalObject(
+    CollisionMasks collisionMask, CollisionGroup collisionGroup,
+    btCollisionShape* shape, btScalar mass,
+    btDefaultMotionState* defaultMotionState) {
+  this->id = CustomPhysicalObject::_id_counter.fetch_add(1);
+
+  this->collisionGroup = collisionGroup;
   this->collisionMask = collisionMask;
 
   this->shape = shape;
-  this->motionState = new btDefaultMotionState(
-      btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 10, 0)));
+  this->motionState = defaultMotionState;
   btRigidBody::btRigidBodyConstructionInfo collisionInfo(
       mass, this->motionState, this->shape, btVector3(0, 0, 0));
   this->rigidBody = new btRigidBody(collisionInfo);
@@ -21,32 +23,36 @@ CustomPhysicalObject::~CustomPhysicalObject() {
   delete this->rigidBody;
 }
 
+int CustomPhysicalObject::getID() const { return this->id; }
+
 CollisionMasks CustomPhysicalObject::getCollisionMask() {
   return this->collisionMask;
 }
 
-CollisionFilters CustomPhysicalObject::getCollisionFilter() {
-  return this->collisionFilter;
+CollisionGroup CustomPhysicalObject::getCollisionGroup() {
+  return this->collisionGroup;
 }
 
-btTransform CustomDynamicPhysicalObject::getTransform(const Uint64 startTick,
-                                                      const Uint64 endTick) {
+btRigidBody* CustomPhysicalObject::getRigidBody() { return this->rigidBody; }
+
+btTransform CustomPhysicalObject::getTransform() {
   btTransform transform;
   this->rigidBody->getMotionState()->getWorldTransform(transform);
-
   return transform;
 }
 
 CustomDynamicPhysicalObject::CustomDynamicPhysicalObject(
-    CollisionMasks collisionMask, CollisionFilters collisionFilter,
-    btCollisionShape* shape, btScalar mass)
-    : CustomPhysicalObject(collisionMask, collisionFilter, shape, mass) {
+    btCollisionShape* shape, btScalar mass,
+    btDefaultMotionState* defaultMotionState)
+    : CustomPhysicalObject(CollisionMasks::DYNAMIC_OBJECT,
+                           CollisionGroup::DYNAMIC_OBJECTS, shape, mass,
+                           defaultMotionState) {
   // TODO
 }
 
 CustomDynamicPhysicalObject::~CustomDynamicPhysicalObject() {}
 
-void CustomDynamicPhysicalObject::addMovement(Movement* const movement) {
+void CustomDynamicPhysicalObject::addMovement(Movement* movement) {
   // TODO verificar tamanho máximo da lista e lógica de inserção de movements
   this->movementList.push_back(movement);
 }
@@ -69,7 +75,7 @@ PhysicsControl::PhysicsControl() {
       dispatcher, broadphase, solver, collisionConfiguration);
 
   // Set the gravity in the world
-  this->dynamicsWorld->setGravity(btVector3(0, -10, 0));
+  this->dynamicsWorld->setGravity(btVector3(0, 10, 0));
 }
 
 PhysicsControl::~PhysicsControl() {
@@ -80,12 +86,43 @@ PhysicsControl::~PhysicsControl() {
   delete this->dynamicsWorld;
 }
 
-void PhysicsControl::doPhysics(std::vector<CustomPhysicalObject*> objects,
-                               Uint64 startTick, Uint64 endTick) noexcept {
-  for (CustomPhysicalObject* object : objects) {
+void PhysicsControl::doPhysics(
+    std::unordered_set<CustomPhysicalObject*,
+                       PhysicsControl::CustomPhysicalObjectHash,
+                       PhysicsControl::CustomPhysicalObjectEqual>
+        objects,
+    Uint64 startTick, Uint64 endTick) noexcept {
+  std::unordered_set<CustomPhysicalObject*,
+                     PhysicsControl::CustomPhysicalObjectHash,
+                     PhysicsControl::CustomPhysicalObjectEqual>
+      allPhysicalObjects;
+  allPhysicalObjects.insert(objects.begin(), objects.end());
+  allPhysicalObjects.insert(this->physicalObjects.begin(),
+                            this->physicalObjects.end());
+  for (auto it = allPhysicalObjects.begin(); it != allPhysicalObjects.end(); ++it) {
+    CustomPhysicalObject* object = *it;
+    if (this->physicalObjects.find(object) != this->physicalObjects.end()) {
+      if (objects.find(object) == objects.end()) {
+        this->physicalObjects.erase(object);
+        dynamicsWorld->removeRigidBody(object->getRigidBody());
+      }
+    } else {
+      if (objects.find(object) != objects.end()) {
+        this->physicalObjects.insert(object);
+        dynamicsWorld->addRigidBody(object->getRigidBody(),
+                                    object->getCollisionGroup(),
+                                    object->getCollisionMask());
+      } else {
+        // ERROR
+      }
+    }
+  }
+
+  for (auto object : this->physicalObjects) {
     object->doPhysics(startTick, endTick);
   }
-  this->dynamicsWorld->stepSimulation(endTick - startTick / 1000.0, 1);
+  this->dynamicsWorld->stepSimulation(btScalar(endTick - startTick / 1000.0),
+                                      1);
 }
 
 // TODO

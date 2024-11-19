@@ -13,11 +13,12 @@ set(SOURCES
 src/engine/CustomGameCharacters.cpp 
 src/engine/CustomPhysics.cpp
 src/engine/CustomScreen.cpp
-src/engine/CustomSDLObject.cpp
+src/engine/CustomSDLObjects.cpp
 src/engine/Stage.cpp
 src/engine/World.cpp
 src/engine/CustomGameUtils.cpp 
-src/engine/CustomGameComponents.cpp "src/engine/CustomTexture.cpp")
+src/engine/CustomGameComponents.cpp 
+src/engine/CustomTexture.cpp)
 
 add_executable(game src/main.cpp ${SOURCES})
 

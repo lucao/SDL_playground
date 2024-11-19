@@ -62,10 +62,12 @@ void CameraSDL::moveCamera(Uint64 startTick, Uint64 endTick) {
   int delta_y = (followedPoint.y - cameraCenter.y);
   if ((delta_x < cameraToleranceBounds.first) ||
       (delta_x > cameraToleranceBounds.second))
-    this->cameraRect.x += delta_x * cameraSmoothLerp * deltaTime;
+    this->cameraRect.x +=
+        static_cast<int>(delta_x * cameraSmoothLerp * deltaTime);
   if ((delta_y < cameraToleranceBounds.first) ||
       (delta_y > cameraToleranceBounds.second))
-    this->cameraRect.y += delta_y * cameraSmoothLerp * deltaTime;
+    this->cameraRect.y +=
+        static_cast<int>(delta_y * cameraSmoothLerp * deltaTime);
 }
 SDL_Renderer* CameraSDL::film(Stage* stage, Uint64 startTick, Uint64 endTick) {
   SDL_SetRenderDrawColor(this->renderer, 0xFF, 0xFF, 0xFF, 0xFF);

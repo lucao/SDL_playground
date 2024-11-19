@@ -35,6 +35,7 @@ class DebugWindows {
   WNDCLASSEXW wc;
 
   CustomPlayer* player;
+  CustomGroundPlane* ground;
   CameraSDL* camera;
 
  public:
@@ -108,6 +109,10 @@ class DebugWindows {
     this->player = trackedPlayer;
   }
 
+  void trackGround(CustomGroundPlane* trackedGround) {
+    this->ground = trackedGround;
+  }
+
   bool loop() {
     MSG msg;
     while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
@@ -153,8 +158,49 @@ class DebugWindows {
     ImGui::Text("destination y %d", this->player->getDestination().y);
     ImGui::Text("destination w %d", this->player->getDestination().w);
     ImGui::Text("destination h %d", this->player->getDestination().h);
+    ImGui::Separator();
+    ImGui::Text("Physics");
+    ImGui::Text("RigidBody x,y %d,%d",
+                static_cast<int>(this->player->getRigidBody()
+                                     ->getWorldTransform()
+                                     .getOrigin()
+                                     .getX()),
+                static_cast<int>(this->player->getRigidBody()
+                                     ->getWorldTransform()
+                                     .getOrigin()
+                                     .getY()));
 
     ImGui::End();
+
+    ImGui::Begin("Ground plane Window");
+
+    ImGui::Separator();
+
+    ImGui::Text("destination x %d", this->ground->getDestination().x);
+    ImGui::Text("destination y %d", this->ground->getDestination().y);
+    ImGui::Text("destination w %d", this->ground->getDestination().w);
+    ImGui::Text("destination h %d", this->ground->getDestination().h);
+    ImGui::Separator();
+    ImGui::Text("Physics");
+    ImGui::Text("RigidBody x,y %d,%d",
+                static_cast<int>(this->ground->getRigidBody()
+                                     ->getWorldTransform()
+                                     .getOrigin()
+                                     .getX()),
+                static_cast<int>(this->ground->getRigidBody()
+                                     ->getWorldTransform()
+                                     .getOrigin()
+                                     .getY()));
+    btBoxShape* groundBoxShape = static_cast<btBoxShape*>(
+        this->ground->getRigidBody()->getCollisionShape());
+    ImGui::Text("Shape: w,h: %d,%d",
+                groundBoxShape->getHalfExtentsWithMargin().getX() * 2,
+                groundBoxShape->getHalfExtentsWithMargin().getY() * 2);
+
+    ImGui::End();
+
+    // Rendering
+    ImGui::EndFrame();
 
     // Rendering
     ImGui::EndFrame();

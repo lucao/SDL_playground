@@ -5,6 +5,15 @@
 
 #include <unordered_set>
 
+enum GAME_ENTITY_TYPE {
+  PLAYABLE_OBJECT,
+  PHYSICAL_OBJECT,
+  MATERIAL_OBJECT,
+  LOGIC_OBJECT
+};
+
+enum ANIMATION_TYPE { NO_ANIMATION, IDLE, WALKING, RUNNING };
+
 enum PLAYER_ACTION {
   PLAYER_IDLE_INPUT = 0,
 
@@ -49,9 +58,14 @@ class Movement {
   Uint64 getStartTick() const { return this->startTick; }
   Uint64 getEndTick() const { return this->endTick; }
 
-  //velocidade em pixels/milisegundos
-  int getVelocityX() { endPoint.x - startPoint.x / endTick - startTick; }
-  int getVelocityY() { startPoint.y - endPoint.y / endTick - startTick; }
+  // velocidade em pixels/milisegundos
+  // TODO testar isso
+  int getVelocityX() {
+    return endPoint.x - startPoint.x / static_cast<int>(endTick - startTick);
+  }
+  int getVelocityY() {
+    return startPoint.y - endPoint.y / static_cast<int>(endTick - startTick);
+  }
 
   virtual MOVEMENT_TYPE getType() const { return MOVEMENT_TYPE::MOVEMENT; }
 

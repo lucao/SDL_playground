@@ -1,11 +1,10 @@
 #ifndef CUSTOM_TEXTURE_H
 #define CUSTOM_TEXTURE_H
 
-#include <SDL.h>
 
-#include <CustomGameObjects.hpp>
-#include <string>
-#include <unordered_map>''
+#include <unordered_map>
+#include "CustomGameUtils.hpp"
+#include "SDL_render.h"
 
 class CustomTextureManager {
  private:

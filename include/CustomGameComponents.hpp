@@ -2,16 +2,19 @@
 #define CUSTOM_GAME_COMPONENTS_H
 
 #include <CustomGameObjects.hpp>
-#include <CustomGameUtils.hpp>
 #include <CustomPhysics.hpp>
 #include <CustomSDLObject.hpp>
 
-class CustomGameFloor : public CustomSDLMaterialObject,
-                        public CustomPhysicalObject,
-                        public GameObject {
- private:
+#include "SDL_stdinc.h"
 
+class CustomGroundPlane : public CustomSDLMaterialObject,
+                          public CustomPhysicalObject,
+                          public GameObject {
+ private:
  public:
+  CustomGroundPlane(CustomTextureManager* textureManager,
+                    SDL_Rect destination);
+  void doPhysics(Uint64 startTick, Uint64 endTick) override;
 };
 
 #endif

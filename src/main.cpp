@@ -2,6 +2,7 @@
 #include <SDL_image.h>
 
 #include <CustomGameCharacters.hpp>
+#include <CustomGameComponents.hpp>
 #include <CustomPhysics.hpp>
 #include <CustomScreen.hpp>
 #include <Stage.hpp>
@@ -16,7 +17,29 @@
 #ifdef DEBUG
 #include <DebugInterface.hpp>
 #endif
+#include <rpcndr.h>
+
 #include <CustomTexture.hpp>
+#include <cstdio>
+#include <stdexcept>
+#include <unordered_map>
+#include <unordered_set>
+
+#include "CustomGameUtils.hpp"
+#include "CustomSDLObject.hpp"
+#include "SDL_error.h"
+#include "SDL_events.h"
+#include "SDL_keyboard.h"
+#include "SDL_log.h"
+#include "SDL_main.h"
+#include "SDL_pixels.h"
+#include "SDL_rect.h"
+#include "SDL_render.h"
+#include "SDL_scancode.h"
+#include "SDL_stdinc.h"
+#include "SDL_surface.h"
+#include "SDL_timer.h"
+#include "begin_code.h"
 
 class FPSControl {
  private:
@@ -75,10 +98,14 @@ class GameControl {
   PhysicsControl* physicsControl;
 
   CustomPlayer* mainPlayer;
+  CustomGroundPlane* ground;
 
   std::vector<EventListener*> eventListeners;
 
-  std::vector<CustomPhysicalObject*> physicalObjects;
+  std::unordered_set<CustomPhysicalObject*,
+                     PhysicsControl::CustomPhysicalObjectHash,
+                     PhysicsControl::CustomPhysicalObjectEqual>
+      physicalObjects;
 
   CustomPlayer* createLocalPlayer() {
     SDL_Surface* surface_idle = IMG_Load(
@@ -93,7 +120,6 @@ class GameControl {
     std::unordered_map<ANIMATION_TYPE, SDL_Texture*> textures;
     textures[ANIMATION_TYPE::IDLE] =
         SDL_CreateTextureFromSurface(camera->getRenderer(), surface_idle);
-    CustomTextureManager* texturesManager = new CustomTextureManager(textures);
 
     SDL_FreeSurface(surface_idle);
 
@@ -108,13 +134,19 @@ class GameControl {
         SDL_Rect{76, 80, 30, 50},  SDL_Rect{107, 80, 30, 50},
         SDL_Rect{145, 80, 30, 50}, SDL_Rect{178, 80, 30, 50}};
         */
-
+    CustomTextureManager* texturesManager = new CustomTextureManager(textures);
     return new CustomPlayer(texturesManager, animationSprites,
-                            SDL_Rect({0, 0, 40, 50}),
-                            10, 4);
+                            CustomSDLRect({0, 0, 40, 50}), 10, 4);
   }
 
+  CustomGroundPlane* createDefaultGround() {
+    std::unordered_map<ANIMATION_TYPE, SDL_Texture*> textures;
+    textures[ANIMATION_TYPE::NO_ANIMATION] = SDL_CreateTextureFromSurface(
+        camera->getRenderer(), SDL_CreateRGBSurface(0, 1, 1, 32, 0, 0, 0, 0));
 
+    CustomTextureManager* textureManager = new CustomTextureManager(textures);
+    return new CustomGroundPlane(textureManager, SDL_Rect({20, 200, 200, 200}));
+  }
 
  public:
   GameControl() {
@@ -137,19 +169,23 @@ class GameControl {
     this->world = new World();
 
     this->mainPlayer = this->createLocalPlayer();
+    this->ground = this->createDefaultGround();
 
-    this->physicalObjects.push_back(this->mainPlayer);
+    this->physicalObjects.insert(this->mainPlayer);
+    this->physicalObjects.insert(this->ground);
 
     this->eventListeners.push_back(this->mainPlayer);
 
     this->currentStage = this->world->createBlankStage(camera->getRenderer());
     this->currentStage->placeMaterialObject(this->mainPlayer);
+    this->currentStage->placeMaterialObject(this->ground);
 
     this->camera->setFollowedObject(this->mainPlayer);
     this->physicsControl = new PhysicsControl();
   }
 
   CustomPlayer* getMainPlayer() { return this->mainPlayer; }
+  CustomGroundPlane* getGround() { return this->ground; }
 
   std::vector<EventListener*> getEventListeners() {
     return this->eventListeners;
@@ -157,7 +193,6 @@ class GameControl {
 
   void processLogic(Uint64 startTick, Uint64 endTick) noexcept {
     this->physicsControl->doPhysics(this->physicalObjects, startTick, endTick);
-
   }
 
   bool isGameLoopRunning() { return this->gameLoopRunning; }
@@ -221,6 +256,7 @@ int main(int, char**) {
     }
 #ifdef DEBUG
     debug->trackPlayer(gameControl->getMainPlayer());
+    debug->trackGround(gameControl->getGround());
 #endif
     while (gameControl->isGameLoopRunning()) {
 #ifdef DEBUG

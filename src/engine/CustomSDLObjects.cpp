@@ -7,6 +7,9 @@
 #include <stdexcept>
 #include <string>
 
+CustomSDLRect::CustomSDLRect(int x, int y, int w, int h)
+    : SDL_Rect({x, y, w, h}) {}
+
 CustomSDLRect::CustomSDLRect() {}
 CustomSDLRect::CustomSDLRect(SDL_Rect rect) : SDL_Rect(rect) {}
 CustomSDLRect::~CustomSDLRect() {}
@@ -51,34 +54,21 @@ std::vector<SDL_Point> CustomSDLRect::getVertices() {
   });
 }
 
-CustomSDLMaterialObject::CustomSDLMaterialObject(CustomTextureManager textureManager,
-                                                 SDL_Rect srcRect,
-                                                 SDL_Rect destination)
+CustomSDLMaterialObject::CustomSDLMaterialObject(
+    CustomTextureManager* textureManager, SDL_Rect srcRect, SDL_Rect destination)
     : GlobalPositionalSDLObject(destination) {
   this->textureManager = textureManager;
   this->srcRect = srcRect;
 }
 
-CustomSDLMaterialObject::CustomSDLMaterialObject(SDL_Rect srcRect,
-                                                 SDL_Rect destination)
-    : GlobalPositionalSDLObject(destination) {
-  this->srcRect = srcRect;
-}
 
-CustomSDLMaterialObject::~CustomSDLMaterialObject() {
-  SDL_DestroyTexture(this->texture);
-}
+CustomSDLMaterialObject::~CustomSDLMaterialObject() {}
 void CustomSDLMaterialObject::render(const SDL_Rect screenDestination,
                                      SDL_Renderer *renderer) {
-  SDL_RenderCopy(renderer, this->textureManager.getDefaultTexture(),
-                 &this->srcRect,
-                 &screenDestination);
+  SDL_RenderCopy(renderer, this->textureManager->getDefaultTexture(),
+                 &this->srcRect, &screenDestination);
 }
 
-void GlobalPositionalSDLObject::setDestination(SDL_Point destination) {
-  this->destination.x = destination.x;
-  this->destination.y = destination.y;
-}
 CustomSDLRect GlobalPositionalSDLObject::getDestination() {
   return this->destination;
 }
@@ -102,25 +92,11 @@ BackgroundSDLTexture::~BackgroundSDLTexture() {
 SDL_Texture *BackgroundSDLTexture::getTexture() { return this->texture; }
 
 CustomAnimatedSDLMaterialObject::CustomAnimatedSDLMaterialObject(
-    CustomTextureManager textureManager,
+    CustomTextureManager* textureManager,
     std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
     CustomSDLRect destination)
     : CustomSDLMaterialObject(textureManager,
                               animationSprites.at(ANIMATION_TYPE::IDLE).front(),
-                              destination) {
-  this->animationSprites = animationSprites;
-  this->currentFrameIterator = CyclicIterator<std::vector<SDL_Rect>::iterator>(
-      this->animationSprites.at(ANIMATION_TYPE::IDLE).begin(),
-      this->animationSprites.at(ANIMATION_TYPE::IDLE).end());
-  this->currentAnimationType = ANIMATION_TYPE::IDLE;
-  this->currentAnimationDirection = Direction::RIGHT;
-  this->lastTick = SDL_GetTicks64();
-}
-
-CustomAnimatedSDLMaterialObject::CustomAnimatedSDLMaterialObject(
-    std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
-    CustomSDLRect destination)
-    : CustomSDLMaterialObject(animationSprites.at(ANIMATION_TYPE::IDLE).front(),
                               destination) {
   this->animationSprites = animationSprites;
   this->currentFrameIterator = CyclicIterator<std::vector<SDL_Rect>::iterator>(
@@ -155,9 +131,9 @@ void CustomAnimatedSDLMaterialObject::render(const SDL_Rect screenDestination,
   if (this->currentAnimationDirection == Direction::LEFT)
     flip = SDL_FLIP_HORIZONTAL;
 
-  SDL_RenderCopyEx(renderer, this->textureManager.getTexture(this->currentAnimationType),
-                   &*this->currentFrameIterator,
-                   &screenDestination, 0, NULL, flip);
+  SDL_RenderCopyEx(
+      renderer, this->textureManager->getTexture(this->currentAnimationType),
+      &*this->currentFrameIterator, &screenDestination, 0, NULL, flip);
 }
 
 CustomAnimatedSDLMaterialObject::~CustomAnimatedSDLMaterialObject() {}

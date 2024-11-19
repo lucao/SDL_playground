@@ -7,15 +7,20 @@
 
 #include <CustomGameObjects.hpp>
 #include <CustomGameUtils.hpp>
-#include <queue>
+#include <atomic>
 #include <unordered_set>
 
-enum CollisionMasks { PLAYER, CHARACTER };
-enum CollisionFilters { PLAYERS, CHARACTERS };
+//TODO adjust masks
+enum CollisionMasks { STATIC_OBJECT = 1 << 1, DYNAMIC_OBJECT = 1 << 0 };
+enum CollisionGroup { STATIC_OBJECTS = 1 << 0, DYNAMIC_OBJECTS = 1 << 1 };
 
 // TODO enum of shapes
 
 class CustomPhysicalObject {
+ private:
+  static std::atomic_int _id_counter;
+  int id;
+
  protected:
   btCollisionShape *shape;
   btDefaultMotionState *motionState;
@@ -24,30 +29,33 @@ class CustomPhysicalObject {
   btScalar mass;
 
   CollisionMasks collisionMask;
-  CollisionFilters collisionFilter;
+  CollisionGroup collisionGroup;
+
+  btTransform getTransform();
 
  public:
   CustomPhysicalObject(CollisionMasks collisionMask,
-                       CollisionFilters collisionFilter,
-                       btCollisionShape *shape, btScalar mass);
+                       CollisionGroup collisionGroup, btCollisionShape *shape,
+                       btScalar mass, btDefaultMotionState *defaultMotionState);
   virtual ~CustomPhysicalObject();
 
+  int getID() const;
+
   CollisionMasks getCollisionMask();
-  CollisionFilters getCollisionFilter();
+  CollisionGroup getCollisionGroup();
+
+  btRigidBody *getRigidBody();
 
   virtual void doPhysics(Uint64 startTick, Uint64 endTick) = 0;
 };
 
 class CustomDynamicPhysicalObject : public CustomPhysicalObject {
  protected:
-  std::list<Movement *const> movementList;
-
-  btTransform getTransform(const Uint64 startTick, const Uint64 endTick);
+  std::list<Movement *> movementList;
 
  public:
-  CustomDynamicPhysicalObject(CollisionMasks collisionMask,
-                              CollisionFilters collisionFilter,
-                              btCollisionShape *shape, btScalar mass);
+  CustomDynamicPhysicalObject(btCollisionShape *shape, btScalar mass,
+                              btDefaultMotionState *defaultMotionState);
 
   virtual ~CustomDynamicPhysicalObject();
   void addMovement(Movement *movement);
@@ -64,18 +72,35 @@ class PhysicsControl {
       *solver;  // = new btSequentialImpulseConstraintSolver();
   btDiscreteDynamicsWorld
       *dynamicsWorld;  // = new btDiscreteDynamicsWorld(dispatcher, broadphase,
-  // solver, collisionConfiguration);
+                       // solver, collisionConfiguration);
+ public:
+  struct CustomPhysicalObjectHash {
+    std::size_t operator()(const CustomPhysicalObject *physicalObject) const {
+      return std::hash<int>()(physicalObject->getID());
+    }
+  };
 
-  std::unordered_map<CollisionMasks, CustomPhysicalObject *> physicalObjects;
+  struct CustomPhysicalObjectEqual {
+    bool operator()(const CustomPhysicalObject *physicalObject1,
+                    const CustomPhysicalObject *physicalObject2) const {
+      return physicalObject1->getID() == physicalObject2->getID();
+    }
+  };
 
-  // void addPhysicalObject(CustomPhysicalObject *object);
+ private:
+  std::unordered_set<CustomPhysicalObject *, CustomPhysicalObjectHash,
+                     CustomPhysicalObjectEqual>
+      physicalObjects;
 
  public:
   PhysicsControl();
   virtual ~PhysicsControl();
 
-  void doPhysics(std::vector<CustomPhysicalObject *> physicalObjects,
-                 Uint64 startTick, Uint64 endTick) noexcept;
+  void doPhysics(
+      std::unordered_set<CustomPhysicalObject *, CustomPhysicalObjectHash,
+                         CustomPhysicalObjectEqual>
+          physicalObjects,
+      Uint64 startTick, Uint64 endTick) noexcept;
 };
 
 #endif
