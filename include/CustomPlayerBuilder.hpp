@@ -1,0 +1,11 @@
+#ifndef CUSTOM_PLAYER_BUILDER_H
+#define CUSTOM_PLAYER_BUILDER_H
+
+enum PLAYER_CLASS { KNIGHT, BARBARIAN, HUNTER, CLERIC, MAGE, DRUID, ROGUE};
+
+class CustomPlayerBuilder {
+
+};
+
+
+#endif

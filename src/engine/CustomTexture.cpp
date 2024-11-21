@@ -5,6 +5,10 @@
 #include "CustomGameUtils.hpp"
 #include "SDL_render.h"
 
+CustomTextureManager::CustomTextureManager(SDL_Texture* static_texture) {
+  this->textures[ANIMATION_TYPE::NO_ANIMATION] = static_texture;
+}
+
 CustomTextureManager::CustomTextureManager(
     std::unordered_map<ANIMATION_TYPE, SDL_Texture*> textures) {
   this->textures = textures;
@@ -20,6 +24,6 @@ SDL_Texture* CustomTextureManager::getTexture(ANIMATION_TYPE animationType) {
   return this->textures.at(animationType);
 }
 
-SDL_Texture* CustomTextureManager::getDefaultTexture() {
+SDL_Texture* CustomTextureManager::getTexture() {
   return this->textures.at(ANIMATION_TYPE::NO_ANIMATION);
 }

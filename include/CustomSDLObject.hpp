@@ -1,13 +1,13 @@
 #ifndef CUSTOM_SDL_OBJECT_H
 #define CUSTOM_SDL_OBJECT_H
 
-
+#include <CustomTexture.hpp>
+#include <CyclicIterator.hpp>
 #include <unordered_map>
 #include <vector>
-#include <CyclicIterator.hpp>
-#include "CustomGameUtils.hpp"
-#include <CustomTexture.hpp>
+
 #include "CustomGameObjects.hpp"
+#include "CustomGameUtils.hpp"
 #include "SDL_rect.h"
 #include "SDL_render.h"
 #include "SDL_stdinc.h"
@@ -39,19 +39,17 @@ class GlobalPositionalSDLObject {
 
 class CustomSDLMaterialObject : public GlobalPositionalSDLObject {
  protected:
-  CustomTextureManager* textureManager;
+  CustomTextureManager *textureManager;
 
  private:
   CustomSDLRect srcRect;
 
  public:
-  CustomSDLMaterialObject(CustomTextureManager* textureManager, SDL_Rect srcRect,
-                          SDL_Rect destination);
+  CustomSDLMaterialObject(CustomTextureManager *textureManager,
+                          SDL_Rect srcRect, SDL_Rect destination);
   virtual ~CustomSDLMaterialObject();
   virtual void render(const SDL_Rect cameraRect, SDL_Renderer *renderer);
 };
-
-
 
 class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
  private:
@@ -64,9 +62,10 @@ class CustomAnimatedSDLMaterialObject : public CustomSDLMaterialObject {
   CyclicIterator<std::vector<SDL_Rect>::iterator> currentFrameIterator;
   ANIMATION_TYPE currentAnimationType;
   Direction currentAnimationDirection;
+
  public:
   CustomAnimatedSDLMaterialObject(
-      CustomTextureManager* textureManager,
+      CustomTextureManager *textureManager,
       std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
           animationSprites,
       CustomSDLRect destination);

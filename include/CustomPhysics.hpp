@@ -73,6 +73,7 @@ class PhysicsControl {
   btDiscreteDynamicsWorld
       *dynamicsWorld;  // = new btDiscreteDynamicsWorld(dispatcher, broadphase,
                        // solver, collisionConfiguration);
+
  public:
   struct CustomPhysicalObjectHash {
     std::size_t operator()(const CustomPhysicalObject *physicalObject) const {

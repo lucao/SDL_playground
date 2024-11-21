@@ -11,13 +11,16 @@ class CustomTextureManager {
   std::unordered_map<ANIMATION_TYPE, SDL_Texture*> textures;
 
  public:
+  CustomTextureManager(SDL_Texture* static_texture);
   CustomTextureManager(
       std::unordered_map<ANIMATION_TYPE, SDL_Texture*> textures);
 
   virtual ~CustomTextureManager();
 
-  SDL_Texture* getTexture(ANIMATION_TYPE animationType);
-  SDL_Texture* getDefaultTexture();
+  virtual SDL_Texture* getTexture(ANIMATION_TYPE animationType);
+  virtual SDL_Texture* getTexture();
 };
+
+
 
 #endif
