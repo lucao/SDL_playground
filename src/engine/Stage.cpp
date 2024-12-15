@@ -120,12 +120,18 @@ Stage::Stage(Stage::StageId stageId, CustomSDLRect rect,
                      "r"),
       1, "jpeg");
 }
-void Stage::placeMaterialObject(CustomSDLMaterialObject* materialObject) {
-  this->materialObjects.push_back(materialObject);
+void Stage::placeGameObject(GameObject* gameObject) {
+  this->gameObjects.push_back(materialObject);
 }
 
 std::vector<CustomSDLMaterialObject*> Stage::getMaterialObjects() {
   return this->materialObjects;
+}
+
+CustomGroundPlane* Stage::createDefaultGround(SDL_Texture* static_texture) {
+  CustomTextureManager* textureManager =
+      new CustomTextureManager(static_texture);
+  return new CustomGroundPlane(textureManager, SDL_Rect({20, 200, 200, 200}));
 }
 
 Stage::StageId Stage::getId() { return Stage::StageId(); }

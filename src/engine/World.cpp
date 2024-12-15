@@ -1,5 +1,6 @@
 #include <SDL_image.h>
 
+#include <CustomPlayerBuilder.hpp>
 #include <World.hpp>
 
 World::World(SDL_Renderer* const renderer) {
@@ -24,9 +25,15 @@ World::World(SDL_Renderer* const renderer) {
       SDL_Rect{115, 14, 40, 50}, SDL_Rect{162, 14, 40, 50}};
 
   CustomTextureManager* texturesManager = new CustomTextureManager(textures);
-  this->mainPlayer = new CustomPlayer(texturesManager, animationSprites,
-                                      CustomSDLRect({0, 0, 40, 50}), 10, 4);
+  
+  std::unique_ptr<CustomPlayerBuilder> playerBuilder =
+      std::make_unique<CustomPlayerBuilder>(
+          CustomPlayerBuilder(renderer, PLAYER_CLASS::ROGUE, "testName"));
+  this->mainPlayer = playerBuilder->getPlayerCharacter();
+
   this->physicsControl = new PhysicsControl();
+  Stage::StageId stageId({1});
+  this->stages[stageId] = new Stage(stageId, CustomSDLRect({0,0,2000,2000}), renderer);
 }
 
 World::~World() {}
@@ -42,12 +49,3 @@ Stage* World::createBlankStage(SDL_Renderer* renderer) {
 
 Stage* World::getStage(Stage::StageId id) { return this->stages.at(id); }
 
-std::vector<CustomSDLMaterialObject*> World::getMaterialObjects() {
-  return this->materialObjects;
-}
-
-CustomGroundPlane* World::createDefaultGround(SDL_Texture* static_texture) {
-  CustomTextureManager* textureManager =
-      new CustomTextureManager(static_texture);
-  return new CustomGroundPlane(textureManager, SDL_Rect({20, 200, 200, 200}));
-}

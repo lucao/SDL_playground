@@ -10,12 +10,14 @@ find_package(imgui CONFIG REQUIRED)
 find_package(Bullet CONFIG REQUIRED)
     
 set(SOURCES 
+src/engine/CustomPlayerBuilder.cpp 
 src/engine/CustomGameCharacters.cpp 
 src/engine/CustomPhysics.cpp
 src/engine/CustomScreen.cpp
 src/engine/CustomSDLObjects.cpp
 src/engine/Stage.cpp
 src/engine/World.cpp
+src/engine/CustomGameObject.cpp 
 src/engine/CustomGameUtils.cpp 
 src/engine/CustomGameComponents.cpp 
 src/engine/CustomTexture.cpp)
@@ -33,7 +35,7 @@ target_link_libraries(game
 target_link_libraries(game PRIVATE $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)
 target_link_libraries(game PRIVATE imgui::imgui)
 target_link_libraries(game PRIVATE ${BULLET_LIBRARIES})
-target_link_libraries(game PRIVATE d3d9)
+
 
 target_include_directories(game PUBLIC include)
 target_include_directories(game PUBLIC include/utils)

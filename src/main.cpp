@@ -125,22 +125,15 @@ class GameControl {
 
     this->gameLoopRunning = true;
 
-    this->world = new World();
+    this->world = new World(this->camera->getRenderer());
 
-    this->mainPlayer = this->createLocalPlayer();
-    this->ground = this->createDefaultGround();
-
-    this->physicalObjects.insert(this->mainPlayer);
-    this->physicalObjects.insert(this->ground);
-
-    this->eventListeners.push_back(this->mainPlayer);
+    this->eventListeners.push_back(this->world->);
 
     this->currentStage = this->world->createBlankStage(camera->getRenderer());
     this->currentStage->placeMaterialObject(this->mainPlayer);
     this->currentStage->placeMaterialObject(this->ground);
 
     this->camera->setFollowedObject(this->mainPlayer);
-    this->physicsControl = new PhysicsControl();
   }
 
   CustomPlayer* getMainPlayer() { return this->mainPlayer; }

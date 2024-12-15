@@ -4,13 +4,14 @@
 CustomGameCharacter::CustomGameCharacter(
     CustomTextureManager* texture,
     std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
-    CustomSDLRect position, int lifePoints)
+    CustomSDLRect position, int lifePoints, int normalSpeed)
     : CustomAnimatedSDLMaterialObject(texture, animationSprites, position),
       CustomDynamicPhysicalObject(
           new btSphereShape(1), btScalar(10),
           new btDefaultMotionState(
               btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 10, 0)))) {
   this->lifePoints = lifePoints;
+  this->normalSpeed = normalSpeed;
 }
 
 CustomGameCharacter::~CustomGameCharacter() {}
@@ -40,12 +41,8 @@ void CustomGameCharacter::doPhysics(Uint64 startTick, Uint64 endTick) {
 CustomPlayer::CustomPlayer(
     CustomTextureManager* texture,
     std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
-    CustomSDLRect position,
-
-    int lifePoints, int normalSpeed)
-    : CustomGameCharacter(texture, animationSprites, position, lifePoints) {
-  this->normalSpeed = normalSpeed;
-}
+    CustomSDLRect position)
+    : CustomGameCharacter(texture, animationSprites, position, 10, 10) {}
 CustomPlayer::~CustomPlayer() {}
 
 bool CustomGameCharacter::canMove() const { return true; }

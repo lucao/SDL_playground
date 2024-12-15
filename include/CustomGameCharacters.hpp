@@ -10,6 +10,7 @@ class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
                             public CustomDynamicPhysicalObject,
                             public GameObject {
  protected:
+  std::string name;
   int lifePoints;
   int normalSpeed;
 
@@ -17,7 +18,7 @@ class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
   CustomGameCharacter(CustomTextureManager* texture,
                       std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
                           animationSprites,
-                      CustomSDLRect position, int lifePoints);
+                      CustomSDLRect position, int lifePoints, int normalSpeed);
   virtual ~CustomGameCharacter();
 
   void doPhysics(Uint64 startTick, Uint64 endTick) override;
@@ -36,7 +37,7 @@ class CustomPlayer : public CustomGameCharacter, public EventListener {
   CustomPlayer(CustomTextureManager* textureManager,
                std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
                    animationSprites,
-               CustomSDLRect position, int lifePoints, int normalSpeed);
+               CustomSDLRect position);
   ~CustomPlayer();
 
   void handleEvent(CustomEvent event) override;

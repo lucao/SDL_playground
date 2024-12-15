@@ -2,12 +2,13 @@
 #define STAGE_H
 
 #include <SDL.h>
-
+#include <CustomGameComponents.hpp>
 #include <CustomGameObjects.hpp>
 #include <CustomPhysics.hpp>
 #include <CustomSDLObject.hpp>
 #include <LazyLoadMatrix.hpp>
 #include <unordered_map>
+#include <set>
 #include <unordered_set>
 #include <valarray>
 #include <vector>
@@ -100,13 +101,38 @@ class Stage {
     std::size_t operator()(const Stage::StageId& s) const { return s.id; }
   };
 
+   // Custom hash function for strings
+  struct StageObject_key_hash {
+    std::size_t operator()(const GlobalPositionalSDLObject*& s) const {
+      auto regionId =
+          Region::RegionID::getIdFrom(s->destination.x, s->destination.y);
+      return regionId.first ^ regionId.second;
+    }
+  };
+
+  // Custom equality function for strings (case-insensitive comparison)
+  struct StageObject_key_equal {
+    bool operator()(const GlobalPositionalSDLObject*& a,
+                    const GlobalPositionalSDLObject*& b) const {
+      return a->destination.x == b->destination.x &&
+             a->destination.y == b->destination.y;
+    }
+  };
+
  private:
   Stage::StageId id;
   CustomSDLRect rect;
   Stage* nextStage;
   Stage* previousStage;
 
-  std::vector<CustomSDLMaterialObject*> materialObjects;
+  //TODO verificar melhor forma de armazenar os gameObjects
+  //TODO usar std::variant
+  std::unordered_multiset<CustomSDLMaterialObject*, StageObject_key_hash,
+                          StageObject_key_equal>
+      materialObjects;
+
+  //std::unordered_map<id_game_object, PhysicalObjects>
+  //std::unordered_map<id_game_object, MaterialObjects>
 
   SDL_Texture* default_dynamic_texture;
 
@@ -122,8 +148,9 @@ class Stage {
   Stage* getNextStage();
   Stage* getPreviousStage();
   Region* getRegion(SDL_Point point);
-  void placeMaterialObject(CustomSDLMaterialObject* materialObject);
+  void placeGameObject(GameObject* gameObject);
   std::vector<CustomSDLMaterialObject*> getMaterialObjects();
+  CustomGroundPlane* createDefaultGround(SDL_Texture* static_texture);
 };
 
 class StageOutOfBounds : public std::exception {

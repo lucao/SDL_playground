@@ -27,10 +27,9 @@ struct CustomSDLRect : SDL_Rect {
 };
 
 class GlobalPositionalSDLObject {
- protected:
+ public:
   CustomSDLRect destination;
 
- public:
   GlobalPositionalSDLObject();
   GlobalPositionalSDLObject(SDL_Rect destination);
   virtual ~GlobalPositionalSDLObject();
