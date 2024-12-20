@@ -3,12 +3,9 @@
 
 #include <Stage.hpp>
 
-DynamicRegion::DynamicRegion(
-    Region::RegionID regionId,
-    std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-    CustomSDLRect rect, SDL_Renderer* renderer, SDL_Texture* texture)
-    : Region(regionId, objectsOnRegion, rect,
-             new BackgroundSDLTexture(texture)) {}
+DynamicRegion::DynamicRegion(Region::RegionID regionId, CustomSDLRect rect,
+                             SDL_Renderer* renderer, SDL_Texture* texture)
+    : Region(regionId, rect, new BackgroundSDLTexture(texture)) {}
 DynamicRegion::~DynamicRegion() {}
 
 const std::valarray<std::valarray<int>>
@@ -17,21 +14,13 @@ const std::valarray<std::valarray<int>>
         // modifiers {0=middle, 1=up/right, -1=down/left}
         {1, 0}, {0, 1}, {-1, 0}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
-Region::Region(Region::RegionID regionId,
-               std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-               CustomSDLRect rect, BackgroundSDLTexture* background) {
+Region::Region(Region::RegionID regionId, CustomSDLRect rect,
+               BackgroundSDLTexture* background) {
   this->regionID = regionId;
   this->rect = rect;
-  this->objectsOnRegion = objectsOnRegion;
   this->background = background;
 }
 Region::~Region() { delete this->background; }
-void Region::addObjectToRegion(CustomSDLMaterialObject* object) {
-  this->objectsOnRegion.insert(object);
-}
-void Region::removeObjectFromRegion(CustomSDLMaterialObject* object) {
-  this->objectsOnRegion.erase(object);
-}
 CustomSDLRect Region::getRect() { return this->rect; }
 
 CustomSDLRect Region::cropRectInside(CustomSDLRect rect) {
@@ -72,7 +61,7 @@ Region* Stage::getRegion(SDL_Point point) {
   } catch (ElementNotFountException&) {
     // load new region
     region = new Region(
-        regionId, {},
+        regionId,
         CustomSDLRect(
             SDL_Rect({regionId.id.first * Region::fixedRegionWidth,
                       regionId.id.second * Region::fixedRegionHeight,
@@ -92,7 +81,7 @@ Region* Stage::getRegion(SDL_Point point) {
           this->regionsMatrix.addElement(
               neighbourRegionID, [this](Region::RegionID neighbourRegionIDKey) {
                 return new Region(
-                    neighbourRegionIDKey, {},
+                    neighbourRegionIDKey,
                     CustomSDLRect(SDL_Rect({neighbourRegionIDKey.id.first *
                                                 Region::fixedRegionWidth,
                                             neighbourRegionIDKey.id.second *
@@ -120,12 +109,48 @@ Stage::Stage(Stage::StageId stageId, CustomSDLRect rect,
                      "r"),
       1, "jpeg");
 }
-void Stage::placeGameObject(GameObject* gameObject) {
-  this->gameObjects.push_back(materialObject);
+void Stage::placeMaterialObject(CustomSDLMaterialObject* const materialObject) {
+  this->materialObjects[Region::RegionID::getIdFrom(
+                            materialObject->getDestination().x,
+                            materialObject->getDestination().y)]
+      .insert(materialObject);
 }
 
-std::vector<CustomSDLMaterialObject*> Stage::getMaterialObjects() {
-  return this->materialObjects;
+void Stage::updateMaterialObject(CustomSDLMaterialObject* const materialObject,
+                                 const std::pair<int, int> oldRegionId) {
+  const std::pair<int, int> materialObjectNewRegionId =
+      Region::RegionID::getIdFrom(materialObject->getDestination().x,
+                                  materialObject->getDestination().y);
+  if (materialObjectNewRegionId != oldRegionId) {
+    this->materialObjects[oldRegionId].erase(materialObject);
+    this->materialObjects[materialObjectNewRegionId].insert(materialObject);
+  }
+}
+
+const std::vector<
+    std::pair<CustomSDLMaterialObject* const, const Region::RegionID>>
+Stage::getMaterialObjects(const std::vector<Region::RegionID> regionsIds) {
+  std::vector<std::pair<CustomSDLMaterialObject* const, const Region::RegionID>>
+      materialObjects;
+
+  for (const auto regionId : regionsIds) {
+    std::vector<
+        std::pair<CustomSDLMaterialObject* const, const Region::RegionID>>
+        materialObjectsTransform;
+
+    std::transform(std::begin(this->materialObjects[regionId]),
+                   std::end(this->materialObjects[regionId]),
+                   std::begin(materialObjectsTransform),
+                   [regionId](CustomSDLMaterialObject* const materialObject) {
+                     return std::make_pair(materialObject, regionId);
+                   });
+
+    materialObjects.insert(std::end(materialObjects),
+                           std::begin(materialObjectsTransform),
+                           std::end(materialObjectsTransform));
+  }
+
+  return materialObjects;
 }
 
 CustomGroundPlane* Stage::createDefaultGround(SDL_Texture* static_texture) {

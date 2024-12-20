@@ -2,13 +2,15 @@
 #define STAGE_H
 
 #include <SDL.h>
+
 #include <CustomGameComponents.hpp>
 #include <CustomGameObjects.hpp>
 #include <CustomPhysics.hpp>
 #include <CustomSDLObject.hpp>
 #include <LazyLoadMatrix.hpp>
-#include <unordered_map>
+#include <algorithm>
 #include <set>
+#include <unordered_map>
 #include <unordered_set>
 #include <valarray>
 #include <vector>
@@ -43,6 +45,10 @@ class Region {
           y > 0 ? y / Region::fixedRegionHeight
                 : (y - Region::fixedRegionHeight) / Region::fixedRegionHeight);
     }
+
+    bool operator==(const Region::RegionID& other) {
+      return id.first == other.id.first && id.second == other.id.second;
+    }
   };
 
   struct RegionID_key_hash {
@@ -61,7 +67,6 @@ class Region {
   RegionID regionID;
 
   BackgroundSDLTexture* background;
-  std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion;
   CustomSDLRect rect;
 
  public:
@@ -69,12 +74,9 @@ class Region {
   static const int fixedRegionHeight = 1080;
 
  public:
-  Region(RegionID regionID,
-         std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-         CustomSDLRect rect, BackgroundSDLTexture* background);
+  Region(RegionID regionID, CustomSDLRect rect,
+         BackgroundSDLTexture* background);
   virtual ~Region();
-  void addObjectToRegion(CustomSDLMaterialObject* object);
-  void removeObjectFromRegion(CustomSDLMaterialObject* object);
   RegionID getRegionId();
   CustomSDLRect getRect();
   BackgroundSDLTexture* getBackground();
@@ -85,11 +87,10 @@ class Region {
 
 class BlankRegion : public Region {
  public:
-  BlankRegion(Region::RegionID regionId,
-              std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-              CustomSDLRect rect, BackgroundSDLTexture* background)
-      : Region(regionId, objectsOnRegion, rect, background){};
-  virtual ~BlankRegion(){};
+  BlankRegion(Region::RegionID regionId, CustomSDLRect rect,
+              BackgroundSDLTexture* background)
+      : Region(regionId, rect, background) {};
+  virtual ~BlankRegion() {};
 };
 
 class Stage {
@@ -101,38 +102,20 @@ class Stage {
     std::size_t operator()(const Stage::StageId& s) const { return s.id; }
   };
 
-   // Custom hash function for strings
-  struct StageObject_key_hash {
-    std::size_t operator()(const GlobalPositionalSDLObject*& s) const {
-      auto regionId =
-          Region::RegionID::getIdFrom(s->destination.x, s->destination.y);
-      return regionId.first ^ regionId.second;
-    }
-  };
-
-  // Custom equality function for strings (case-insensitive comparison)
-  struct StageObject_key_equal {
-    bool operator()(const GlobalPositionalSDLObject*& a,
-                    const GlobalPositionalSDLObject*& b) const {
-      return a->destination.x == b->destination.x &&
-             a->destination.y == b->destination.y;
-    }
-  };
-
  private:
   Stage::StageId id;
   CustomSDLRect rect;
   Stage* nextStage;
   Stage* previousStage;
 
-  //TODO verificar melhor forma de armazenar os gameObjects
-  //TODO usar std::variant
-  std::unordered_multiset<CustomSDLMaterialObject*, StageObject_key_hash,
-                          StageObject_key_equal>
+  // key is std::pair<int, int> from Region::RegionID
+  std::unordered_map<std::pair<int, int>,
+                     std::unordered_set<CustomSDLMaterialObject* const>,
+                     Region::RegionID_key_hash, Region::RegionID_key_equal>
       materialObjects;
 
-  //std::unordered_map<id_game_object, PhysicalObjects>
-  //std::unordered_map<id_game_object, MaterialObjects>
+  // std::unordered_map<id_game_object, PhysicalObjects>
+  // std::unordered_map<id_game_object, MaterialObjects>
 
   SDL_Texture* default_dynamic_texture;
 
@@ -148,8 +131,14 @@ class Stage {
   Stage* getNextStage();
   Stage* getPreviousStage();
   Region* getRegion(SDL_Point point);
-  void placeGameObject(GameObject* gameObject);
-  std::vector<CustomSDLMaterialObject*> getMaterialObjects();
+  void placeMaterialObject(CustomSDLMaterialObject* const materialObject);
+  void updateMaterialObject(CustomSDLMaterialObject* const materialObject,
+                            const std::pair<int, int> oldRegionId);
+
+  const std::vector<
+      std::pair<CustomSDLMaterialObject* const, const Region::RegionID>>
+  getMaterialObjects(const std::vector<Region::RegionID> regionsIds);
+
   CustomGroundPlane* createDefaultGround(SDL_Texture* static_texture);
 };
 
@@ -184,7 +173,8 @@ class RegionLoadError : public std::exception {
 
 class RegionNotLoaded : public RegionLoadError {
  public:
-  RegionNotLoaded(std::pair<int, int> regionKey) : RegionLoadError(regionKey){};
+  RegionNotLoaded(std::pair<int, int> regionKey)
+      : RegionLoadError(regionKey) {};
   char* what() {
     return const_cast<char*>("Game API Error, Region not loaded");
   }
@@ -192,7 +182,7 @@ class RegionNotLoaded : public RegionLoadError {
 class RegionNotLoadedYet : public RegionLoadError {
  public:
   RegionNotLoadedYet(std::pair<int, int> regionKey)
-      : RegionLoadError(regionKey){};
+      : RegionLoadError(regionKey) {};
   char* what() {
     return const_cast<char*>("Game API Error, Region load is not finished");
   }
@@ -202,10 +192,8 @@ class DynamicRegion : public Region {
  public:
   static SDL_RWops* DEFAULT_TEXTURE_RWOPS;
 
-  DynamicRegion(Region::RegionID regionId,
-                std::unordered_set<CustomSDLMaterialObject*> objectsOnRegion,
-                CustomSDLRect rect, SDL_Renderer* renderer,
-                SDL_Texture* texture);
+  DynamicRegion(Region::RegionID regionId, CustomSDLRect rect,
+                SDL_Renderer* renderer, SDL_Texture* texture);
   ~DynamicRegion();
 };
 #endif
