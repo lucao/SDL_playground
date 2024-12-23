@@ -175,7 +175,7 @@ class DebugWindows {
     ImGui::Begin("Ground plane Window");
 
     ImGui::Separator();
-
+    /*
     ImGui::Text("destination x %d", this->ground->getDestination().x);
     ImGui::Text("destination y %d", this->ground->getDestination().y);
     ImGui::Text("destination w %d", this->ground->getDestination().w);
@@ -196,7 +196,7 @@ class DebugWindows {
     ImGui::Text("Shape: w,h: %d,%d",
                 groundBoxShape->getHalfExtentsWithMargin().getX() * 2,
                 groundBoxShape->getHalfExtentsWithMargin().getY() * 2);
-
+                */
     ImGui::End();
 
     // Rendering

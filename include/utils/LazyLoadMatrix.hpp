@@ -22,6 +22,7 @@ class LazyLoadMatrix {
   Value getElement(Key key);
   bool contains(Key key);
   bool addElement(Key key, std::function<Value(Key)> lambda);
+  Value operator[](Key key) { return this->getElement(key); }
 };
 
 template <typename Key, typename Value, typename Hash, typename Equal>

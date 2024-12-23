@@ -65,7 +65,7 @@ CustomSDLMaterialObject::CustomSDLMaterialObject(
 CustomSDLMaterialObject::~CustomSDLMaterialObject() {}
 void CustomSDLMaterialObject::render(const SDL_Rect screenDestination,
                                      SDL_Renderer *renderer) {
-  SDL_RenderCopy(renderer, this->textureManager->getDefaultTexture(),
+  SDL_RenderCopy(renderer, this->textureManager->getTexture(),
                  &this->srcRect, &screenDestination);
 }
 

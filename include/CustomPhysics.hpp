@@ -10,17 +10,13 @@
 #include <atomic>
 #include <unordered_set>
 
-//TODO adjust masks
+// TODO adjust masks
 enum CollisionMasks { STATIC_OBJECT = 1 << 1, DYNAMIC_OBJECT = 1 << 0 };
 enum CollisionGroup { STATIC_OBJECTS = 1 << 0, DYNAMIC_OBJECTS = 1 << 1 };
 
 // TODO enum of shapes
 
 class CustomPhysicalObject {
- private:
-  static std::atomic_int _id_counter;
-  int id;
-
  protected:
   btCollisionShape *shape;
   btDefaultMotionState *motionState;
@@ -38,8 +34,6 @@ class CustomPhysicalObject {
                        CollisionGroup collisionGroup, btCollisionShape *shape,
                        btScalar mass, btDefaultMotionState *defaultMotionState);
   virtual ~CustomPhysicalObject();
-
-  int getID() const;
 
   CollisionMasks getCollisionMask();
   CollisionGroup getCollisionGroup();
@@ -74,34 +68,17 @@ class PhysicsControl {
       *dynamicsWorld;  // = new btDiscreteDynamicsWorld(dispatcher, broadphase,
                        // solver, collisionConfiguration);
 
- public:
-  struct CustomPhysicalObjectHash {
-    std::size_t operator()(const CustomPhysicalObject *physicalObject) const {
-      return std::hash<int>()(physicalObject->getID());
-    }
-  };
-
-  struct CustomPhysicalObjectEqual {
-    bool operator()(const CustomPhysicalObject *physicalObject1,
-                    const CustomPhysicalObject *physicalObject2) const {
-      return physicalObject1->getID() == physicalObject2->getID();
-    }
-  };
-
- private:
-  std::unordered_set<CustomPhysicalObject *, CustomPhysicalObjectHash,
-                     CustomPhysicalObjectEqual>
+  std::unordered_set<CustomPhysicalObject *, std::hash<CustomPhysicalObject *>>
       physicalObjects;
 
  public:
   PhysicsControl();
   virtual ~PhysicsControl();
 
-  void doPhysics(
-      std::unordered_set<CustomPhysicalObject *, CustomPhysicalObjectHash,
-                         CustomPhysicalObjectEqual>
-          physicalObjects,
-      Uint64 startTick, Uint64 endTick) noexcept;
+  void doPhysics(std::unordered_set<CustomPhysicalObject *,
+                                    std::hash<CustomPhysicalObject *>>
+                     physicalObjects,
+                 Uint64 startTick, Uint64 endTick) noexcept;
 };
 
 #endif

@@ -24,6 +24,8 @@ class CustomRoguePlayer : public CustomPlayer {
   CustomSDLRect size = CustomSDLRect(0, 0, 50, 50);
 
  public:
-  CustomRoguePlayer(CustomTextureManager* customTextureManager);
+  CustomRoguePlayer(CustomTextureManager* customTextureManager,
+                    std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
+                        animationSprites);
 };
 #endif

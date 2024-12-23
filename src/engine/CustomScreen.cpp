@@ -88,15 +88,16 @@ SDL_Renderer* CameraSDL::film(Stage* stage, Uint64 startTick, Uint64 endTick) {
     SDL_RenderCopy(this->renderer,
                    regionToRender->getBackground()->getTexture(), &srcRegioRect,
                    &destRegionRect);
-  }
-  // render objects
-  for (CustomSDLMaterialObject* object : stage->getMaterialObjects()) {
-    SDL_Rect destObjectRect = object->getDestination();
-    if (SDL_HasIntersection(&destObjectRect, &this->cameraRect)) {
-      object->render({object->getDestination().x - this->cameraRect.x,
-                      object->getDestination().y - this->cameraRect.y,
-                      object->getDestination().w, object->getDestination().h},
-                     this->renderer);
+    // render objects
+    for (CustomSDLMaterialObject* object :
+         regionToRender->getMaterialObjects()) {
+      SDL_Rect destObjectRect = object->getDestination();
+      if (SDL_HasIntersection(&destObjectRect, &this->cameraRect)) {
+        object->render({object->getDestination().x - this->cameraRect.x,
+                        object->getDestination().y - this->cameraRect.y,
+                        object->getDestination().w, object->getDestination().h},
+                       this->renderer);
+      }
     }
   }
 

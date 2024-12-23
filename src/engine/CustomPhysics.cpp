@@ -1,12 +1,9 @@
 #include <CustomPhysics.hpp>
 
-std::atomic_int CustomPhysicalObject::_id_counter{0};
 CustomPhysicalObject::CustomPhysicalObject(
     CollisionMasks collisionMask, CollisionGroup collisionGroup,
     btCollisionShape* shape, btScalar mass,
     btDefaultMotionState* defaultMotionState) {
-  this->id = CustomPhysicalObject::_id_counter.fetch_add(1);
-
   this->collisionGroup = collisionGroup;
   this->collisionMask = collisionMask;
 
@@ -22,8 +19,6 @@ CustomPhysicalObject::~CustomPhysicalObject() {
   delete this->motionState;
   delete this->rigidBody;
 }
-
-int CustomPhysicalObject::getID() const { return this->id; }
 
 CollisionMasks CustomPhysicalObject::getCollisionMask() {
   return this->collisionMask;
@@ -52,7 +47,7 @@ CustomDynamicPhysicalObject::CustomDynamicPhysicalObject(
 
 CustomDynamicPhysicalObject::~CustomDynamicPhysicalObject() {}
 
-void CustomDynamicPhysicalObject::addMovement(Movement* movement) {
+void CustomDynamicPhysicalObject::addMovement(Movement* const movement) {
   // TODO verificar tamanho máximo da lista e lógica de inserção de movements
   this->movementList.push_back(movement);
 }
@@ -88,18 +83,16 @@ PhysicsControl::~PhysicsControl() {
 
 void PhysicsControl::doPhysics(
     std::unordered_set<CustomPhysicalObject*,
-                       PhysicsControl::CustomPhysicalObjectHash,
-                       PhysicsControl::CustomPhysicalObjectEqual>
+                       std::hash<CustomPhysicalObject*>>
         objects,
     Uint64 startTick, Uint64 endTick) noexcept {
-  std::unordered_set<CustomPhysicalObject*,
-                     PhysicsControl::CustomPhysicalObjectHash,
-                     PhysicsControl::CustomPhysicalObjectEqual>
+  std::unordered_set<CustomPhysicalObject*, std::hash<CustomPhysicalObject*>>
       allPhysicalObjects;
   allPhysicalObjects.insert(objects.begin(), objects.end());
   allPhysicalObjects.insert(this->physicalObjects.begin(),
                             this->physicalObjects.end());
-  for (auto it = allPhysicalObjects.begin(); it != allPhysicalObjects.end(); ++it) {
+  for (auto it = allPhysicalObjects.begin(); it != allPhysicalObjects.end();
+       ++it) {
     CustomPhysicalObject* object = *it;
     if (this->physicalObjects.find(object) != this->physicalObjects.end()) {
       if (objects.find(object) == objects.end()) {

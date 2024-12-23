@@ -17,7 +17,7 @@ src/engine/CustomScreen.cpp
 src/engine/CustomSDLObjects.cpp
 src/engine/Stage.cpp
 src/engine/World.cpp
-src/engine/CustomGameObject.cpp 
+src/engine/CustomGameObjects.cpp 
 src/engine/CustomGameUtils.cpp 
 src/engine/CustomGameComponents.cpp 
 src/engine/CustomTexture.cpp)

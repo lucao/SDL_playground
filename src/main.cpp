@@ -19,6 +19,7 @@
 #endif
 #include <rpcndr.h>
 
+#include <CustomPlayerBuilder.hpp>
 #include <CustomTexture.hpp>
 #include <cstdio>
 #include <stdexcept>
@@ -97,6 +98,9 @@ class GameControl {
 
   std::vector<EventListener*> eventListeners;
 
+  PhysicsControl* physicsControl;
+
+  CustomPlayer* mainPlayer;
 
   CustomGroundPlane* createDefaultGround() {
     std::unordered_map<ANIMATION_TYPE, SDL_Texture*> textures;
@@ -127,24 +131,40 @@ class GameControl {
 
     this->world = new World(this->camera->getRenderer());
 
-    this->eventListeners.push_back(this->world->);
+    // TODO create mainPlayer
+    this->mainPlayer =
+        std::unique_ptr<CustomPlayerBuilder>(
+            new CustomPlayerBuilder(this->camera->getRenderer(),
+                                    PLAYER_CLASS::ROGUE, std::string("test")))
+            ->getPlayerCharacter();
+
+    this->physicsControl = new PhysicsControl();
 
     this->currentStage = this->world->createBlankStage(camera->getRenderer());
+
     this->currentStage->placeMaterialObject(this->mainPlayer);
-    this->currentStage->placeMaterialObject(this->ground);
+    this->currentStage->placePhysicalObject(this->mainPlayer);
+
+    SDL_Surface* surface = SDL_CreateRGBSurface(0, 1, 1, 32, 0, 0, 1, 0);
+    SDL_FillRect(surface, nullptr, SDL_MapRGB(surface->format, 1, 0, 1));
+    SDL_Texture* texture =
+        SDL_CreateTextureFromSurface(camera->getRenderer(), surface);
+
+    this->currentStage->placeMaterialObject(
+        this->currentStage->createDefaultGround(texture));
 
     this->camera->setFollowedObject(this->mainPlayer);
   }
 
   CustomPlayer* getMainPlayer() { return this->mainPlayer; }
-  CustomGroundPlane* getGround() { return this->ground; }
 
   std::vector<EventListener*> getEventListeners() {
     return this->eventListeners;
   }
 
   void processLogic(Uint64 startTick, Uint64 endTick) noexcept {
-    this->physicsControl->doPhysics(this->physicalObjects, startTick, endTick);
+    this->physicsControl->doPhysics(this->currentStage->getPhysicalObjects(),
+                                    startTick, endTick);
   }
 
   bool isGameLoopRunning() { return this->gameLoopRunning; }
@@ -208,7 +228,6 @@ int main(int, char**) {
     }
 #ifdef DEBUG
     debug->trackPlayer(gameControl->getMainPlayer());
-    debug->trackGround(gameControl->getGround());
 #endif
     while (gameControl->isGameLoopRunning()) {
 #ifdef DEBUG

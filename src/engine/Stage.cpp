@@ -51,13 +51,10 @@ CustomSDLRect Region::getSrcRect(CustomSDLRect referenceRect) {
 BackgroundSDLTexture* Region::getBackground() { return this->background; }
 Region::RegionID Region::getRegionId() { return this->regionID; }
 
-Region* Stage::getRegion(SDL_Point point) {
-  Region::RegionID regionId = Region::RegionID::valueFrom(
-      Region::RegionID::getIdFrom(point.x, point.y));
-
+Region* Stage::getRegion(Region::RegionID regionId) {
   Region* region;
   try {
-    region = this->regionsMatrix.getElement(regionId);
+    region = this->regionsMatrix[regionId];
   } catch (ElementNotFountException&) {
     // load new region
     region = new Region(
@@ -98,6 +95,17 @@ Region* Stage::getRegion(SDL_Point point) {
   return region;
 }
 
+Region* Stage::getRegion(SDL_Point point) {
+  return this->getRegion(Region::RegionID::valueFrom(
+      Region::RegionID::getIdFrom(point.x, point.y)));
+}
+
+std::unordered_set<CustomSDLMaterialObject*,
+                   std::hash<CustomSDLMaterialObject*>>
+Region::getMaterialObjects() {
+  return this->materialObjects;
+}
+
 Stage::~Stage() {}
 Stage::Stage(Stage::StageId stageId, CustomSDLRect rect,
              SDL_Renderer* renderer) {
@@ -109,48 +117,30 @@ Stage::Stage(Stage::StageId stageId, CustomSDLRect rect,
                      "r"),
       1, "jpeg");
 }
-void Stage::placeMaterialObject(CustomSDLMaterialObject* const materialObject) {
-  this->materialObjects[Region::RegionID::getIdFrom(
-                            materialObject->getDestination().x,
-                            materialObject->getDestination().y)]
+void Stage::placeMaterialObject(CustomSDLMaterialObject* materialObject) {
+  this->getRegion(materialObject->getDestination().getPoint())
+      ->getMaterialObjects()
       .insert(materialObject);
 }
 
-void Stage::updateMaterialObject(CustomSDLMaterialObject* const materialObject,
-                                 const std::pair<int, int> oldRegionId) {
-  const std::pair<int, int> materialObjectNewRegionId =
-      Region::RegionID::getIdFrom(materialObject->getDestination().x,
-                                  materialObject->getDestination().y);
-  if (materialObjectNewRegionId != oldRegionId) {
-    this->materialObjects[oldRegionId].erase(materialObject);
-    this->materialObjects[materialObjectNewRegionId].insert(materialObject);
+void Stage::placePhysicalObject(CustomPhysicalObject* physicalObject) {
+  this->physicalObjects.insert(physicalObject);
+}
+
+void Stage::updateMaterialObject(CustomSDLMaterialObject* materialObject,
+                                 Region* oldRegion) {
+  Region* newRegion =
+      this->getRegion(materialObject->getDestination().getPoint());
+
+  if (newRegion != oldRegion) {
+    oldRegion->getMaterialObjects().erase(materialObject);
+    newRegion->getMaterialObjects().insert(materialObject);
   }
 }
 
-const std::vector<
-    std::pair<CustomSDLMaterialObject* const, const Region::RegionID>>
-Stage::getMaterialObjects(const std::vector<Region::RegionID> regionsIds) {
-  std::vector<std::pair<CustomSDLMaterialObject* const, const Region::RegionID>>
-      materialObjects;
-
-  for (const auto regionId : regionsIds) {
-    std::vector<
-        std::pair<CustomSDLMaterialObject* const, const Region::RegionID>>
-        materialObjectsTransform;
-
-    std::transform(std::begin(this->materialObjects[regionId]),
-                   std::end(this->materialObjects[regionId]),
-                   std::begin(materialObjectsTransform),
-                   [regionId](CustomSDLMaterialObject* const materialObject) {
-                     return std::make_pair(materialObject, regionId);
-                   });
-
-    materialObjects.insert(std::end(materialObjects),
-                           std::begin(materialObjectsTransform),
-                           std::end(materialObjectsTransform));
-  }
-
-  return materialObjects;
+std::unordered_set<CustomPhysicalObject*, std::hash<CustomPhysicalObject*>>
+Stage::getPhysicalObjects() {
+  return this->physicalObjects;
 }
 
 CustomGroundPlane* Stage::createDefaultGround(SDL_Texture* static_texture) {

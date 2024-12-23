@@ -49,6 +49,10 @@ class Region {
     bool operator==(const Region::RegionID& other) {
       return id.first == other.id.first && id.second == other.id.second;
     }
+
+    bool operator!=(const Region::RegionID& other) {
+      return id.first != other.id.first || id.second != other.id.second;
+    }
   };
 
   struct RegionID_key_hash {
@@ -69,6 +73,11 @@ class Region {
   BackgroundSDLTexture* background;
   CustomSDLRect rect;
 
+  // use gameobject hash
+  std::unordered_set<CustomSDLMaterialObject*,
+                     std::hash<CustomSDLMaterialObject*>>
+      materialObjects;
+
  public:
   static const int fixedRegionWidth = 1920;
   static const int fixedRegionHeight = 1080;
@@ -83,6 +92,10 @@ class Region {
   CustomSDLRect getSrcRect(CustomSDLRect referenceRect);
 
   CustomSDLRect cropRectInside(CustomSDLRect referenceRect);
+
+  std::unordered_set<CustomSDLMaterialObject*,
+                     std::hash<CustomSDLMaterialObject*>>
+  getMaterialObjects();
 };
 
 class BlankRegion : public Region {
@@ -108,20 +121,16 @@ class Stage {
   Stage* nextStage;
   Stage* previousStage;
 
-  // key is std::pair<int, int> from Region::RegionID
-  std::unordered_map<std::pair<int, int>,
-                     std::unordered_set<CustomSDLMaterialObject* const>,
-                     Region::RegionID_key_hash, Region::RegionID_key_equal>
-      materialObjects;
-
-  // std::unordered_map<id_game_object, PhysicalObjects>
-  // std::unordered_map<id_game_object, MaterialObjects>
-
   SDL_Texture* default_dynamic_texture;
 
   LazyLoadMatrix<Region::RegionID, Region*, Region::RegionID_key_hash,
                  Region::RegionID_key_equal>
       regionsMatrix;
+
+  // use gameobject hash
+  std::unordered_set<CustomPhysicalObject*,
+                     std::hash<CustomPhysicalObject*>>
+      physicalObjects;
 
  public:
   Stage(Stage::StageId stageId, CustomSDLRect rect, SDL_Renderer* renderer);
@@ -131,13 +140,14 @@ class Stage {
   Stage* getNextStage();
   Stage* getPreviousStage();
   Region* getRegion(SDL_Point point);
-  void placeMaterialObject(CustomSDLMaterialObject* const materialObject);
-  void updateMaterialObject(CustomSDLMaterialObject* const materialObject,
-                            const std::pair<int, int> oldRegionId);
-
-  const std::vector<
-      std::pair<CustomSDLMaterialObject* const, const Region::RegionID>>
-  getMaterialObjects(const std::vector<Region::RegionID> regionsIds);
+  Region* getRegion(Region::RegionID regionId);
+  void placeMaterialObject(CustomSDLMaterialObject* materialObject);
+  void placePhysicalObject(CustomPhysicalObject* physicalObject);
+  void updateMaterialObject(CustomSDLMaterialObject* materialObject,
+                            Region* oldRegion);
+  std::unordered_set<CustomPhysicalObject*,
+                     std::hash<CustomPhysicalObject*>>
+  getPhysicalObjects();
 
   CustomGroundPlane* createDefaultGround(SDL_Texture* static_texture);
 };
