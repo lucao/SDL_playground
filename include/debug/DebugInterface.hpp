@@ -35,7 +35,7 @@ class DebugWindows {
   WNDCLASSEXW wc;
 
   CustomPlayer* player;
-  CustomGroundPlane* ground;
+  Stage* stage;
   CameraSDL* camera;
 
  public:
@@ -109,9 +109,7 @@ class DebugWindows {
     this->player = trackedPlayer;
   }
 
-  void trackGround(CustomGroundPlane* trackedGround) {
-    this->ground = trackedGround;
-  }
+  void trackStage(Stage* trackedStage) { this->stage = trackedStage; }
 
   bool loop() {
     MSG msg;
@@ -171,32 +169,23 @@ class DebugWindows {
                                      .getY()));
 
     ImGui::End();
-
-    ImGui::Begin("Ground plane Window");
+    ImGui::Begin("Regions");
 
     ImGui::Separator();
-    /*
-    ImGui::Text("destination x %d", this->ground->getDestination().x);
-    ImGui::Text("destination y %d", this->ground->getDestination().y);
-    ImGui::Text("destination w %d", this->ground->getDestination().w);
-    ImGui::Text("destination h %d", this->ground->getDestination().h);
-    ImGui::Separator();
-    ImGui::Text("Physics");
-    ImGui::Text("RigidBody x,y %d,%d",
-                static_cast<int>(this->ground->getRigidBody()
-                                     ->getWorldTransform()
-                                     .getOrigin()
-                                     .getX()),
-                static_cast<int>(this->ground->getRigidBody()
-                                     ->getWorldTransform()
-                                     .getOrigin()
-                                     .getY()));
-    btBoxShape* groundBoxShape = static_cast<btBoxShape*>(
-        this->ground->getRigidBody()->getCollisionShape());
-    ImGui::Text("Shape: w,h: %d,%d",
-                groundBoxShape->getHalfExtentsWithMargin().getX() * 2,
-                groundBoxShape->getHalfExtentsWithMargin().getY() * 2);
-                */
+    ImGui::BeginTable("TableExample", 2);
+    ImGui::TableSetupColumn("Column 1");
+    ImGui::TableSetupColumn("Column 2");
+    ImGui::TableHeadersRow();
+
+    for (auto regionId : stage->getRegionIds()) {
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::Text("%d", regionId.id.first);
+      ImGui::TableSetColumnIndex(1);
+      ImGui::Text("%d", regionId.id.second);
+    }
+
+    ImGui::EndTable();
     ImGui::End();
 
     // Rendering

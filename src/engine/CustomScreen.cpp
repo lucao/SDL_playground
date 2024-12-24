@@ -82,6 +82,8 @@ SDL_Renderer* CameraSDL::film(Stage* stage, Uint64 startTick, Uint64 endTick) {
       regionsToRender.push_back(region);
     }
   }
+
+  std::vector<CustomSDLMaterialObject*> objectsToRender;
   for (Region* regionToRender : regionsToRender) {
     SDL_Rect srcRegioRect = regionToRender->getSrcRect(this->cameraRect);
     SDL_Rect destRegionRect = regionToRender->cropRectInside(this->cameraRect);
@@ -93,12 +95,19 @@ SDL_Renderer* CameraSDL::film(Stage* stage, Uint64 startTick, Uint64 endTick) {
          regionToRender->getMaterialObjects()) {
       SDL_Rect destObjectRect = object->getDestination();
       if (SDL_HasIntersection(&destObjectRect, &this->cameraRect)) {
-        object->render({object->getDestination().x - this->cameraRect.x,
-                        object->getDestination().y - this->cameraRect.y,
-                        object->getDestination().w, object->getDestination().h},
-                       this->renderer);
+        objectsToRender.push_back(object);
+        
       }
     }
+  }
+
+  for (CustomSDLMaterialObject* objectToRender : objectsToRender) {
+    objectToRender->render(
+        {objectToRender->getDestination().x - this->cameraRect.x,
+         objectToRender->getDestination().y - this->cameraRect.y,
+         objectToRender->getDestination().w,
+         objectToRender->getDestination().h},
+                   this->renderer);
   }
 
   SDL_RenderPresent(this->renderer);

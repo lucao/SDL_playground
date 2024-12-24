@@ -93,9 +93,12 @@ class Region {
 
   CustomSDLRect cropRectInside(CustomSDLRect referenceRect);
 
-  std::unordered_set<CustomSDLMaterialObject*,
+  const std::unordered_set<CustomSDLMaterialObject*,
                      std::hash<CustomSDLMaterialObject*>>
   getMaterialObjects();
+
+  void placeMaterialObject(CustomSDLMaterialObject* materialObject);
+  void eraseMaterialObject(CustomSDLMaterialObject* materialObject);
 };
 
 class BlankRegion : public Region {
@@ -128,8 +131,7 @@ class Stage {
       regionsMatrix;
 
   // use gameobject hash
-  std::unordered_set<CustomPhysicalObject*,
-                     std::hash<CustomPhysicalObject*>>
+  std::unordered_set<CustomPhysicalObject*, std::hash<CustomPhysicalObject*>>
       physicalObjects;
 
  public:
@@ -145,9 +147,10 @@ class Stage {
   void placePhysicalObject(CustomPhysicalObject* physicalObject);
   void updateMaterialObject(CustomSDLMaterialObject* materialObject,
                             Region* oldRegion);
-  std::unordered_set<CustomPhysicalObject*,
-                     std::hash<CustomPhysicalObject*>>
+  std::unordered_set<CustomPhysicalObject*, std::hash<CustomPhysicalObject*>>
   getPhysicalObjects();
+
+  std::vector<Region::RegionID> getRegionIds();
 
   CustomGroundPlane* createDefaultGround(SDL_Texture* static_texture);
 };

@@ -4,7 +4,7 @@
 #include <future>
 #include <unordered_map>
 
-class ElementNotFountException : std::exception {
+class ElementNotFoundException : std::exception {
  public:
   char *what() {
     return const_cast<char *>(
@@ -12,17 +12,25 @@ class ElementNotFountException : std::exception {
   }
 };
 
-template <typename Key, typename Value, typename Hash, typename Equal>
+template <typename Key, typename Value, typename Hash = std::hash<Key>,
+          typename Equal = std::equal_to<Key>>
 class LazyLoadMatrix {
  private:
   std::unordered_map<Key, std::future<Value>, Hash, Equal> loadMatrix;
   std::unordered_map<Key, Value, Hash, Equal> valueMatrix;
 
  public:
+  LazyLoadMatrix() {
+    // loadMatrix.clear();
+    // valueMatrix.clear();
+  }
   Value getElement(Key key);
   bool contains(Key key);
   bool addElement(Key key, std::function<Value(Key)> lambda);
-  Value operator[](Key key) { return this->getElement(key); }
+  std::vector<Key> keys();
+  Value operator[](Key key) {  // TODO
+    return this->getElement(key);
+  }
 };
 
 template <typename Key, typename Value, typename Hash, typename Equal>
@@ -40,7 +48,7 @@ Value LazyLoadMatrix<Key, Value, Hash, Equal>::getElement(Key key) {
     }
   }
 
-  throw ElementNotFountException();
+  throw ElementNotFoundException();
 }
 
 template <typename Key, typename Value, typename Hash, typename Equal>
@@ -55,6 +63,15 @@ bool LazyLoadMatrix<Key, Value, Hash, Equal>::addElement(
   auto emplacedElement = this->loadMatrix.try_emplace(
       key, std::async(std::launch::async, lambda, key));
   return emplacedElement.second;
+}
+
+template <typename Key, typename Value, typename Hash, typename Equal>
+std::vector<Key> LazyLoadMatrix<Key, Value, Hash, Equal>::keys() {
+  std::vector<Key> keys;
+  for (const auto &kv : this->valueMatrix) {
+    keys.push_back(kv.first);
+  }
+  return keys;
 }
 
 #endif

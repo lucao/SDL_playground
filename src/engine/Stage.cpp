@@ -55,7 +55,7 @@ Region* Stage::getRegion(Region::RegionID regionId) {
   Region* region;
   try {
     region = this->regionsMatrix[regionId];
-  } catch (ElementNotFountException&) {
+  } catch (ElementNotFoundException&) {
     // load new region
     region = new Region(
         regionId,
@@ -66,7 +66,7 @@ Region* Stage::getRegion(Region::RegionID regionId) {
         new BackgroundSDLTexture(this->default_dynamic_texture));
 
     this->regionsMatrix.addElement(
-        regionId, [this, region](Region::RegionID regionId) { return region; });
+        regionId, [&region](Region::RegionID regionId) { return region; });
   }
 
   std::for_each(
@@ -95,15 +95,27 @@ Region* Stage::getRegion(Region::RegionID regionId) {
   return region;
 }
 
+std::vector<Region::RegionID> Stage::getRegionIds() {
+  return this->regionsMatrix.keys();
+}
+
 Region* Stage::getRegion(SDL_Point point) {
   return this->getRegion(Region::RegionID::valueFrom(
       Region::RegionID::getIdFrom(point.x, point.y)));
 }
 
-std::unordered_set<CustomSDLMaterialObject*,
-                   std::hash<CustomSDLMaterialObject*>>
+const std::unordered_set<CustomSDLMaterialObject*,
+                         std::hash<CustomSDLMaterialObject*>>
 Region::getMaterialObjects() {
   return this->materialObjects;
+}
+
+void Region::placeMaterialObject(CustomSDLMaterialObject* materialObject) {
+  this->materialObjects.insert(materialObject);
+}
+
+void Region::eraseMaterialObject(CustomSDLMaterialObject* materialObject) {
+  this->materialObjects.erase(materialObject);
 }
 
 Stage::~Stage() {}
@@ -119,8 +131,7 @@ Stage::Stage(Stage::StageId stageId, CustomSDLRect rect,
 }
 void Stage::placeMaterialObject(CustomSDLMaterialObject* materialObject) {
   this->getRegion(materialObject->getDestination().getPoint())
-      ->getMaterialObjects()
-      .insert(materialObject);
+      ->placeMaterialObject(materialObject);
 }
 
 void Stage::placePhysicalObject(CustomPhysicalObject* physicalObject) {
@@ -133,8 +144,8 @@ void Stage::updateMaterialObject(CustomSDLMaterialObject* materialObject,
       this->getRegion(materialObject->getDestination().getPoint());
 
   if (newRegion != oldRegion) {
-    oldRegion->getMaterialObjects().erase(materialObject);
-    newRegion->getMaterialObjects().insert(materialObject);
+    oldRegion->eraseMaterialObject(materialObject);
+    newRegion->placeMaterialObject(materialObject);
   }
 }
 
@@ -146,7 +157,7 @@ Stage::getPhysicalObjects() {
 CustomGroundPlane* Stage::createDefaultGround(SDL_Texture* static_texture) {
   CustomTextureManager* textureManager =
       new CustomTextureManager(static_texture);
-  return new CustomGroundPlane(textureManager, SDL_Rect({20, 200, 200, 200}));
+  return new CustomGroundPlane(textureManager, SDL_Rect({-200, 200, 1000, 100}));
 }
 
 Stage::StageId Stage::getId() { return Stage::StageId(); }

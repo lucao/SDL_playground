@@ -144,19 +144,22 @@ class GameControl {
 
     this->currentStage->placeMaterialObject(this->mainPlayer);
     this->currentStage->placePhysicalObject(this->mainPlayer);
-
-    SDL_Surface* surface = SDL_CreateRGBSurface(0, 1, 1, 32, 0, 0, 1, 0);
+    //verificar se surface está sendo plotada com a cor correta
+    SDL_Surface* surface = SDL_CreateRGBSurface(0, 1, 1, 32, 0, 0, 1, 1);
     SDL_FillRect(surface, nullptr, SDL_MapRGB(surface->format, 1, 0, 1));
     SDL_Texture* texture =
         SDL_CreateTextureFromSurface(camera->getRenderer(), surface);
 
-    this->currentStage->placeMaterialObject(
-        this->currentStage->createDefaultGround(texture));
+    CustomGroundPlane* ground =
+        this->currentStage->createDefaultGround(texture);
+    this->currentStage->placeMaterialObject(ground);
+    this->currentStage->placePhysicalObject(ground);
 
     this->camera->setFollowedObject(this->mainPlayer);
   }
 
   CustomPlayer* getMainPlayer() { return this->mainPlayer; }
+  Stage* getCurrentStage() { return this->currentStage; }
 
   std::vector<EventListener*> getEventListeners() {
     return this->eventListeners;
@@ -228,6 +231,7 @@ int main(int, char**) {
     }
 #ifdef DEBUG
     debug->trackPlayer(gameControl->getMainPlayer());
+    debug->trackStage(gameControl->getCurrentStage());
 #endif
     while (gameControl->isGameLoopRunning()) {
 #ifdef DEBUG
