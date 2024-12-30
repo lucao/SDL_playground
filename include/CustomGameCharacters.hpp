@@ -40,7 +40,7 @@ class CustomPlayer : public CustomGameCharacter, public EventListener {
                CustomSDLRect position);
   ~CustomPlayer();
 
-  void handleEvent(CustomEvent event) override;
+  void handleEvent(CustomEvent* event) override;
 };
 
 #endif

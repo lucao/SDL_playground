@@ -40,12 +40,15 @@ enum Direction { LEFT, RIGHT };
 
 enum MOVEMENT_TYPE { MOVEMENT, WALK, RUN, JUMP };
 
+// TODO destructors
 class Movement {
  protected:
   SDL_Point startPoint;
   Uint64 startTick;
   Uint64 endTick;
   SDL_Point endPoint;
+
+  Movement(SDL_Point startPoint, Uint64 startTick, Uint64 endTick);
 
  public:
   Movement(SDL_Point startPoint, Uint64 startTick, Uint64 endTick,
@@ -60,29 +63,13 @@ class Movement {
 
   // velocidade em pixels/milisegundos
   // TODO testar isso
-  int getVelocityX() {
-    return endPoint.x - startPoint.x / static_cast<int>(endTick - startTick);
-  }
-  int getVelocityY() {
-    return startPoint.y - endPoint.y / static_cast<int>(endTick - startTick);
-  }
+  float getVelocityX();
+  float getVelocityY();
 
   virtual MOVEMENT_TYPE getType() const { return MOVEMENT_TYPE::MOVEMENT; }
 
-  bool operator==(const Movement& other) const {
-    return other.getType() == MOVEMENT_TYPE::MOVEMENT;
-  }
 };
-
-namespace std {
-template <>
-struct hash<Movement> {
-  std::size_t operator()(const Movement& k) const {
-    return static_cast<std::size_t>(k.getType());
-  }
-};
-}  // namespace std
-
+//TODO remove pointers
 class CustomEvent {
  private:
   PLAYER_ACTION action;
@@ -91,7 +78,6 @@ class CustomEvent {
 
  public:
   CustomEvent(PLAYER_ACTION action, Uint64 initialTick, Uint64 endTick);
-  virtual ~CustomEvent();
   PLAYER_ACTION getAction();
   Uint64 getInitialTick();
   Uint64 getEndTick();
@@ -99,7 +85,7 @@ class CustomEvent {
 
 class EventListener {
  public:
-  virtual void handleEvent(CustomEvent event);
+  virtual void handleEvent(CustomEvent* event);
 };
 
 class Walk : public Movement {

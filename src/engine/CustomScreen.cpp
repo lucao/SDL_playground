@@ -74,16 +74,34 @@ SDL_Renderer* CameraSDL::film(Stage* stage, Uint64 startTick, Uint64 endTick) {
   SDL_RenderClear(this->renderer);
 
   // render regions
-  std::vector<Region*> regionsToRender;
+  std::unordered_set<Region*, std::hash<Region*>> regionsToRender;
+  std::unordered_set<CustomSDLMaterialObject*,
+                     std::hash<CustomSDLMaterialObject*>>
+      objectsToRender;
   for (SDL_Point point : this->cameraRect.getVertices()) {
-    Region* region = stage->getRegion(point);
-    if (std::find(regionsToRender.begin(), regionsToRender.end(), region) ==
-        regionsToRender.end()) {
-      regionsToRender.push_back(region);
+    std::vector<Region*> regions;
+    Region* regionToRender = stage->getRegion(point);
+    regionsToRender.insert(regionToRender);
+    regions.push_back(regionToRender);
+
+    auto materialObjectsToRender = regionToRender->getMaterialObjects();
+    objectsToRender.insert(materialObjectsToRender.begin(),
+                           materialObjectsToRender.end());
+
+    for (auto neighbourRegionId :
+         regionToRender->getRegionId().neighbourRegionsIDs) {
+      regions.push_back(
+          stage->getRegion(Region::RegionID::valueFrom(neighbourRegionId)));
+    }
+    for (Region* region : regions) {
+      auto materialObjectsToRenderFromNeighbourRegion =
+          region->getMaterialObjects();
+      objectsToRender.insert(materialObjectsToRenderFromNeighbourRegion.begin(),
+                             materialObjectsToRenderFromNeighbourRegion.end());
     }
   }
 
-  std::vector<CustomSDLMaterialObject*> objectsToRender;
+  std::vector<CustomSDLMaterialObject*> objectsInsideCamera;
   for (Region* regionToRender : regionsToRender) {
     SDL_Rect srcRegioRect = regionToRender->getSrcRect(this->cameraRect);
     SDL_Rect destRegionRect = regionToRender->cropRectInside(this->cameraRect);
@@ -91,23 +109,21 @@ SDL_Renderer* CameraSDL::film(Stage* stage, Uint64 startTick, Uint64 endTick) {
                    regionToRender->getBackground()->getTexture(), &srcRegioRect,
                    &destRegionRect);
     // render objects
-    for (CustomSDLMaterialObject* object :
-         regionToRender->getMaterialObjects()) {
+    for (CustomSDLMaterialObject* object : objectsToRender) {
       SDL_Rect destObjectRect = object->getDestination();
       if (SDL_HasIntersection(&destObjectRect, &this->cameraRect)) {
-        objectsToRender.push_back(object);
-        
+        objectsInsideCamera.push_back(object);
       }
     }
   }
 
-  for (CustomSDLMaterialObject* objectToRender : objectsToRender) {
-    objectToRender->render(
-        {objectToRender->getDestination().x - this->cameraRect.x,
-         objectToRender->getDestination().y - this->cameraRect.y,
-         objectToRender->getDestination().w,
-         objectToRender->getDestination().h},
-                   this->renderer);
+  for (CustomSDLMaterialObject* objectInsideCamera : objectsInsideCamera) {
+    objectInsideCamera->render(
+        {objectInsideCamera->getDestination().x - this->cameraRect.x,
+         objectInsideCamera->getDestination().y - this->cameraRect.y,
+         objectInsideCamera->getDestination().w,
+         objectInsideCamera->getDestination().h},
+        this->renderer);
   }
 
   SDL_RenderPresent(this->renderer);

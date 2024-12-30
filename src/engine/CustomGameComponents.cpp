@@ -8,7 +8,7 @@ CustomGroundPlane::CustomGroundPlane(CustomTextureManager* textureManager,
           CollisionMasks::STATIC_OBJECT, CollisionGroup::STATIC_OBJECTS,
           new btBoxShape(btVector3(btScalar(destination.w / 2),
                                    btScalar(destination.h / 2), 0)),
-          btScalar(0),
+          btScalar(0.0),
           new btDefaultMotionState(
               btTransform(btQuaternion(0, 0, 0, 1),
                           btVector3(destination.x, destination.y, 0)))),

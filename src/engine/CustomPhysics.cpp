@@ -47,7 +47,7 @@ CustomDynamicPhysicalObject::CustomDynamicPhysicalObject(
 
 CustomDynamicPhysicalObject::~CustomDynamicPhysicalObject() {}
 
-void CustomDynamicPhysicalObject::addMovement(Movement* const movement) {
+void CustomDynamicPhysicalObject::addMovement(Movement* movement) {
   // TODO verificar tamanho máximo da lista e lógica de inserção de movements
   this->movementList.push_back(movement);
 }

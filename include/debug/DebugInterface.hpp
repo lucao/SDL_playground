@@ -167,6 +167,11 @@ class DebugWindows {
                                      ->getWorldTransform()
                                      .getOrigin()
                                      .getY()));
+    ImGui::Text("RigidBody linearVel x,y %.2f , %.2f",
+                static_cast<float>(
+                    this->player->getRigidBody()->getLinearVelocity().getX()),
+                static_cast<float>(
+                    this->player->getRigidBody()->getLinearVelocity().getY()));
 
     ImGui::End();
     ImGui::Begin("Regions");

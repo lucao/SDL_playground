@@ -144,6 +144,9 @@ class GameControl {
 
     this->currentStage->placeMaterialObject(this->mainPlayer);
     this->currentStage->placePhysicalObject(this->mainPlayer);
+
+    this->eventListeners.push_back(this->mainPlayer);
+
     //verificar se surface está sendo plotada com a cor correta
     SDL_Surface* surface = SDL_CreateRGBSurface(0, 1, 1, 32, 0, 0, 1, 1);
     SDL_FillRect(surface, nullptr, SDL_MapRGB(surface->format, 1, 0, 1));
@@ -190,7 +193,7 @@ class GameControl {
 
 class EventControl {
  private:
-  std::queue<CustomEvent> eventsQueue;
+  std::queue<CustomEvent*> eventsQueue;
   std::vector<EventListener*> eventListeners;
 
  public:
@@ -198,14 +201,15 @@ class EventControl {
   void addEventListener(EventListener* listener) {
     eventListeners.push_back(listener);
   }
-  virtual void addEvent(CustomEvent event) { eventsQueue.push(event); }
+  virtual void addEvent(CustomEvent* event) { eventsQueue.push(event); }
   void processEvents() {
     while (!eventsQueue.empty()) {
-      CustomEvent event = this->eventsQueue.front();
+      CustomEvent* event = this->eventsQueue.front();
       for (EventListener* listener : eventListeners) {
         listener->handleEvent(event);  // TODO handle exceptions
       }
       this->eventsQueue.pop();
+      delete event;
     }
   }
 };
@@ -288,20 +292,20 @@ int main(int, char**) {
     */
       boolean idle_input = true;
       if (keyboardState[SDL_SCANCODE_A] || keyboardState[SDL_SCANCODE_LEFT]) {
-        eventControl->addEvent(CustomEvent(
+        eventControl->addEvent(new CustomEvent(
             PLAYER_ACTION::PLAYER_LEFT_KEY_PRESSED,
             fpsControl->getLastFrameTick(), fpsControl->getFrameTick()));
         idle_input = false;
       }
       if (keyboardState[SDL_SCANCODE_D] || keyboardState[SDL_SCANCODE_RIGHT]) {
-        eventControl->addEvent(CustomEvent(
+        eventControl->addEvent(new CustomEvent(
             PLAYER_ACTION::PLAYER_RIGHT_KEY_PRESSED,
             fpsControl->getLastFrameTick(), fpsControl->getFrameTick()));
         idle_input = false;
       }
 
       if (idle_input) {
-        eventControl->addEvent(CustomEvent(PLAYER_ACTION::PLAYER_IDLE_INPUT,
+        eventControl->addEvent(new CustomEvent(PLAYER_ACTION::PLAYER_IDLE_INPUT,
                                            fpsControl->getLastFrameTick(),
                                            fpsControl->getFrameTick()));
       }
