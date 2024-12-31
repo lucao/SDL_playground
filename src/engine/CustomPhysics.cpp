@@ -1,4 +1,5 @@
 #include <CustomPhysics.hpp>
+#include <unordered_map>
 
 CustomPhysicalObject::CustomPhysicalObject(
     CollisionMasks collisionMask, CollisionGroup collisionGroup,
@@ -82,37 +83,38 @@ PhysicsControl::~PhysicsControl() {
 }
 
 void PhysicsControl::doPhysics(
-    std::unordered_set<CustomPhysicalObject*,
-                       std::hash<CustomPhysicalObject*>>
-        objects,
+    std::unordered_map<GameObject, CustomPhysicalObject*> objects,
     Uint64 startTick, Uint64 endTick) noexcept {
-  std::unordered_set<CustomPhysicalObject*, std::hash<CustomPhysicalObject*>>
+  std::unordered_map<GameObject, CustomPhysicalObject*>
       allPhysicalObjects;
   allPhysicalObjects.insert(objects.begin(), objects.end());
   allPhysicalObjects.insert(this->physicalObjects.begin(),
                             this->physicalObjects.end());
   for (auto it = allPhysicalObjects.begin(); it != allPhysicalObjects.end();
        ++it) {
-    CustomPhysicalObject* object = *it;
-    if (this->physicalObjects.find(object) != this->physicalObjects.end()) {
-      if (objects.find(object) == objects.end()) {
-        this->physicalObjects.erase(object);
-        dynamicsWorld->removeRigidBody(object->getRigidBody());
+    auto pair = *it;
+    GameObject gameObject = pair.first;
+    CustomPhysicalObject* physicalObject = pair.second;
+
+    if (this->physicalObjects.find(gameObject) != this->physicalObjects.end()) {
+      if (objects.find(gameObject) == objects.end()) {
+        this->physicalObjects.erase(gameObject);
+        dynamicsWorld->removeRigidBody(physicalObject->getRigidBody());
       }
     } else {
-      if (objects.find(object) != objects.end()) {
-        this->physicalObjects.insert(object);
-        dynamicsWorld->addRigidBody(object->getRigidBody(),
-                                    object->getCollisionGroup(),
-                                    object->getCollisionMask());
+      if (objects.find(gameObject) != objects.end()) {
+        this->physicalObjects[gameObject] = physicalObject;
+        dynamicsWorld->addRigidBody(physicalObject->getRigidBody(),
+                                    physicalObject->getCollisionGroup(),
+                                    physicalObject->getCollisionMask());
       } else {
         // ERROR
       }
     }
   }
 
-  for (auto object : this->physicalObjects) {
-    object->doPhysics(startTick, endTick);
+  for (auto pair : this->physicalObjects) {
+    pair.second->doPhysics(startTick, endTick);
   }
   this->dynamicsWorld->stepSimulation(btScalar(endTick - startTick / 1000.0),
                                       1);

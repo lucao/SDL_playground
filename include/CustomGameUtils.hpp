@@ -4,6 +4,7 @@
 #include <SDL.h>
 
 #include <unordered_set>
+#include <deque>
 
 enum GAME_ENTITY_TYPE {
   PLAYABLE_OBJECT,
@@ -68,6 +69,10 @@ class Movement {
 
   virtual MOVEMENT_TYPE getType() const { return MOVEMENT_TYPE::MOVEMENT; }
 
+  virtual bool operator==(const Movement& other) const {
+    return this == &other;
+  }
+
 };
 //TODO remove pointers
 class CustomEvent {
@@ -105,6 +110,50 @@ class Jump : public Movement {
  public:
   Jump(int jumpForce, SDL_Point startPoint, Uint64 startTick, Uint64 endTick);
   virtual MOVEMENT_TYPE getType() const override { return MOVEMENT_TYPE::JUMP; }
+};
+
+class FPSControl {
+ private:
+  Uint64 frameTick;
+  Uint64 lastFrameTick;
+
+  Uint64 lastSecondTick;
+
+  Uint16 frameCounter;
+  std::deque<Uint64> ticks;
+  std::deque<Uint16> samples;
+
+ public:
+  static const Uint32 secondinMS = 1000;
+  FPSControl() {
+    this->frameTick = SDL_GetTicks64();
+    this->lastFrameTick = SDL_GetTicks64();
+    this->lastSecondTick = 0;
+    this->ticks = std::deque<Uint64>(20, -1);
+    this->samples = std::deque<Uint16>(20, -1);
+  }
+
+  void tick() {
+    this->lastFrameTick = this->frameTick;
+    this->frameTick = SDL_GetTicks64();
+
+    if (this->ticks.size() > 19) this->ticks.pop_back();
+    this->ticks.push_front(this->frameTick);
+
+    frameCounter++;
+    if (SDL_GetTicks64() - this->lastSecondTick >= secondinMS) {
+      this->lastSecondTick = SDL_GetTicks64();
+
+      if (this->samples.size() > 19) this->samples.pop_back();
+      this->samples.push_front(frameCounter);
+
+      frameCounter = 0;
+    }
+  }
+
+  Uint64 getLastFrameTick() { return this->lastFrameTick; }
+  Uint64 getFrameTick() { return this->frameTick; }
+  std::deque<Uint16> getFpsSamples() { return this->samples; }
 };
 
 #endif

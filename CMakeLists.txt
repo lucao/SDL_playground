@@ -35,6 +35,7 @@ target_link_libraries(game
 target_link_libraries(game PRIVATE $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)
 target_link_libraries(game PRIVATE imgui::imgui)
 target_link_libraries(game PRIVATE ${BULLET_LIBRARIES})
+target_link_libraries(game PRIVATE bcrypt)
 
 
 target_include_directories(game PUBLIC include)

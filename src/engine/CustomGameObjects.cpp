@@ -2,10 +2,9 @@
 
 #include <CustomPhysics.hpp>
 #include <CustomSDLObject.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
-GameObject::GameObject() {
-  // TODO set uuid
-  this->uuid = boost::uuids::uuid();
-}
+GameObject::GameObject() : uuid(boost::uuids::random_generator()()) {}
 
-boost::uuids::uuid GameObject::getUUID() { return this->uuid; }
+const boost::uuids::uuid& GameObject::getUUID() const { return this->uuid; }

@@ -4,6 +4,8 @@
 #include <d3d9.h>
 #include <tchar.h>
 
+#include <vector>
+
 #include "imgui.h"
 #include "imgui_impl_dx9.h"
 #include "imgui_impl_win32.h"
@@ -22,6 +24,7 @@ void ResetDevice();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #include <exception>
+#include <numeric>
 #include <unordered_map>
 
 class DebugWindows {
@@ -38,8 +41,11 @@ class DebugWindows {
   Stage* stage;
   CameraSDL* camera;
 
+  FPSControl* fpsControl;
+
  public:
-  DebugWindows() {
+  DebugWindows(FPSControl* fpsControl) {
+    this->fpsControl = fpsControl;
     // Create application window
     // ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = {sizeof(wc),
@@ -108,7 +114,6 @@ class DebugWindows {
   void trackPlayer(CustomPlayer* trackedPlayer) {
     this->player = trackedPlayer;
   }
-
   void trackStage(Stage* trackedStage) { this->stage = trackedStage; }
 
   bool loop() {
@@ -143,10 +148,27 @@ class DebugWindows {
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair
-    // to create a named window.
-    static float f = 0.0f;
-    static int counter = 0;
+    // static float f = 0.0f;
+    // static int counter = 0;
+
+    ImGui::Begin("General Statistics");
+    std::vector<float> samples;
+    int x = 0;
+    for (Uint16 sample : this->fpsControl->getFpsSamples()) {
+      // TODO removing outliers
+      if (sample < 400) samples.push_back(static_cast<float>(sample));
+    }
+    if (samples.size() != 0) {
+      ImGui::PlotLines("", &samples[0], samples.size());
+      ImGui::Text("FPS (avg) %d",
+                  static_cast<int>(std::reduce(samples.begin(), samples.end())) / samples.size());
+    }
+    ImGui::Separator();
+    ImGui::TextColored(ImVec4(1, 1, 0, 1), "Events captured");
+    ImGui::BeginChild("Scrolling");
+    // for (int n = 0; n < 50; n++) ImGui::Text("%04d: Some text", n);
+    ImGui::EndChild();
+    ImGui::End();
 
     ImGui::Begin("Player 1 Window");
 
@@ -174,6 +196,20 @@ class DebugWindows {
                     this->player->getRigidBody()->getLinearVelocity().getY()));
 
     ImGui::End();
+    /*
+    for (auto physicalObject : this->stage->getPhysicalObjects()) {
+      if (physicalObject != this->player) {
+      //TODO
+        ImGui::Begin("PhysicalObjects Window");
+        ImGui::Text("destination x %d", .x);
+        ImGui::Text("destination y %d", this->player->getDestination().y);
+        ImGui::Text("destination w %d", this->player->getDestination().w);
+        ImGui::Text("destination h %d", this->player->getDestination().h);
+        ImGui::Separator();
+        ImGui::End();
+      }
+    }
+    */
     ImGui::Begin("Regions");
 
     ImGui::Separator();

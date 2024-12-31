@@ -8,7 +8,7 @@
 #include <CustomGameObjects.hpp>
 #include <CustomGameUtils.hpp>
 #include <atomic>
-#include <unordered_set>
+#include <unordered_map>
 
 // TODO adjust masks
 enum CollisionMasks { STATIC_OBJECT = 1 << 1, DYNAMIC_OBJECT = 1 << 0 };
@@ -68,15 +68,15 @@ class PhysicsControl {
       *dynamicsWorld;  // = new btDiscreteDynamicsWorld(dispatcher, broadphase,
                        // solver, collisionConfiguration);
 
-  std::unordered_set<CustomPhysicalObject *, std::hash<CustomPhysicalObject *>>
+  std::unordered_map<GameObject, CustomPhysicalObject *>
       physicalObjects;
 
  public:
   PhysicsControl();
   virtual ~PhysicsControl();
 
-  void doPhysics(std::unordered_set<CustomPhysicalObject *,
-                                    std::hash<CustomPhysicalObject *>>
+  void doPhysics(
+      std::unordered_map<GameObject, CustomPhysicalObject *>
                      physicalObjects,
                  Uint64 startTick, Uint64 endTick) noexcept;
 };

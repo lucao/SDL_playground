@@ -14,5 +14,10 @@ int main(int, char**) {
       }
     }
 
+
+    //TODO test learn pointers
+    int* p1 = new int(1);
+    int* p2 = new int(1);
+    if (*p1 != *p2) return 2;
   return 0;
 }

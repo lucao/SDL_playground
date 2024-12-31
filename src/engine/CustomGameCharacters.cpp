@@ -12,6 +12,9 @@ CustomGameCharacter::CustomGameCharacter(
               btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 10, 0)))) {
   this->lifePoints = lifePoints;
   this->normalSpeed = normalSpeed;
+
+  // characters cant rotate
+  this->rigidBody->setAngularFactor(btVector3(0, 0, 0));
 }
 
 CustomGameCharacter::~CustomGameCharacter() {}
@@ -20,7 +23,8 @@ void CustomGameCharacter::doPhysics(Uint64 startTick, Uint64 endTick) {
   std::list<Movement*>::iterator iterator = this->movementList.begin();
 
   this->rigidBody->setLinearVelocity(
-      btVector3(btScalar(0), this->rigidBody->getLinearVelocity().getY(), 0));
+      btVector3(static_cast<btScalar>(0),
+                this->rigidBody->getLinearVelocity().getY(), 0));
 
   while (iterator != this->movementList.end()) {
     Movement* movement = *iterator;
@@ -33,7 +37,7 @@ void CustomGameCharacter::doPhysics(Uint64 startTick, Uint64 endTick) {
     switch (movement->getType()) {
       case MOVEMENT_TYPE::WALK:
         this->rigidBody->setLinearVelocity(
-            btVector3(btScalar(movement->getVelocityX()),
+            btVector3(static_cast<btScalar>(movement->getVelocityX()*10),
                       this->rigidBody->getLinearVelocity().getY(), 0));
         continue;
         // TODO jump
@@ -47,7 +51,7 @@ CustomPlayer::CustomPlayer(
     CustomTextureManager* texture,
     std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
     CustomSDLRect position)
-    : CustomGameCharacter(texture, animationSprites, position, 100, 100) {}
+    : CustomGameCharacter(texture, animationSprites, position, 10, 100) {}
 CustomPlayer::~CustomPlayer() {}
 
 bool CustomGameCharacter::canMove() const { return true; }

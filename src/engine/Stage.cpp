@@ -104,18 +104,21 @@ Region* Stage::getRegion(SDL_Point point) {
       Region::RegionID::getIdFrom(point.x, point.y)));
 }
 
-const std::unordered_set<CustomSDLMaterialObject*,
-                         std::hash<CustomSDLMaterialObject*>>
-Region::getMaterialObjects() {
-  return this->materialObjects;
+const std::vector<CustomSDLMaterialObject*> Region::getMaterialObjects() {
+  std::vector<CustomSDLMaterialObject*> values;
+  for (const auto pair : this->materialObjects) {
+    values.push_back(pair.second);
+  }
+  return values;
 }
 
-void Region::placeMaterialObject(CustomSDLMaterialObject* materialObject) {
-  this->materialObjects.insert(materialObject);
+void Region::placeMaterialObject(GameObject gameObject,
+                                 CustomSDLMaterialObject* materialObject) {
+  this->materialObjects[gameObject] = materialObject;
 }
 
-void Region::eraseMaterialObject(CustomSDLMaterialObject* materialObject) {
-  this->materialObjects.erase(materialObject);
+void Region::removeMaterialObject(GameObject gameObject) {
+  this->materialObjects.erase(gameObject);
 }
 
 Stage::~Stage() {}
@@ -129,27 +132,30 @@ Stage::Stage(Stage::StageId stageId, CustomSDLRect rect,
                      "r"),
       1, "jpeg");
 }
-void Stage::placeMaterialObject(CustomSDLMaterialObject* materialObject) {
+void Stage::placeMaterialObject(GameObject gameObject,
+                                CustomSDLMaterialObject* materialObject) {
   this->getRegion(materialObject->getDestination().getPoint())
-      ->placeMaterialObject(materialObject);
+      ->placeMaterialObject(gameObject, materialObject);
 }
 
-void Stage::placePhysicalObject(CustomPhysicalObject* physicalObject) {
-  this->physicalObjects.insert(physicalObject);
+void Stage::placePhysicalObject(GameObject gameObject,
+                                CustomPhysicalObject* physicalObject) {
+  this->physicalObjects[gameObject] = physicalObject;
 }
 
-void Stage::updateMaterialObject(CustomSDLMaterialObject* materialObject,
+void Stage::updateMaterialObject(GameObject gameObject,
+                                 CustomSDLMaterialObject* materialObject,
                                  Region* oldRegion) {
   Region* newRegion =
       this->getRegion(materialObject->getDestination().getPoint());
 
   if (newRegion != oldRegion) {
-    oldRegion->eraseMaterialObject(materialObject);
-    newRegion->placeMaterialObject(materialObject);
+    oldRegion->removeMaterialObject(gameObject);
+    newRegion->placeMaterialObject(gameObject, materialObject);
   }
 }
 
-std::unordered_set<CustomPhysicalObject*, std::hash<CustomPhysicalObject*>>
+std::unordered_map<GameObject, CustomPhysicalObject*>
 Stage::getPhysicalObjects() {
   return this->physicalObjects;
 }
@@ -157,7 +163,8 @@ Stage::getPhysicalObjects() {
 CustomGroundPlane* Stage::createDefaultGround(SDL_Texture* static_texture) {
   CustomTextureManager* textureManager =
       new CustomTextureManager(static_texture);
-  return new CustomGroundPlane(textureManager, SDL_Rect({-200, 200, 1000, 100}));
+  return new CustomGroundPlane(textureManager,
+                               SDL_Rect({-200, 200, 1000, 100}));
 }
 
 Stage::StageId Stage::getId() { return Stage::StageId(); }

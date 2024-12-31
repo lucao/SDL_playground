@@ -30,6 +30,10 @@ class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
   int getJumpForce() const;
 
   virtual CustomSDLRect getDestination() override;
+
+   virtual bool operator==(const CustomGameCharacter& other) const {
+    return this == &other;
+  }
 };
 
 class CustomPlayer : public CustomGameCharacter, public EventListener {

@@ -34,6 +34,10 @@ class GlobalPositionalSDLObject {
   GlobalPositionalSDLObject(SDL_Rect destination);
   virtual ~GlobalPositionalSDLObject();
   virtual CustomSDLRect getDestination();
+
+  virtual bool operator==(const GlobalPositionalSDLObject &other) const {
+    return this == &other;
+  }
 };
 
 class CustomSDLMaterialObject : public GlobalPositionalSDLObject {

@@ -42,49 +42,6 @@
 #include "SDL_timer.h"
 #include "begin_code.h"
 
-class FPSControl {
- private:
-  Uint64 frameTick;
-  Uint64 lastFrameTick;
-
-  Uint64 lastSecondTick;
-
-  Uint16 frameCounter;
-  std::deque<Uint64> ticks;
-  std::deque<Uint16> samples;
-
- public:
-  static const Uint32 secondinMS = 1000;
-  FPSControl() {
-    this->frameTick = SDL_GetTicks64();
-    this->lastFrameTick = SDL_GetTicks64();
-    this->lastSecondTick = 0;
-    this->ticks = std::deque<Uint64>(20, -1);
-    this->samples = std::deque<Uint16>(20, -1);
-  }
-
-  void tick() {
-    this->lastFrameTick = this->frameTick;
-    this->frameTick = SDL_GetTicks64();
-
-    if (this->ticks.size() > 19) this->ticks.pop_back();
-    this->ticks.push_front(this->frameTick);
-
-    frameCounter++;
-    if (SDL_GetTicks64() - this->lastSecondTick >= secondinMS) {
-      this->lastSecondTick = SDL_GetTicks64();
-
-      if (this->samples.size() > 19) this->samples.pop_back();
-      this->samples.push_front(frameCounter);
-
-      frameCounter = 0;
-    }
-  }
-
-  Uint64 getLastFrameTick() { return this->lastFrameTick; }
-  Uint64 getFrameTick() { return this->frameTick; }
-  std::deque<Uint16> getFpsSamples() { return this->samples; }
-};
 
 class GameControl {
  private:
@@ -142,12 +99,14 @@ class GameControl {
 
     this->currentStage = this->world->createBlankStage(camera->getRenderer());
 
-    this->currentStage->placeMaterialObject(this->mainPlayer);
-    this->currentStage->placePhysicalObject(this->mainPlayer);
+    this->currentStage->placeMaterialObject(*this->mainPlayer,
+                                            this->mainPlayer);
+    this->currentStage->placePhysicalObject(*this->mainPlayer,
+                                            this->mainPlayer);
 
     this->eventListeners.push_back(this->mainPlayer);
 
-    //verificar se surface está sendo plotada com a cor correta
+    // verificar se surface está sendo plotada com a cor correta
     SDL_Surface* surface = SDL_CreateRGBSurface(0, 1, 1, 32, 0, 0, 1, 1);
     SDL_FillRect(surface, nullptr, SDL_MapRGB(surface->format, 1, 0, 1));
     SDL_Texture* texture =
@@ -155,8 +114,8 @@ class GameControl {
 
     CustomGroundPlane* ground =
         this->currentStage->createDefaultGround(texture);
-    this->currentStage->placeMaterialObject(ground);
-    this->currentStage->placePhysicalObject(ground);
+    this->currentStage->placeMaterialObject(*ground, ground);
+    this->currentStage->placePhysicalObject(*ground, ground);
 
     this->camera->setFollowedObject(this->mainPlayer);
   }
@@ -217,9 +176,6 @@ class EventControl {
 int main(int, char**) {
   printf("Inicializando...");
 
-#ifdef DEBUG
-  DebugWindows* debug = new DebugWindows();
-#endif
   // TODO verificar pq o player não está sendo mostrado... Acho que é calculo
   // errado do posicionamento
   try {
@@ -229,6 +185,10 @@ int main(int, char**) {
 
     printf("Start game loop...");
     EventControl* eventControl = new EventControl();
+
+#ifdef DEBUG
+    DebugWindows* debug = new DebugWindows(fpsControl);
+#endif
 
     for (EventListener* listener : gameControl->getEventListeners()) {
       eventControl->addEventListener(listener);
@@ -306,8 +266,8 @@ int main(int, char**) {
 
       if (idle_input) {
         eventControl->addEvent(new CustomEvent(PLAYER_ACTION::PLAYER_IDLE_INPUT,
-                                           fpsControl->getLastFrameTick(),
-                                           fpsControl->getFrameTick()));
+                                               fpsControl->getLastFrameTick(),
+                                               fpsControl->getFrameTick()));
       }
 
       eventControl->processEvents();

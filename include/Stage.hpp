@@ -74,9 +74,7 @@ class Region {
   CustomSDLRect rect;
 
   // use gameobject hash
-  std::unordered_set<CustomSDLMaterialObject*,
-                     std::hash<CustomSDLMaterialObject*>>
-      materialObjects;
+  std::unordered_map<GameObject, CustomSDLMaterialObject*> materialObjects;
 
  public:
   static const int fixedRegionWidth = 1920;
@@ -93,12 +91,11 @@ class Region {
 
   CustomSDLRect cropRectInside(CustomSDLRect referenceRect);
 
-  const std::unordered_set<CustomSDLMaterialObject*,
-                     std::hash<CustomSDLMaterialObject*>>
-  getMaterialObjects();
+  const std::vector<CustomSDLMaterialObject*> getMaterialObjects();
 
-  void placeMaterialObject(CustomSDLMaterialObject* materialObject);
-  void eraseMaterialObject(CustomSDLMaterialObject* materialObject);
+  void placeMaterialObject(GameObject gameObject,
+                           CustomSDLMaterialObject* materialObject);
+  void removeMaterialObject(GameObject gameObject);
 };
 
 class BlankRegion : public Region {
@@ -131,8 +128,7 @@ class Stage {
       regionsMatrix;
 
   // use gameobject hash
-  std::unordered_set<CustomPhysicalObject*, std::hash<CustomPhysicalObject*>>
-      physicalObjects;
+  std::unordered_map<GameObject, CustomPhysicalObject*> physicalObjects;
 
  public:
   Stage(Stage::StageId stageId, CustomSDLRect rect, SDL_Renderer* renderer);
@@ -143,12 +139,14 @@ class Stage {
   Stage* getPreviousStage();
   Region* getRegion(SDL_Point point);
   Region* getRegion(Region::RegionID regionId);
-  void placeMaterialObject(CustomSDLMaterialObject* materialObject);
-  void placePhysicalObject(CustomPhysicalObject* physicalObject);
-  void updateMaterialObject(CustomSDLMaterialObject* materialObject,
+  void placeMaterialObject(GameObject gameObject,
+                           CustomSDLMaterialObject* materialObject);
+  void placePhysicalObject(GameObject gameObject,
+                           CustomPhysicalObject* physicalObject);
+  void updateMaterialObject(GameObject gameObject,
+                            CustomSDLMaterialObject* materialObject,
                             Region* oldRegion);
-  std::unordered_set<CustomPhysicalObject*, std::hash<CustomPhysicalObject*>>
-  getPhysicalObjects();
+  std::unordered_map<GameObject, CustomPhysicalObject*> getPhysicalObjects();
 
   std::vector<Region::RegionID> getRegionIds();
 
