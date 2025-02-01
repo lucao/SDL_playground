@@ -149,8 +149,6 @@ class Stage {
   std::unordered_map<GameObject, CustomPhysicalObject*> getPhysicalObjects();
 
   std::vector<Region::RegionID> getRegionIds();
-
-  CustomGroundPlane* createDefaultGround(SDL_Texture* static_texture);
 };
 
 class StageOutOfBounds : public std::exception {

@@ -7,7 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_image CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
-find_package(Bullet CONFIG REQUIRED)
+
+add_subdirectory(external/box2d)
     
 set(SOURCES 
 src/engine/CustomPlayerBuilder.cpp 
@@ -20,7 +21,8 @@ src/engine/World.cpp
 src/engine/CustomGameObjects.cpp 
 src/engine/CustomGameUtils.cpp 
 src/engine/CustomGameComponents.cpp 
-src/engine/CustomTexture.cpp)
+src/engine/CustomTexture.cpp
+)
 
 add_executable(game src/main.cpp ${SOURCES})
 
@@ -34,7 +36,7 @@ target_link_libraries(game
     )
 target_link_libraries(game PRIVATE $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)
 target_link_libraries(game PRIVATE imgui::imgui)
-target_link_libraries(game PRIVATE ${BULLET_LIBRARIES})
+target_link_libraries(game PRIVATE box2d)
 target_link_libraries(game PRIVATE bcrypt)
 
 

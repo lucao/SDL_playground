@@ -25,15 +25,19 @@ World::World(SDL_Renderer* const renderer) {
       SDL_Rect{115, 14, 40, 50}, SDL_Rect{162, 14, 40, 50}};
 
   CustomTextureManager* texturesManager = new CustomTextureManager(textures);
-  
+
+  this->physicsControl =
+      new Box2DPhysicsControl(60.0f);  // TODO add frameRate to settings
+
   std::unique_ptr<CustomPlayerBuilder> playerBuilder =
       std::make_unique<CustomPlayerBuilder>(
-          CustomPlayerBuilder(renderer, PLAYER_CLASS::ROGUE, "testName"));
+          CustomPlayerBuilder(renderer, PLAYER_CLASS::ROGUE, "testName",
+                              this->physicsControl->getWorldId()));
   this->mainPlayer = playerBuilder->getPlayerCharacter();
 
-  this->physicsControl = new PhysicsControl();
   Stage::StageId stageId({1});
-  this->stages[stageId] = new Stage(stageId, CustomSDLRect({0,0,2000,2000}), renderer);
+  this->stages[stageId] =
+      new Stage(stageId, CustomSDLRect({0, 0, 2000, 2000}), renderer);
 }
 
 World::~World() {}
@@ -48,4 +52,3 @@ Stage* World::createBlankStage(SDL_Renderer* renderer) {
 }
 
 Stage* World::getStage(Stage::StageId id) { return this->stages.at(id); }
-

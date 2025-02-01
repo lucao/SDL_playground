@@ -15,7 +15,7 @@ class CustomPlayerBuilder {
 
  public:
   CustomPlayerBuilder(SDL_Renderer* renderer, PLAYER_CLASS player_class,
-                      std::string name);
+                      std::string name, b2WorldId worldId);
   CustomPlayer* getPlayerCharacter();
 };
 
@@ -25,6 +25,6 @@ class CustomRoguePlayer : public CustomPlayer {
   CustomRoguePlayer(CustomTextureManager* customTextureManager,
                     std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
                         animationSprites,
-                    CustomSDLRect size);
+                    CustomSDLRect size, b2WorldId worldId);
 };
 #endif

@@ -14,11 +14,11 @@
 
 CustomPlayerBuilder::CustomPlayerBuilder(SDL_Renderer* const renderer,
                                          PLAYER_CLASS player_class,
-                                         std::string name) {
+                                         std::string name, b2WorldId worldId) {
   this->name = name;
   this->player_class = player_class;
 
-  if (this->player_class == PLAYER_CLASS::ROGUE){
+  if (this->player_class == PLAYER_CLASS::ROGUE) {
     // default test texture for rogue
     SDL_Surface* surface = SDL_CreateRGBSurface(0, 1, 1, 32, 0, 0, 1, 1);
     SDL_FillRect(surface, nullptr, SDL_MapRGB(surface->format, 1, 0, 1));
@@ -36,9 +36,9 @@ CustomPlayerBuilder::CustomPlayerBuilder(SDL_Renderer* const renderer,
     animationSprites[ANIMATION_TYPE::WALKING] = {{0, 0, 50, 50}};
     animationSprites[ANIMATION_TYPE::RUNNING] = {{0, 0, 50, 50}};
 
-    this->player =
-        new CustomRoguePlayer(new CustomTextureManager(textures),
-                              animationSprites, CustomSDLRect(0, 0, 50, 50));
+    this->player = new CustomRoguePlayer(new CustomTextureManager(textures),
+                                         animationSprites,
+                                         CustomSDLRect(0, 0, 50, 50), worldId);
   }
 }
 
@@ -47,7 +47,7 @@ CustomPlayer* CustomPlayerBuilder::getPlayerCharacter() { return this->player; }
 CustomRoguePlayer::CustomRoguePlayer(
     CustomTextureManager* customTextureManager,
     std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
-    CustomSDLRect size)
-    : CustomPlayer(customTextureManager, animationSprites, size) {
+    CustomSDLRect size, b2WorldId worldId)
+    : CustomPlayer(customTextureManager, animationSprites, size, worldId) {
   ;
 }

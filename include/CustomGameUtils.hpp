@@ -3,8 +3,8 @@
 
 #include <SDL.h>
 
-#include <unordered_set>
 #include <deque>
+#include <unordered_set>
 
 enum GAME_ENTITY_TYPE {
   PLAYABLE_OBJECT,
@@ -62,6 +62,8 @@ class Movement {
   Uint64 getStartTick() const { return this->startTick; }
   Uint64 getEndTick() const { return this->endTick; }
 
+  Uint64 getDeltaTick() const { return this->endTick - this->startTick; }
+
   // velocidade em pixels/milisegundos
   // TODO testar isso
   float getVelocityX();
@@ -72,9 +74,8 @@ class Movement {
   virtual bool operator==(const Movement& other) const {
     return this == &other;
   }
-
 };
-//TODO remove pointers
+// TODO remove pointers
 class CustomEvent {
  private:
   PLAYER_ACTION action;

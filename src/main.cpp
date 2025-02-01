@@ -21,27 +21,22 @@
 
 #include <CustomPlayerBuilder.hpp>
 #include <CustomTexture.hpp>
-#include <cstdio>
 #include <stdexcept>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "CustomGameUtils.hpp"
-#include "CustomSDLObject.hpp"
 #include "SDL_error.h"
 #include "SDL_events.h"
 #include "SDL_keyboard.h"
 #include "SDL_log.h"
 #include "SDL_main.h"
 #include "SDL_pixels.h"
-#include "SDL_rect.h"
 #include "SDL_render.h"
 #include "SDL_scancode.h"
 #include "SDL_stdinc.h"
 #include "SDL_surface.h"
 #include "SDL_timer.h"
 #include "begin_code.h"
-
 
 class GameControl {
  private:
@@ -55,9 +50,10 @@ class GameControl {
 
   std::vector<EventListener*> eventListeners;
 
-  PhysicsControl* physicsControl;
+  Box2DPhysicsControl* physicsControl;
 
   CustomPlayer* mainPlayer;
+  CustomGroundPlane* ground;
 
   CustomGroundPlane* createDefaultGround() {
     std::unordered_map<ANIMATION_TYPE, SDL_Texture*> textures;
@@ -65,7 +61,9 @@ class GameControl {
         camera->getRenderer(), SDL_CreateRGBSurface(0, 1, 1, 32, 0, 0, 0, 0));
 
     CustomTextureManager* textureManager = new CustomTextureManager(textures);
-    return new CustomGroundPlane(textureManager, SDL_Rect({20, 200, 200, 200}));
+    return new CustomGroundPlane(textureManager,
+                                 CustomSDLRect({0, 300, 500, 500}),
+                                 physicsControl->getWorldId());
   }
 
  public:
@@ -85,6 +83,8 @@ class GameControl {
     this->camera = new CameraSDL(screen->getWindow(), 1000);
 
     this->gameLoopRunning = true;
+    this->physicsControl =
+        new Box2DPhysicsControl(60.0f);  // TODO add frameRate to settings
 
     this->world = new World(this->camera->getRenderer());
 
@@ -92,10 +92,9 @@ class GameControl {
     this->mainPlayer =
         std::unique_ptr<CustomPlayerBuilder>(
             new CustomPlayerBuilder(this->camera->getRenderer(),
-                                    PLAYER_CLASS::ROGUE, std::string("test")))
+                                    PLAYER_CLASS::ROGUE, std::string("test"),
+                                    physicsControl->getWorldId()))
             ->getPlayerCharacter();
-
-    this->physicsControl = new PhysicsControl();
 
     this->currentStage = this->world->createBlankStage(camera->getRenderer());
 
@@ -112,15 +111,17 @@ class GameControl {
     SDL_Texture* texture =
         SDL_CreateTextureFromSurface(camera->getRenderer(), surface);
 
-    CustomGroundPlane* ground =
-        this->currentStage->createDefaultGround(texture);
-    this->currentStage->placeMaterialObject(*ground, ground);
-    this->currentStage->placePhysicalObject(*ground, ground);
+    this->ground = this->createDefaultGround();
+    this->currentStage->placeMaterialObject(*this->ground, this->ground);
+    this->currentStage->placePhysicalObject(*this->ground, this->ground);
 
     this->camera->setFollowedObject(this->mainPlayer);
   }
 
   CustomPlayer* getMainPlayer() { return this->mainPlayer; }
+#ifdef DEBUG
+  CustomGroundPlane* getGroundForDebug() { return this->ground; }
+#endif  // DEBUG
   Stage* getCurrentStage() { return this->currentStage; }
 
   std::vector<EventListener*> getEventListeners() {
@@ -194,6 +195,7 @@ int main(int, char**) {
       eventControl->addEventListener(listener);
     }
 #ifdef DEBUG
+    debug->trackGround(gameControl->getGroundForDebug());
     debug->trackPlayer(gameControl->getMainPlayer());
     debug->trackStage(gameControl->getCurrentStage());
 #endif

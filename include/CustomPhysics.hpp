@@ -2,45 +2,28 @@
 #define CUSTOM_PHYSICS_H
 
 #include <SDL.h>
-#include <bullet/btBulletCollisionCommon.h>
-#include <bullet/btBulletDynamicsCommon.h>
+#include <box2d/box2d.h>
 
 #include <CustomGameObjects.hpp>
 #include <CustomGameUtils.hpp>
-#include <atomic>
 #include <unordered_map>
-
-// TODO adjust masks
-enum CollisionMasks { STATIC_OBJECT = 1 << 1, DYNAMIC_OBJECT = 1 << 0 };
-enum CollisionGroup { STATIC_OBJECTS = 1 << 0, DYNAMIC_OBJECTS = 1 << 1 };
-
-// TODO enum of shapes
 
 class CustomPhysicalObject {
  protected:
-  btCollisionShape *shape;
-  btDefaultMotionState *motionState;
-  btRigidBody *rigidBody;
+  b2BodyId bodyId;
+  b2Polygon polygon;
 
-  btScalar mass;
-
-  CollisionMasks collisionMask;
-  CollisionGroup collisionGroup;
-
-  btTransform getTransform();
-
+  CustomPhysicalObject();
  public:
-  CustomPhysicalObject(CollisionMasks collisionMask,
-                       CollisionGroup collisionGroup, btCollisionShape *shape,
-                       btScalar mass, btDefaultMotionState *defaultMotionState);
+  CustomPhysicalObject(b2BodyDef bodyDef,
+                       b2ShapeDef shapeDef,
+                       b2Vec2 position, b2Polygon polygon, b2WorldId worldId);
   virtual ~CustomPhysicalObject();
 
-  CollisionMasks getCollisionMask();
-  CollisionGroup getCollisionGroup();
-
-  btRigidBody *getRigidBody();
-
   virtual void doPhysics(Uint64 startTick, Uint64 endTick) = 0;
+  virtual void afterSimulation(Uint64 startTick, Uint64 endTick) = 0;
+
+  b2BodyId getBodyId();
 };
 
 class CustomDynamicPhysicalObject : public CustomPhysicalObject {
@@ -48,37 +31,35 @@ class CustomDynamicPhysicalObject : public CustomPhysicalObject {
   std::list<Movement *> movementList;
 
  public:
-  CustomDynamicPhysicalObject(btCollisionShape *shape, btScalar mass,
-                              btDefaultMotionState *defaultMotionState);
+  CustomDynamicPhysicalObject(b2BodyDef bodyDef,
+                              b2ShapeDef shapeDef,
+                              b2Vec2 position, b2Polygon polygon,
+                              b2WorldId worldId);
 
   virtual ~CustomDynamicPhysicalObject();
   void addMovement(Movement *movement);
 };
 
-class PhysicsControl {
+class Box2DPhysicsControl {
  private:
-  btBroadphaseInterface *broadphase;  // = new btDbvtBroadphase();
-  btDefaultCollisionConfiguration
-      *collisionConfiguration;  // = new btDefaultCollisionConfiguration();
-  btCollisionDispatcher
-      *dispatcher;  // = new btCollisionDispatcher(collisionConfiguration);
-  btSequentialImpulseConstraintSolver
-      *solver;  // = new btSequentialImpulseConstraintSolver();
-  btDiscreteDynamicsWorld
-      *dynamicsWorld;  // = new btDiscreteDynamicsWorld(dispatcher, broadphase,
-                       // solver, collisionConfiguration);
+  b2WorldDef worldDef;
+  b2WorldId worldId;
 
-  std::unordered_map<GameObject, CustomPhysicalObject *>
-      physicalObjects;
+  std::unordered_map<GameObject, CustomPhysicalObject *> physicalObjects;
+
+  float frameRate;
 
  public:
-  PhysicsControl();
-  virtual ~PhysicsControl();
+  Box2DPhysicsControl(float frameRate);
+  virtual ~Box2DPhysicsControl();
 
-  void doPhysics(
-      std::unordered_map<GameObject, CustomPhysicalObject *>
-                     physicalObjects,
-                 Uint64 startTick, Uint64 endTick) noexcept;
+  void changeFrameRate(float frameRate);
+
+  b2WorldId getWorldId();
+
+  virtual void doPhysics(
+      std::unordered_map<GameObject, CustomPhysicalObject *> physicalObjects,
+      Uint64 startTick, Uint64 endTick) noexcept;
 };
 
 #endif

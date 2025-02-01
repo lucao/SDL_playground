@@ -12,45 +12,53 @@
 #include "SDL_render.h"
 #include "SDL_stdinc.h"
 
+//TODO verificar formas mais performáticas de calcular 
 struct CustomSDLRect : SDL_Rect {
   CustomSDLRect(int x, int y, int w, int h);
   CustomSDLRect();
   CustomSDLRect(SDL_Rect rect);
   ~CustomSDLRect();
-  SDL_Point getPoint();
-  SDL_Point getCenter();
-  bool xPointIsInBounds(int x);
-  bool yPointIsInBounds(int y);
-  int xGetNearestBoundary(int x);
-  int yGetNearestBoundary(int y);
-  std::vector<SDL_Point> getVertices();
+  SDL_Point getPoint() const;
+  SDL_Point getCenter() const;
+  bool xPointIsInBounds(int x) const;
+  bool yPointIsInBounds(int y) const;
+  int xGetNearestBoundary(int x) const;
+  int yGetNearestBoundary(int y) const;
+  std::vector<SDL_Point> getVertices() const;
 };
 
-class GlobalPositionalSDLObject {
- public:
-  CustomSDLRect destination;
+// TODO 3D rect
 
-  GlobalPositionalSDLObject();
-  GlobalPositionalSDLObject(SDL_Rect destination);
-  virtual ~GlobalPositionalSDLObject();
-  virtual CustomSDLRect getDestination();
-
-  virtual bool operator==(const GlobalPositionalSDLObject &other) const {
-    return this == &other;
-  }
-};
-
-class CustomSDLMaterialObject : public GlobalPositionalSDLObject {
+class GlobalPositionalObject {
  protected:
+  double x;
+  double y;
+  double z;
+
+  GlobalPositionalObject();
+  GlobalPositionalObject(double x, double y, double z);
+
+ public:
+  virtual ~GlobalPositionalObject();
+  virtual const CustomSDLRect getDestination() = 0;
+};
+
+class CustomSDLMaterialObject : public GlobalPositionalObject {
+ protected:
+  double w;
+  double h;
+
   CustomTextureManager *textureManager;
 
  private:
   CustomSDLRect srcRect;
+  
 
  public:
   CustomSDLMaterialObject(CustomTextureManager *textureManager,
-                          SDL_Rect srcRect, SDL_Rect destination);
+                          CustomSDLRect srcRect, CustomSDLRect destination);
   virtual ~CustomSDLMaterialObject();
+  virtual const CustomSDLRect getDestination() override;
   virtual void render(const SDL_Rect cameraRect, SDL_Renderer *renderer);
 };
 

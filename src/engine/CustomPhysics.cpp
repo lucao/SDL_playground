@@ -1,49 +1,37 @@
 #include <CustomPhysics.hpp>
 #include <unordered_map>
 
-CustomPhysicalObject::CustomPhysicalObject(
-    CollisionMasks collisionMask, CollisionGroup collisionGroup,
-    btCollisionShape* shape, btScalar mass,
-    btDefaultMotionState* defaultMotionState) {
-  this->collisionGroup = collisionGroup;
-  this->collisionMask = collisionMask;
-
-  this->shape = shape;
-  this->motionState = defaultMotionState;
-  btRigidBody::btRigidBodyConstructionInfo collisionInfo(
-      mass, this->motionState, this->shape, btVector3(0, 0, 0));
-  this->rigidBody = new btRigidBody(collisionInfo);
+CustomPhysicalObject::CustomPhysicalObject(b2BodyDef bodyDef,
+                                           b2ShapeDef shapeDef, b2Vec2 position,
+                                           b2Polygon polygon,
+                                           b2WorldId worldId) {
+  bodyDef.position = position;
+  bodyDef.type = b2_staticBody;
+  shapeDef.density = 1.0f;
+  shapeDef.friction = 0.3f;
+  this->bodyId = b2CreateBody(worldId, &bodyDef);
+  b2CreatePolygonShape(this->bodyId, &shapeDef, &polygon);
 }
 
-CustomPhysicalObject::~CustomPhysicalObject() {
-  delete this->shape;
-  delete this->motionState;
-  delete this->rigidBody;
+CustomPhysicalObject::CustomPhysicalObject() {
+//TODO
 }
 
-CollisionMasks CustomPhysicalObject::getCollisionMask() {
-  return this->collisionMask;
-}
+CustomPhysicalObject::~CustomPhysicalObject() {}
 
-CollisionGroup CustomPhysicalObject::getCollisionGroup() {
-  return this->collisionGroup;
-}
+b2BodyId CustomPhysicalObject::getBodyId() { return this->bodyId; }
 
-btRigidBody* CustomPhysicalObject::getRigidBody() { return this->rigidBody; }
-
-btTransform CustomPhysicalObject::getTransform() {
-  btTransform transform;
-  this->rigidBody->getMotionState()->getWorldTransform(transform);
-  return transform;
-}
-
-CustomDynamicPhysicalObject::CustomDynamicPhysicalObject(
-    btCollisionShape* shape, btScalar mass,
-    btDefaultMotionState* defaultMotionState)
-    : CustomPhysicalObject(CollisionMasks::DYNAMIC_OBJECT,
-                           CollisionGroup::DYNAMIC_OBJECTS, shape, mass,
-                           defaultMotionState) {
-  // TODO
+CustomDynamicPhysicalObject::CustomDynamicPhysicalObject(b2BodyDef bodyDef,
+                                                         b2ShapeDef shapeDef,
+                                                         b2Vec2 position,
+                                                         b2Polygon polygon,
+                                                         b2WorldId worldId) {
+  bodyDef.position = position;
+  bodyDef.type = b2_dynamicBody;
+  shapeDef.density = 1.0f;
+  shapeDef.friction = 0.3f;
+  this->bodyId = b2CreateBody(worldId, &bodyDef);
+  b2CreatePolygonShape(this->bodyId, &shapeDef, &polygon);
 }
 
 CustomDynamicPhysicalObject::~CustomDynamicPhysicalObject() {}
@@ -53,40 +41,25 @@ void CustomDynamicPhysicalObject::addMovement(Movement* movement) {
   this->movementList.push_back(movement);
 }
 
-PhysicsControl::PhysicsControl() {
-  // Set up the broadphase
-  this->broadphase = new btDbvtBroadphase();
-
-  // Set up the collision configuration
-  this->collisionConfiguration = new btDefaultCollisionConfiguration();
-
-  // Set up the dispatcher
-  this->dispatcher = new btCollisionDispatcher(collisionConfiguration);
-
-  // Set up the solver
-  this->solver = new btSequentialImpulseConstraintSolver();
-
-  // Set up the dynamics world
-  this->dynamicsWorld = new btDiscreteDynamicsWorld(
-      dispatcher, broadphase, solver, collisionConfiguration);
-
-  // Set the gravity in the world
-  this->dynamicsWorld->setGravity(btVector3(0, 10, 0));
+Box2DPhysicsControl::Box2DPhysicsControl(float frameRate) {
+  this->frameRate = frameRate;
+  b2WorldDef worldDef = b2DefaultWorldDef();
+  worldDef.gravity = b2Vec2({0.0f, -9.8f});
+  this->worldId = b2CreateWorld(&worldDef);
 }
 
-PhysicsControl::~PhysicsControl() {
-  delete this->broadphase;
-  delete this->collisionConfiguration;
-  delete this->dispatcher;
-  delete this->solver;
-  delete this->dynamicsWorld;
+Box2DPhysicsControl::~Box2DPhysicsControl() {}
+
+b2WorldId Box2DPhysicsControl::getWorldId() { return this->worldId; }
+
+void Box2DPhysicsControl::changeFrameRate(float frameRate) {
+  this->frameRate = frameRate;
 }
 
-void PhysicsControl::doPhysics(
+void Box2DPhysicsControl::doPhysics(
     std::unordered_map<GameObject, CustomPhysicalObject*> objects,
     Uint64 startTick, Uint64 endTick) noexcept {
-  std::unordered_map<GameObject, CustomPhysicalObject*>
-      allPhysicalObjects;
+  std::unordered_map<GameObject, CustomPhysicalObject*> allPhysicalObjects;
   allPhysicalObjects.insert(objects.begin(), objects.end());
   allPhysicalObjects.insert(this->physicalObjects.begin(),
                             this->physicalObjects.end());
@@ -99,14 +72,10 @@ void PhysicsControl::doPhysics(
     if (this->physicalObjects.find(gameObject) != this->physicalObjects.end()) {
       if (objects.find(gameObject) == objects.end()) {
         this->physicalObjects.erase(gameObject);
-        dynamicsWorld->removeRigidBody(physicalObject->getRigidBody());
       }
     } else {
       if (objects.find(gameObject) != objects.end()) {
         this->physicalObjects[gameObject] = physicalObject;
-        dynamicsWorld->addRigidBody(physicalObject->getRigidBody(),
-                                    physicalObject->getCollisionGroup(),
-                                    physicalObject->getCollisionMask());
       } else {
         // ERROR
       }
@@ -116,45 +85,14 @@ void PhysicsControl::doPhysics(
   for (auto pair : this->physicalObjects) {
     pair.second->doPhysics(startTick, endTick);
   }
-  this->dynamicsWorld->stepSimulation(btScalar(endTick - startTick / 1000.0),
-                                      1);
+
+  int subStepCount = 4;
+  b2World_Step(worldId, static_cast<float>(endTick - startTick) / 1000.0,
+               subStepCount);
+
+  for (auto pair : this->physicalObjects) {
+    // TODO implement callback for each CustomPhysicalObject
+
+    pair.second->afterSimulation(startTick, endTick);
+  }
 }
-
-// TODO
-/*
-std::vector<std::pair<CustomPhysicalObject*, CustomPhysicalObject*>>
-PhysicsControl::getCollisions(
-    std::vector<CustomPhysicalObject*> objects) noexcept {
-
-  for (CustomPhysicalObject object : objects) {
-    this->addPhysicalObject(object);
-  }
-
-
-  this->dynamicsWorld->stepSimulation(1 / 60.f, 10);
-
-  this->dynamicsWorld->performDiscreteCollisionDetection();
-
-  int numManifolds = this->dynamicsWorld->getDispatcher()->getNumManifolds();
-
-  for (int i = 0; i < numManifolds; i++) {
-    btPersistentManifold* contactManifold =
-        this->dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
-
-    const btCollisionObject* objectA = contactManifold->getBody0();
-    const btCollisionObject* objectB = contactManifold->getBody1();
-
-    int numContacts = contactManifold->getNumContacts();
-
-    if (numContacts > 0) {
-      // has hit
-    }
-  }
-
-}*/
-
-// void PhysicsControl::addPhysicalObject(CustomPhysicalObject* object) {
-//  TODO add physical object by it's type (rigid body, collision object or
-//  character)
-//  return;
-//}

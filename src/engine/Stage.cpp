@@ -160,13 +160,6 @@ Stage::getPhysicalObjects() {
   return this->physicalObjects;
 }
 
-CustomGroundPlane* Stage::createDefaultGround(SDL_Texture* static_texture) {
-  CustomTextureManager* textureManager =
-      new CustomTextureManager(static_texture);
-  return new CustomGroundPlane(textureManager,
-                               SDL_Rect({-200, 200, 1000, 100}));
-}
-
 Stage::StageId Stage::getId() { return Stage::StageId(); }
 Stage* Stage::getNextStage() { return this->nextStage; }
 Stage* Stage::getPreviousStage() { return this->previousStage; }

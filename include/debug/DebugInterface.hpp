@@ -1,6 +1,5 @@
 #ifndef CUSTOM_DEBUG_INTERFACE_H
 #define CUSTOM_DEBUG_INTERFACE_H
-
 #include <d3d9.h>
 #include <tchar.h>
 
@@ -38,6 +37,7 @@ class DebugWindows {
   WNDCLASSEXW wc;
 
   CustomPlayer* player;
+  CustomGroundPlane* ground;
   Stage* stage;
   CameraSDL* camera;
 
@@ -116,6 +116,8 @@ class DebugWindows {
   }
   void trackStage(Stage* trackedStage) { this->stage = trackedStage; }
 
+  void trackGround(CustomGroundPlane* ground) { this->ground = ground; }
+
   bool loop() {
     MSG msg;
     while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
@@ -160,14 +162,33 @@ class DebugWindows {
     }
     if (samples.size() != 0) {
       ImGui::PlotLines("", &samples[0], samples.size());
-      ImGui::Text("FPS (avg) %d",
-                  static_cast<int>(std::reduce(samples.begin(), samples.end())) / samples.size());
+      ImGui::Text("FPS (avg) %d", static_cast<int>(std::reduce(samples.begin(),
+                                                               samples.end())) /
+                                      samples.size());
     }
     ImGui::Separator();
     ImGui::TextColored(ImVec4(1, 1, 0, 1), "Events captured");
     ImGui::BeginChild("Scrolling");
     // for (int n = 0; n < 50; n++) ImGui::Text("%04d: Some text", n);
     ImGui::EndChild();
+    ImGui::End();
+
+    ImGui::Begin("Ground Window");
+    ImGui::Separator();
+
+    ImGui::Text("destination x %d", this->ground->getDestination().x);
+    ImGui::Text("destination y %d", this->ground->getDestination().y);
+    ImGui::Text("destination w %d", this->ground->getDestination().w);
+    ImGui::Text("destination h %d", this->ground->getDestination().h);
+    ImGui::Separator();
+    ImGui::Text("Physics");
+    auto positionPhysicsGround = b2Body_GetPosition(this->ground->getBodyId());
+    ImGui::Text("center x,y %f,%f", positionPhysicsGround.x,
+                positionPhysicsGround.y);
+    auto aabbPhysicsGround = b2Body_ComputeAABB(this->ground->getBodyId());
+    ImGui::Text("aaBB (x/y) lb,up %f/%f,%f/%f", aabbPhysicsGround.lowerBound.x,
+                aabbPhysicsGround.lowerBound.y, aabbPhysicsGround.upperBound.x,
+                aabbPhysicsGround.upperBound.y);
     ImGui::End();
 
     ImGui::Begin("Player 1 Window");
@@ -180,21 +201,14 @@ class DebugWindows {
     ImGui::Text("destination h %d", this->player->getDestination().h);
     ImGui::Separator();
     ImGui::Text("Physics");
-    ImGui::Text("RigidBody x,y %d,%d",
-                static_cast<int>(this->player->getRigidBody()
-                                     ->getWorldTransform()
-                                     .getOrigin()
-                                     .getX()),
-                static_cast<int>(this->player->getRigidBody()
-                                     ->getWorldTransform()
-                                     .getOrigin()
-                                     .getY()));
-    ImGui::Text("RigidBody linearVel x,y %.2f , %.2f",
-                static_cast<float>(
-                    this->player->getRigidBody()->getLinearVelocity().getX()),
-                static_cast<float>(
-                    this->player->getRigidBody()->getLinearVelocity().getY()));
+    auto positionPhysicsPlayer = b2Body_GetPosition(this->player->getBodyId());
 
+    ImGui::Text("center x,y %f,%f", positionPhysicsPlayer.x,
+                positionPhysicsPlayer.y);
+    auto aabbPhysicsPlayer = b2Body_ComputeAABB(this->player->getBodyId());
+    ImGui::Text("aaBB (x/y) lb,up %f/%f,%f/%f", aabbPhysicsPlayer.lowerBound.x,
+                aabbPhysicsPlayer.lowerBound.y, aabbPhysicsPlayer.upperBound.x,
+                aabbPhysicsPlayer.upperBound.y);
     ImGui::End();
     /*
     for (auto physicalObject : this->stage->getPhysicalObjects()) {

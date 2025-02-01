@@ -12,9 +12,13 @@ class CustomGroundPlane : public CustomSDLMaterialObject,
                           public GameObject {
  private:
  public:
+  CustomGroundPlane(CustomTextureManager* textureManager, CustomSDLRect destination,
+                    b2WorldId worldId);
   CustomGroundPlane(CustomTextureManager* textureManager,
-                    SDL_Rect destination);
+                    CustomSDLRect destination,
+                    b2BodyDef bodyDef, b2ShapeDef shapeDef, b2WorldId worldId);
   void doPhysics(Uint64 startTick, Uint64 endTick) override;
+  void afterSimulation(Uint64 startTick, Uint64 endTick) override;
 };
 
 #endif

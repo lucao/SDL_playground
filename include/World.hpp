@@ -10,7 +10,7 @@ class World {
  private:
   CustomPlayer* mainPlayer;
   //TODO physical Objects
-  PhysicsControl* physicsControl;
+  Box2DPhysicsControl* physicsControl;
 
   std::unordered_map<Stage::StageId, Stage*, Stage::StageId> stages;
 

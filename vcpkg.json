@@ -12,8 +12,8 @@
       "features": [ "libjpeg-turbo" ]
     },
     "libjpeg-turbo",
-    "imgui",
     "bullet3",
+    "imgui",
     {
       "name": "imgui",
       "features": [ "dx9-binding", "win32-binding" ]

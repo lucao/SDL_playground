@@ -14,18 +14,18 @@ CustomSDLRect::CustomSDLRect() {}
 CustomSDLRect::CustomSDLRect(SDL_Rect rect) : SDL_Rect(rect) {}
 CustomSDLRect::~CustomSDLRect() {}
 
-SDL_Point CustomSDLRect::getPoint() { return {this->x, this->y}; }
+SDL_Point CustomSDLRect::getPoint() const { return {this->x, this->y}; }
 
-SDL_Point CustomSDLRect::getCenter() {
+SDL_Point CustomSDLRect::getCenter() const {
   return {this->x + (this->w / 2), this->y + (this->h / 2)};
 }
-bool CustomSDLRect::xPointIsInBounds(int x) {
+bool CustomSDLRect::xPointIsInBounds(int x) const {
   return (x < this->x + this->w && x > this->x);
 }
-bool CustomSDLRect::yPointIsInBounds(int y) {
+bool CustomSDLRect::yPointIsInBounds(int y) const {
   return (y < this->y + this->h && y > this->y);
 }
-int CustomSDLRect::xGetNearestBoundary(int x) {
+int CustomSDLRect::xGetNearestBoundary(int x) const {
   SDL_Point centerPoint = this->getCenter();
   if (x < centerPoint.x) {
     return this->x;
@@ -35,7 +35,7 @@ int CustomSDLRect::xGetNearestBoundary(int x) {
     return this->x;
   }
 }
-int CustomSDLRect::yGetNearestBoundary(int y) {
+int CustomSDLRect::yGetNearestBoundary(int y) const {
   SDL_Point centerPoint = this->getCenter();
   if (y < centerPoint.y) {
     return this->y;
@@ -45,7 +45,7 @@ int CustomSDLRect::yGetNearestBoundary(int y) {
     return this->y;
   }
 }
-std::vector<SDL_Point> CustomSDLRect::getVertices() {
+std::vector<SDL_Point> CustomSDLRect::getVertices() const {
   return std::vector<SDL_Point>({
       SDL_Point({this->x, this->y}),
       SDL_Point({this->x + this->w, this->y}),
@@ -55,31 +55,42 @@ std::vector<SDL_Point> CustomSDLRect::getVertices() {
 }
 
 CustomSDLMaterialObject::CustomSDLMaterialObject(
-    CustomTextureManager* textureManager, SDL_Rect srcRect, SDL_Rect destination)
-    : GlobalPositionalSDLObject(destination) {
+    CustomTextureManager *textureManager, CustomSDLRect srcRect,
+    CustomSDLRect destination)
+    : GlobalPositionalObject(static_cast<double>(destination.x),
+                             static_cast<double>(destination.y), 0) {
   this->textureManager = textureManager;
   this->srcRect = srcRect;
+  this->w = static_cast<double>(destination.w);
+  this->h = static_cast<double>(destination.h);
 }
-
 
 CustomSDLMaterialObject::~CustomSDLMaterialObject() {}
+const CustomSDLRect CustomSDLMaterialObject::getDestination() {
+  return CustomSDLRect(static_cast<int>(std::round(this->x)),
+                       static_cast<int>(std::round(this->y)),
+                       static_cast<int>(std::round(this->w)),
+                       static_cast<int>(std::round(this->h)));
+}
+
+// TODO calcular screenDestination?
 void CustomSDLMaterialObject::render(const SDL_Rect screenDestination,
                                      SDL_Renderer *renderer) {
-  SDL_RenderCopy(renderer, this->textureManager->getTexture(),
-                 &this->srcRect, &screenDestination);
+  SDL_RenderCopy(renderer, this->textureManager->getTexture(), &this->srcRect,
+                 &screenDestination);
 }
 
-CustomSDLRect GlobalPositionalSDLObject::getDestination() {
-  return this->destination;
+GlobalPositionalObject::GlobalPositionalObject() {
+  this->x = 0;
+  this->y = 0;
+  this->z = 0;
 }
-
-GlobalPositionalSDLObject::GlobalPositionalSDLObject() {
-  this->destination = CustomSDLRect({});
+GlobalPositionalObject::GlobalPositionalObject(double x, double y, double z) {
+  this->x = x;
+  this->y = y;
+  this->z = z;
 }
-GlobalPositionalSDLObject::GlobalPositionalSDLObject(SDL_Rect destination) {
-  this->destination = CustomSDLRect(destination);
-}
-GlobalPositionalSDLObject::~GlobalPositionalSDLObject() {}
+GlobalPositionalObject::~GlobalPositionalObject() {}
 BackgroundSDLTexture::BackgroundSDLTexture(SDL_Texture *texture) {
   // SDL_CreateRGBSurface(0, 640, 480, 32, 120, 120, 120, -1);
   this->texture = texture;
@@ -92,7 +103,7 @@ BackgroundSDLTexture::~BackgroundSDLTexture() {
 SDL_Texture *BackgroundSDLTexture::getTexture() { return this->texture; }
 
 CustomAnimatedSDLMaterialObject::CustomAnimatedSDLMaterialObject(
-    CustomTextureManager* textureManager,
+    CustomTextureManager *textureManager,
     std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>> animationSprites,
     CustomSDLRect destination)
     : CustomSDLMaterialObject(textureManager,

@@ -18,10 +18,19 @@ class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
   CustomGameCharacter(CustomTextureManager* texture,
                       std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
                           animationSprites,
-                      CustomSDLRect position, int lifePoints, int normalSpeed);
+                      CustomSDLRect position, b2BodyDef bodyDef,
+                      b2ShapeDef shapeDef, b2WorldId worldId, int lifePoints,
+                      int normalSpeed);
+  CustomGameCharacter(GAME_TAGS tag, CustomTextureManager* texture,
+                      std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
+                          animationSprites,
+                      CustomSDLRect position, b2BodyDef bodyDef,
+                      b2ShapeDef shapeDef, b2WorldId worldId, int lifePoints,
+                      int normalSpeed);
   virtual ~CustomGameCharacter();
 
   void doPhysics(Uint64 startTick, Uint64 endTick) override;
+  void afterSimulation(Uint64 startTick, Uint64 endTick) override;
 
   bool canMove() const;
 
@@ -29,9 +38,7 @@ class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
   bool isJumping() const;
   int getJumpForce() const;
 
-  virtual CustomSDLRect getDestination() override;
-
-   virtual bool operator==(const CustomGameCharacter& other) const {
+  virtual bool operator==(const CustomGameCharacter& other) const {
     return this == &other;
   }
 };
@@ -41,7 +48,7 @@ class CustomPlayer : public CustomGameCharacter, public EventListener {
   CustomPlayer(CustomTextureManager* textureManager,
                std::unordered_map<ANIMATION_TYPE, std::vector<SDL_Rect>>
                    animationSprites,
-               CustomSDLRect position);
+               CustomSDLRect position, b2WorldId worldId);
   ~CustomPlayer();
 
   void handleEvent(CustomEvent* event) override;
