@@ -60,3 +60,7 @@ Uint64 CustomEvent::getEndTick() { return this->endTick; }
 void EventListener::handleEvent(CustomEvent* event) {
   // handle general events
 }
+
+Stop::Stop(int speed, Direction direction, SDL_Point startPoint,
+           Uint64 startTick, Uint64 endTick)
+    : Movement(startPoint, startTick, endTick) {}

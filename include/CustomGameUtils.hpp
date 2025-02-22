@@ -39,7 +39,7 @@ extern std::unordered_set<SDL_Scancode> movementScanCodes;
 
 enum Direction { LEFT, RIGHT };
 
-enum MOVEMENT_TYPE { MOVEMENT, WALK, RUN, JUMP };
+enum MOVEMENT_TYPE { MOVEMENT, WALK, RUN, JUMP, STOP };
 
 // TODO destructors
 class Movement {
@@ -102,6 +102,16 @@ class Walk : public Movement {
   Walk(int speed, Direction direction, SDL_Point startPoint, Uint64 startTick,
        Uint64 endTick);
   virtual MOVEMENT_TYPE getType() const override { return MOVEMENT_TYPE::WALK; }
+};
+
+class Stop : public Movement {
+//TODO
+private:
+int brakeSpeed;
+ public:
+  Stop(int speed, Direction direction, SDL_Point startPoint, Uint64 startTick,
+       Uint64 endTick);
+  virtual MOVEMENT_TYPE getType() const override { return MOVEMENT_TYPE::STOP; }
 };
 
 class Jump : public Movement {

@@ -1,7 +1,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
-#include <CustomSDLObject.hpp>
+#include <CustomSDLObjects.hpp>
 #include <list>
 #include <memory>
 #include <stdexcept>
@@ -19,33 +19,8 @@ SDL_Point CustomSDLRect::getPoint() const { return {this->x, this->y}; }
 SDL_Point CustomSDLRect::getCenter() const {
   return {this->x + (this->w / 2), this->y + (this->h / 2)};
 }
-bool CustomSDLRect::xPointIsInBounds(int x) const {
-  return (x < this->x + this->w && x > this->x);
-}
-bool CustomSDLRect::yPointIsInBounds(int y) const {
-  return (y < this->y + this->h && y > this->y);
-}
-int CustomSDLRect::xGetNearestBoundary(int x) const {
-  SDL_Point centerPoint = this->getCenter();
-  if (x < centerPoint.x) {
-    return this->x;
-  } else if (x > centerPoint.x) {
-    return this->x + this->w;
-  } else {
-    return this->x;
-  }
-}
-int CustomSDLRect::yGetNearestBoundary(int y) const {
-  SDL_Point centerPoint = this->getCenter();
-  if (y < centerPoint.y) {
-    return this->y;
-  } else if (y > centerPoint.y) {
-    return this->y + this->h;
-  } else {
-    return this->y;
-  }
-}
-std::vector<SDL_Point> CustomSDLRect::getVertices() const {
+
+std::vector<SDL_Point> CustomSDLRect::getSDLVertices() const {
   return std::vector<SDL_Point>({
       SDL_Point({this->x, this->y}),
       SDL_Point({this->x + this->w, this->y}),
@@ -56,22 +31,13 @@ std::vector<SDL_Point> CustomSDLRect::getVertices() const {
 
 CustomSDLMaterialObject::CustomSDLMaterialObject(
     CustomTextureManager *textureManager, CustomSDLRect srcRect,
-    CustomSDLRect destination)
-    : GlobalPositionalObject(static_cast<double>(destination.x),
-                             static_cast<double>(destination.y), 0) {
+    CustomSDLRect destination) {
   this->textureManager = textureManager;
   this->srcRect = srcRect;
-  this->w = static_cast<double>(destination.w);
-  this->h = static_cast<double>(destination.h);
 }
 
 CustomSDLMaterialObject::~CustomSDLMaterialObject() {}
-const CustomSDLRect CustomSDLMaterialObject::getDestination() {
-  return CustomSDLRect(static_cast<int>(std::round(this->x)),
-                       static_cast<int>(std::round(this->y)),
-                       static_cast<int>(std::round(this->w)),
-                       static_cast<int>(std::round(this->h)));
-}
+
 
 // TODO calcular screenDestination?
 void CustomSDLMaterialObject::render(const SDL_Rect screenDestination,
@@ -79,18 +45,17 @@ void CustomSDLMaterialObject::render(const SDL_Rect screenDestination,
   SDL_RenderCopy(renderer, this->textureManager->getTexture(), &this->srcRect,
                  &screenDestination);
 }
-
-GlobalPositionalObject::GlobalPositionalObject() {
-  this->x = 0;
-  this->y = 0;
-  this->z = 0;
-}
-GlobalPositionalObject::GlobalPositionalObject(double x, double y, double z) {
+Position::Position(double x, double y) {
   this->x = x;
   this->y = y;
-  this->z = z;
 }
-GlobalPositionalObject::~GlobalPositionalObject() {}
+
+PositionObject::PositionObject(double x, double y, double w, double h)
+    : Position(x, y) {
+  this->w = w;
+  this->h = h;
+}
+PositionObject::~PositionObject() {}
 BackgroundSDLTexture::BackgroundSDLTexture(SDL_Texture *texture) {
   // SDL_CreateRGBSurface(0, 640, 480, 32, 120, 120, 120, -1);
   this->texture = texture;

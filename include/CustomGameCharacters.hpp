@@ -4,15 +4,19 @@
 #include <CustomGameObjects.hpp>
 #include <CustomGameUtils.hpp>
 #include <CustomPhysics.hpp>
-#include <CustomSDLObject.hpp>
+#include <CustomSDLObjects.hpp>
 
-class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
+class CustomGameCharacter : public PositionObject,
+                            public CustomAnimatedSDLMaterialObject,
                             public CustomDynamicPhysicalObject,
                             public GameObject {
  protected:
   std::string name;
   int lifePoints;
   int normalSpeed;
+
+  bool still;
+  bool grounded;
 
  public:
   CustomGameCharacter(CustomTextureManager* texture,
@@ -29,14 +33,10 @@ class CustomGameCharacter : public CustomAnimatedSDLMaterialObject,
                       int normalSpeed);
   virtual ~CustomGameCharacter();
 
+  virtual const CustomSDLRect getDestination() override;
+
   void doPhysics(Uint64 startTick, Uint64 endTick) override;
   void afterSimulation(Uint64 startTick, Uint64 endTick) override;
-
-  bool canMove() const;
-
-  bool canJump() const;
-  bool isJumping() const;
-  int getJumpForce() const;
 
   virtual bool operator==(const CustomGameCharacter& other) const {
     return this == &other;

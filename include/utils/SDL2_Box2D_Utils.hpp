@@ -1,14 +1,26 @@
 #ifndef SDL2_BOX2D_UTILS
 #define SDL2_BOX2D_UTILS
 
-const int pixelToMeterProportion = 25;  // 25 pixels is equivalent to 1 meter
+//TODO check for monitor ratio
+//const int pixelsRatio = 16; // 16 pixels is equivalent to 1 meter
 
-constexpr float convertMetersToPixels(float meters) {
-  return meters * pixelToMeterProportion;
+const int pixelToMeterProportionHeight = 16 ;  
+const int pixelToMeterProportionWidth =  9; 
+
+constexpr float convertMetersToPixelsX(float meters) {
+  return meters * pixelToMeterProportionWidth;
 }
 
-constexpr float convertPixelsToMeters(int pixels) {
-  return static_cast<float>(pixels) / pixelToMeterProportion;
+constexpr float convertMetersToPixelsY(float meters) {
+  return meters * pixelToMeterProportionHeight;
+}
+
+constexpr float convertPixelsToMetersX(int pixels) {
+  return static_cast<float>(pixels) / pixelToMeterProportionWidth;
+}
+
+constexpr float convertPixelsToMetersY(int pixels) {
+  return static_cast<float>(pixels) / pixelToMeterProportionHeight;
 }
 
 #endif

@@ -12,7 +12,7 @@
 #include "SDL_render.h"
 #include "SDL_stdinc.h"
 
-//TODO verificar formas mais performáticas de calcular 
+// TODO verificar formas mais performáticas de calcular
 struct CustomSDLRect : SDL_Rect {
   CustomSDLRect(int x, int y, int w, int h);
   CustomSDLRect();
@@ -20,45 +20,41 @@ struct CustomSDLRect : SDL_Rect {
   ~CustomSDLRect();
   SDL_Point getPoint() const;
   SDL_Point getCenter() const;
-  bool xPointIsInBounds(int x) const;
-  bool yPointIsInBounds(int y) const;
-  int xGetNearestBoundary(int x) const;
-  int yGetNearestBoundary(int y) const;
-  std::vector<SDL_Point> getVertices() const;
+  std::vector<SDL_Point> getSDLVertices() const;
 };
 
 // TODO 3D rect
-
-class GlobalPositionalObject {
+class Position {
  protected:
   double x;
   double y;
-  double z;
-
-  GlobalPositionalObject();
-  GlobalPositionalObject(double x, double y, double z);
 
  public:
-  virtual ~GlobalPositionalObject();
-  virtual const CustomSDLRect getDestination() = 0;
+  Position(double x, double y);
 };
 
-class CustomSDLMaterialObject : public GlobalPositionalObject {
+class PositionObject : public Position {
  protected:
   double w;
   double h;
 
+ public:
+  PositionObject(double x, double y, double w, double h);
+  virtual ~PositionObject();
+};
+
+class CustomSDLMaterialObject {
+ protected:
   CustomTextureManager *textureManager;
 
  private:
   CustomSDLRect srcRect;
-  
 
  public:
   CustomSDLMaterialObject(CustomTextureManager *textureManager,
                           CustomSDLRect srcRect, CustomSDLRect destination);
   virtual ~CustomSDLMaterialObject();
-  virtual const CustomSDLRect getDestination() override;
+  virtual const CustomSDLRect getDestination() = 0;
   virtual void render(const SDL_Rect cameraRect, SDL_Renderer *renderer);
 };
 

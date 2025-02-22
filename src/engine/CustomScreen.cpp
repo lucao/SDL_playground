@@ -76,7 +76,7 @@ SDL_Renderer* CameraSDL::film(Stage* stage, Uint64 startTick, Uint64 endTick) {
   // render regions
   std::unordered_set<Region*> regionsToRender;
   std::unordered_set<CustomSDLMaterialObject*> objectsToRender;
-  for (SDL_Point point : this->cameraRect.getVertices()) {
+  for (SDL_Point point : this->cameraRect.getSDLVertices()) {
     std::vector<Region*> regions;
     Region* regionToRender = stage->getRegion(point);
     regionsToRender.insert(regionToRender);

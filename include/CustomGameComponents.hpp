@@ -3,20 +3,21 @@
 
 #include <CustomGameObjects.hpp>
 #include <CustomPhysics.hpp>
-#include <CustomSDLObject.hpp>
+#include <CustomSDLObjects.hpp>
 
 #include "SDL_stdinc.h"
 
-class CustomGroundPlane : public CustomSDLMaterialObject,
+class CustomGroundPlane : public PositionObject,
+                          public CustomSDLMaterialObject,
                           public CustomPhysicalObject,
                           public GameObject {
  private:
  public:
-  CustomGroundPlane(CustomTextureManager* textureManager, CustomSDLRect destination,
-                    b2WorldId worldId);
   CustomGroundPlane(CustomTextureManager* textureManager,
-                    CustomSDLRect destination,
-                    b2BodyDef bodyDef, b2ShapeDef shapeDef, b2WorldId worldId);
+                    CustomSDLRect position, b2WorldId worldId);
+  CustomGroundPlane(CustomTextureManager* textureManager,
+                    CustomSDLRect position, b2BodyDef bodyDef,
+                    b2ShapeDef shapeDef, b2WorldId worldId);
   void doPhysics(Uint64 startTick, Uint64 endTick) override;
   void afterSimulation(Uint64 startTick, Uint64 endTick) override;
 };

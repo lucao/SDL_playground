@@ -7,7 +7,7 @@
 
 #include "CustomGameCharacters.hpp"
 #include "CustomGameUtils.hpp"
-#include "CustomSDLObject.hpp"
+#include "CustomSDLObjects.hpp"
 #include "CustomTexture.hpp"
 #include "SDL_rect.h"
 #include "SDL_render.h"
