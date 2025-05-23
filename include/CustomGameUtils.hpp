@@ -137,8 +137,8 @@ class FPSControl {
  public:
   static const Uint32 secondinMS = 1000;
   FPSControl() {
-    this->frameTick = SDL_GetTicks64();
-    this->lastFrameTick = SDL_GetTicks64();
+    this->frameTick = SDL_GetTicks();
+    this->lastFrameTick = SDL_GetTicks();
     this->lastSecondTick = 0;
     this->ticks = std::deque<Uint64>(20, -1);
     this->samples = std::deque<Uint16>(20, -1);
@@ -146,14 +146,14 @@ class FPSControl {
 
   void tick() {
     this->lastFrameTick = this->frameTick;
-    this->frameTick = SDL_GetTicks64();
+    this->frameTick = SDL_GetTicks();
 
     if (this->ticks.size() > 19) this->ticks.pop_back();
     this->ticks.push_front(this->frameTick);
 
     frameCounter++;
-    if (SDL_GetTicks64() - this->lastSecondTick >= secondinMS) {
-      this->lastSecondTick = SDL_GetTicks64();
+    if (SDL_GetTicks() - this->lastSecondTick >= secondinMS) {
+      this->lastSecondTick = SDL_GetTicks();
 
       if (this->samples.size() > 19) this->samples.pop_back();
       this->samples.push_front(frameCounter);

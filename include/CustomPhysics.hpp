@@ -14,10 +14,16 @@ class CustomPhysicalObject {
   b2Polygon polygon;
 
   CustomPhysicalObject();
+
  public:
-  CustomPhysicalObject(b2BodyDef bodyDef,
-                       b2ShapeDef shapeDef,
-                       b2Vec2 position, b2Polygon polygon, b2WorldId worldId);
+  CustomPhysicalObject(b2BodyDef bodyDef, b2ShapeDef shapeDef, b2Vec2 position,
+                       b2Polygon polygon, b2WorldId worldId);
+
+  CustomPhysicalObject(b2BodyDef bodyDef, b2ShapeDef shapeDef, b2Vec2 position,
+                       b2Capsule capsule, b2WorldId worldId);
+
+  CustomPhysicalObject(b2BodyDef bodyDef, b2ShapeDef shapeDef, b2Vec2 position,
+                       b2Circle circle, b2WorldId worldId);
   virtual ~CustomPhysicalObject();
 
   virtual void doPhysics(Uint64 startTick, Uint64 endTick) = 0;
@@ -31,10 +37,18 @@ class CustomDynamicPhysicalObject : public CustomPhysicalObject {
   std::list<Movement *> movementList;
 
  public:
-  CustomDynamicPhysicalObject(b2BodyDef bodyDef,
-                              b2ShapeDef shapeDef,
+  CustomDynamicPhysicalObject(b2BodyDef bodyDef, b2ShapeDef shapeDef,
                               b2Vec2 position, b2Polygon polygon,
                               b2WorldId worldId);
+
+  CustomDynamicPhysicalObject(b2BodyDef bodyDef, b2ShapeDef shapeDef,
+                              b2Vec2 position, b2Capsule capsule,
+                              b2WorldId worldId);
+
+  CustomDynamicPhysicalObject(b2BodyDef bodyDef, b2ShapeDef shapeDef,
+                              b2Vec2 position, b2Circle circle,
+                              b2WorldId worldId);
+  // TODO make capsule constructor
 
   virtual ~CustomDynamicPhysicalObject();
   void addMovement(Movement *movement);

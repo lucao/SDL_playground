@@ -36,7 +36,6 @@
 #include "SDL_stdinc.h"
 #include "SDL_surface.h"
 #include "SDL_timer.h"
-#include "begin_code.h"
 
 class GameControl {
  private:
@@ -58,7 +57,9 @@ class GameControl {
   CustomGroundPlane* createDefaultGround() {
     std::unordered_map<ANIMATION_TYPE, SDL_Texture*> textures;
     textures[ANIMATION_TYPE::NO_ANIMATION] = SDL_CreateTextureFromSurface(
-        camera->getRenderer(), SDL_CreateRGBSurface(0, 1, 1, 32, 0, 0, 0, 0));
+        camera->getRenderer(),
+        SDL_CreateSurfaceFrom(0, 1,
+                              SDL_GetPixelFormatForMasks(1, 32, 0, 0, 0, 0)));
 
     CustomTextureManager* textureManager = new CustomTextureManager(textures);
     return new CustomGroundPlane(textureManager,
@@ -68,15 +69,10 @@ class GameControl {
 
  public:
   GameControl() {
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+    if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
       SDL_Log("Error initializing SDL: %s\n", SDL_GetError());
 
       throw std::runtime_error("Error initializing SDL");
-    } else if (!IMG_Init(IMG_INIT_JPG)) {
-      SDL_Log("SDL_image could not initialize! SDL_image Error: %s\n",
-              IMG_GetError());
-
-      throw std::runtime_error("Error initializing SDL_image");
     }
 
     this->screen = new Screen(640, 480);
@@ -216,11 +212,11 @@ int main(int, char**) {
 
       while (SDL_PollEvent(&event) != 0) {
         switch (event.type) {
-          case SDL_QUIT:
+          case SDL_EVENT_QUIT:
             // handling of close button
             gameControl->setGameLoopRunning(false);
             break;
-          case SDL_MOUSEWHEEL:
+          case SDL_EVENT_MOUSE_WHEEL:
             if (event.wheel.y > 0) {
               // Put code for handling "scroll up" here!
             } else if (event.wheel.y < 0) {
@@ -235,8 +231,8 @@ int main(int, char**) {
             break;
         }
       }
-
-      const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
+      int* keyboardState;
+      SDL_GetKeyboardState(keyboardState);
       /*
         if (keyboardState[SDL_SCANCODE_W] || keyboardState[SDL_SCANCODE_UP]) {
           eventControl->addEvent(new

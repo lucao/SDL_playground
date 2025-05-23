@@ -14,8 +14,9 @@ class CustomGameCharacter : public PositionObject,
   std::string name;
   int lifePoints;
   int normalSpeed;
+  float forceForMovement;
 
-  bool still;
+  bool moving;
   bool grounded;
 
  public:

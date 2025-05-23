@@ -13,8 +13,20 @@ CustomPhysicalObject::CustomPhysicalObject(b2BodyDef bodyDef,
   b2CreatePolygonShape(this->bodyId, &shapeDef, &polygon);
 }
 
+CustomPhysicalObject::CustomPhysicalObject(b2BodyDef bodyDef,
+                                           b2ShapeDef shapeDef, b2Vec2 position,
+                                           b2Capsule capsule,
+                                           b2WorldId worldId) {
+  bodyDef.position = position;
+  bodyDef.type = b2_staticBody;
+  shapeDef.density = 1.0f;
+  shapeDef.friction = 0.3f;
+  this->bodyId = b2CreateBody(worldId, &bodyDef);
+  b2CreateCapsuleShape(this->bodyId, &shapeDef, &capsule);
+}
+
 CustomPhysicalObject::CustomPhysicalObject() {
-//TODO
+  // TODO
 }
 
 CustomPhysicalObject::~CustomPhysicalObject() {}
@@ -32,6 +44,19 @@ CustomDynamicPhysicalObject::CustomDynamicPhysicalObject(b2BodyDef bodyDef,
   shapeDef.friction = 0.3f;
   this->bodyId = b2CreateBody(worldId, &bodyDef);
   b2CreatePolygonShape(this->bodyId, &shapeDef, &polygon);
+}
+
+CustomDynamicPhysicalObject::CustomDynamicPhysicalObject(b2BodyDef bodyDef,
+                                                         b2ShapeDef shapeDef,
+                                                         b2Vec2 position,
+                                                         b2Capsule capsule,
+                                                         b2WorldId worldId) {
+  bodyDef.position = position;
+  bodyDef.type = b2_dynamicBody;
+  shapeDef.density = 1.0f;
+  shapeDef.friction = 0.3f;
+  this->bodyId = b2CreateBody(worldId, &bodyDef);
+  b2CreateCapsuleShape(this->bodyId, &shapeDef, &capsule);
 }
 
 CustomDynamicPhysicalObject::~CustomDynamicPhysicalObject() {}

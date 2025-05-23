@@ -3,7 +3,7 @@
 
 #include <SDL.h>
 
-#include <CustomSDLObject.hpp>
+#include <CustomSDLObjects.hpp>
 #include <Stage.hpp>
 
 class CameraSDL {

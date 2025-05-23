@@ -16,13 +16,17 @@ CustomGameCharacter::CustomGameCharacter(
           bodyDef, shapeDef,
           b2Vec2({convertPixelsToMetersX(position.getCenter().x),
                   -convertPixelsToMetersY(position.getCenter().y)}),
-          b2MakeBox(convertPixelsToMetersX(position.w) / 2,
-                    convertPixelsToMetersY(position.h) / 2),
+          b2Capsule(
+              {b2Vec2({0, convertPixelsToMetersY(position.h) -
+                              (2 * convertPixelsToMetersX(position.w)) / 2}),
+               b2Vec2({0, -(convertPixelsToMetersY(position.h) -
+                              (2 * convertPixelsToMetersX(position.w)) / 2)}),
+               convertPixelsToMetersX(position.w) / 2}),
           worldId),
-      GameObject(tag) {
+      GameObject(tag) {  // TODO verificar se essa construção da capsula está OK
   this->lifePoints = lifePoints;
   this->normalSpeed = normalSpeed;
-  this->still = false;
+  this->moving = false;
   this->grounded = true;  // TODO should be false... Is setted true for testing
 }
 
@@ -61,7 +65,7 @@ const CustomSDLRect CustomGameCharacter::getDestination() {
 void CustomGameCharacter::doPhysics(Uint64 startTick, Uint64 endTick) {
   std::list<Movement*>::iterator iterator = this->movementList.begin();
   auto velocity = b2Body_GetLinearVelocity(this->bodyId);
-  velocity.x = 0.;  // TODO verificar como parar o personagem
+
   while (iterator != this->movementList.end()) {
     Movement* movement = *iterator;
     if (movement->getEndTick() < startTick) {
@@ -73,9 +77,22 @@ void CustomGameCharacter::doPhysics(Uint64 startTick, Uint64 endTick) {
     switch (movement->getType()) {
       case MOVEMENT_TYPE::WALK:
         // TODO
-        b2Body_ApplyForceToCenter(myBodyId, force, wake);
-        b2Body_ApplyLinearImpulseToCenter(myBodyId, linearImpulse, wake);
-
+        // b2Body_ApplyForceToCenter(myBodyId, force, wake);
+        // b2Body_ApplyLinearImpulseToCenter(myBodyId, linearImpulse, wake);
+        if (this->moving) {
+          b2Body_ApplyForceToCenter(
+              this->bodyId,
+              b2Body_GetMass(this->bodyId) *
+                  b2Vec2({this->normalSpeed - velocity.x, 0}),
+              true);
+        } else {
+          this->moving = true;
+          b2Body_ApplyLinearImpulseToCenter(
+              this->bodyId,
+              b2Body_GetMass(this->bodyId) *
+                  b2Vec2({this->normalSpeed - velocity.x, 0}),
+              true);
+        }
         /*
          * Use ApplyForce or ApplyLinearImpulse to move the character
          *horizontally.
@@ -84,9 +101,10 @@ void CustomGameCharacter::doPhysics(Uint64 startTick, Uint64 endTick) {
          *jumping).
          */
         // TODO jump
-        continue;
+        return;
     }
   }
+  this->moving = false;
   // erase movements that are past the ticks
 }
 
@@ -109,7 +127,6 @@ void CustomPlayer::handleEvent(CustomEvent* event) {
   // TODO interaction key pressed
   if (event->getAction() == PLAYER_ACTION::PLAYER_JUMP_KEY_PRESSED) {
     if (this->grounded) {
-      this->still = false;
       /* TODO
       this->addMovement(new Jump(this->getJumpForce(),
                                  this->getDestination().getPoint(),
@@ -118,16 +135,16 @@ void CustomPlayer::handleEvent(CustomEvent* event) {
     }
   }
   if (event->getAction() == PLAYER_ACTION::PLAYER_IDLE_INPUT) {
-    if (this->still) {
+    if (this->moving) {
+      this->moving = false;
+      // TODO enviar evento de parar personagem
+    } else {
       this->changeAnimation(ANIMATION_TYPE::IDLE,
                             this->currentAnimationDirection);
-    } else {
-      // TODO enviar evento de parar personagem
-      this->still = true;
     }
 
   } else {
-    this->still = false;
+    this->moving = true;
     if (event->getAction() == PLAYER_ACTION::PLAYER_RIGHT_KEY_PRESSED) {
       this->addMovement(new Walk(this->normalSpeed, Direction::RIGHT,
                                  this->getDestination().getPoint(),

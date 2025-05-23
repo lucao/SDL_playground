@@ -6,7 +6,7 @@
 #include <CustomGameComponents.hpp>
 #include <CustomGameObjects.hpp>
 #include <CustomPhysics.hpp>
-#include <CustomSDLObject.hpp>
+#include <CustomSDLObjects.hpp>
 #include <LazyLoadMatrix.hpp>
 #include <algorithm>
 #include <set>
@@ -199,7 +199,7 @@ class RegionNotLoadedYet : public RegionLoadError {
 
 class DynamicRegion : public Region {
  public:
-  static SDL_RWops* DEFAULT_TEXTURE_RWOPS;
+  static SDL_IOStream* DEFAULT_TEXTURE_RWOPS;
 
   DynamicRegion(Region::RegionID regionId, CustomSDLRect rect,
                 SDL_Renderer* renderer, SDL_Texture* texture);
