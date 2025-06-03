@@ -20,6 +20,7 @@ class CustomGroundPlane : public PositionObject,
                     b2ShapeDef shapeDef, b2WorldId worldId);
   void doPhysics(Uint64 startTick, Uint64 endTick) override;
   void afterSimulation(Uint64 startTick, Uint64 endTick) override;
+  const CustomSDLRect getDestination() override;
 };
 
 #endif

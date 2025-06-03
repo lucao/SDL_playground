@@ -55,11 +55,12 @@ class GameControl {
   CustomGroundPlane* ground;
 
   CustomGroundPlane* createDefaultGround() {
+    Uint32 pixel = 0xFF000000;  // Opaque black in ARGB8888
+    SDL_Surface* surface = SDL_CreateSurfaceFrom(1, 1, SDL_PIXELFORMAT_ARGB8888,
+                                                 &pixel, sizeof(Uint32));
     std::unordered_map<ANIMATION_TYPE, SDL_Texture*> textures;
-    textures[ANIMATION_TYPE::NO_ANIMATION] = SDL_CreateTextureFromSurface(
-        camera->getRenderer(),
-        SDL_CreateSurfaceFrom(0, 1,
-                              SDL_GetPixelFormatForMasks(1, 32, 0, 0, 0, 0)));
+    textures[ANIMATION_TYPE::NO_ANIMATION] =
+        SDL_CreateTextureFromSurface(camera->getRenderer(), surface);
 
     CustomTextureManager* textureManager = new CustomTextureManager(textures);
     return new CustomGroundPlane(textureManager,
@@ -102,8 +103,10 @@ class GameControl {
     this->eventListeners.push_back(this->mainPlayer);
 
     // verificar se surface está sendo plotada com a cor correta
-    SDL_Surface* surface = SDL_CreateRGBSurface(0, 1, 1, 32, 0, 0, 1, 1);
-    SDL_FillRect(surface, nullptr, SDL_MapRGB(surface->format, 1, 0, 1));
+    // TODO
+    Uint32 pixel = 0xFF000000;  // Opaque black in ARGB8888
+    SDL_Surface* surface = SDL_CreateSurfaceFrom(1, 1, SDL_PIXELFORMAT_ARGB8888,
+                                                 &pixel, sizeof(Uint32));
     SDL_Texture* texture =
         SDL_CreateTextureFromSurface(camera->getRenderer(), surface);
 

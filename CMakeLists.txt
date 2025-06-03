@@ -4,25 +4,11 @@ project(game VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_subdirectory(external/box2d)
+add_subdirectory(external/boost EXCLUDE_FROM_ALL)
+add_subdirectory(external/box2d EXCLUDE_FROM_ALL)
 add_subdirectory(external/SDL3 EXCLUDE_FROM_ALL)
-add_subdirectory(external/SDL3_image)
-
-set(SOURCES 
-src/engine/CustomPlayerBuilder.cpp 
-src/engine/CustomGameCharacters.cpp 
-src/engine/CustomPhysics.cpp
-src/engine/CustomScreen.cpp
-src/engine/CustomSDLObjects.cpp
-src/engine/Stage.cpp
-src/engine/World.cpp
-src/engine/CustomGameObjects.cpp 
-src/engine/CustomGameUtils.cpp 
-src/engine/CustomGameComponents.cpp 
-src/engine/CustomTexture.cpp
-)
-
-add_executable(game src/main.cpp ${SOURCES})
+add_subdirectory(external/SDL3_image EXCLUDE_FROM_ALL)
+set(aom_DIR external/SDL3_image/external/aom_build)
 
 
 add_library(dear_imgui
@@ -41,6 +27,22 @@ external/imgui/imstb_truetype.h
 external/imgui/imstb_textedit.h
 external/imgui/imstb_rectpack.h)
 
+set(SOURCES 
+src/engine/CustomPlayerBuilder.cpp 
+src/engine/CustomGameCharacters.cpp 
+src/engine/CustomPhysics.cpp
+src/engine/CustomScreen.cpp
+src/engine/CustomSDLObjects.cpp
+src/engine/Stage.cpp
+src/engine/World.cpp
+src/engine/CustomGameObjects.cpp 
+src/engine/CustomGameUtils.cpp 
+src/engine/CustomGameComponents.cpp 
+src/engine/CustomTexture.cpp
+)
+
+add_executable(game src/main.cpp ${SOURCES})
+
 link_directories(libs)
 
 target_link_libraries(game PRIVATE d3d9)
@@ -48,6 +50,8 @@ target_link_libraries(game PRIVATE SDL3::SDL3 SDL3_image::SDL3_image)
 target_link_libraries(game PRIVATE dear_imgui)
 target_link_libraries(game PRIVATE box2d)
 target_link_libraries(game PRIVATE bcrypt)
+target_link_libraries(game PRIVATE Boost::hash2)
+target_link_libraries(game PRIVATE Boost::uuid)
 
 target_include_directories(game PUBLIC include)
 target_include_directories(game PUBLIC include/utils)

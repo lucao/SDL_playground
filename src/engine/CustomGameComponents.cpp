@@ -45,3 +45,7 @@ void CustomGroundPlane::doPhysics(Uint64 startTick, Uint64 endTick) {
 void CustomGroundPlane::afterSimulation(Uint64 startTick, Uint64 endTick) {
   // TODO
 }
+
+const CustomSDLRect CustomGroundPlane::getDestination() {
+  // TODO
+}
